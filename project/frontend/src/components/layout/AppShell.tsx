@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
@@ -17,11 +17,18 @@ function readCollapsed(): boolean {
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mainRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
 
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  // `inert` is best-effort: browsers without support simply ignore the attribute.
+  useEffect(() => {
+    mainRef.current?.toggleAttribute('inert', mobileOpen);
+    return () => mainRef.current?.removeAttribute('inert');
+  }, [mobileOpen]);
 
   const toggleCollapse = () => {
     setCollapsed((current) => {
@@ -35,6 +42,9 @@ export function AppShell() {
     });
   };
 
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+  const openMobile = useCallback(() => setMobileOpen(true), []);
+
   return (
     <div className={cx('app-shell', collapsed && 'is-collapsed', mobileOpen && 'is-mobile-open')}>
       <a className="skip-link" href="#main-content">
@@ -44,10 +54,10 @@ export function AppShell() {
         collapsed={collapsed}
         onToggleCollapse={toggleCollapse}
         mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
+        onCloseMobile={closeMobile}
       />
-      <div className="main-column">
-        <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
+      <div className="main-column" ref={mainRef}>
+        <Topbar onOpenMobileMenu={openMobile} />
         <main className="app-content" id="main-content">
           <div className="app-content-inner">
             <Outlet />

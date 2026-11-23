@@ -61,6 +61,28 @@ RUN printf '%s\n' \
       '            proxy_set_header X-Forwarded-Proto $scheme;' \
       '        }' \
       '' \
+      '        # Native WebSocket and SockJS fallback for live notifications.' \
+      '        location /ws/ {' \
+      '            proxy_pass http://backend:8080;' \
+      '            proxy_http_version 1.1;' \
+      '            proxy_set_header Upgrade $http_upgrade;' \
+      '            proxy_set_header Connection "upgrade";' \
+      '            proxy_set_header Host $host;' \
+      '            proxy_set_header X-Real-IP $remote_addr;' \
+      '            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' \
+      '            proxy_set_header X-Forwarded-Proto $scheme;' \
+      '            proxy_read_timeout 300s;' \
+      '        }' \
+      '' \
+      '        location /sockjs/ {' \
+      '            proxy_pass http://backend:8080;' \
+      '            proxy_http_version 1.1;' \
+      '            proxy_set_header Host $host;' \
+      '            proxy_set_header X-Real-IP $remote_addr;' \
+      '            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' \
+      '            proxy_set_header X-Forwarded-Proto $scheme;' \
+      '        }' \
+      '' \
       '        location = /healthz {' \
       '            access_log off;' \
       '            add_header Content-Type text/plain;' \
@@ -69,9 +91,9 @@ RUN printf '%s\n' \
       '    }' \
       '}' \
       > /etc/nginx/nginx.conf \
- && rm -f /etc/nginx/conf.d/default.conf \
- && mkdir -p /tmp/nginx \
- && chown -R nginx:nginx /tmp/nginx
+  && rm -f /etc/nginx/conf.d/default.conf \
+  && mkdir -p /tmp/nginx \
+  && chown -R nginx:nginx /tmp/nginx
 
 COPY --from=build --chown=nginx:nginx /app/dist/ /usr/share/nginx/html/
 

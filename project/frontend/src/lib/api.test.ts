@@ -38,6 +38,19 @@ describe('api client', () => {
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer access-token');
   });
 
+  it('allows one request to override the active organization header', async () => {
+    tokenStore.setOrganizationId(10);
+    const fetchMock = vi.fn().mockResolvedValue(response(200, success({ ok: true })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await api.get('/analytics/overview', { organizationId: 20 });
+    await api.get('/analytics/overview', { organizationId: null });
+    await api.get('/analytics/overview');
+
+    const headers = fetchMock.mock.calls.map((call) => new Headers(call[1].headers));
+    expect(headers.map((header) => header.get('X-Organization-Id'))).toEqual(['20', null, '10']);
+  });
+
   it('throws a typed ApiError with code, message, correlationId and details', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response(403, {
       success: false,

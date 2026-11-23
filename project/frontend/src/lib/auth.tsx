@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import {
   createContext,
   useCallback,
@@ -49,18 +50,29 @@ function contextFromUser(user: UserView | null) {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<UserView | null>(null);
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [organizationId, setOrganizationId] = useState<number | null>(null);
   const bootstrapStarted = useRef(false);
 
-  const syncOrganization = useCallback((nextUser: UserView) => {
-    const stored = tokenStore.getOrganizationId();
-    const validIds = nextUser.memberships.map((membership) => membership.organizationId);
-    const resolved = stored && validIds.includes(stored) ? stored : (validIds[0] ?? null);
-    tokenStore.setOrganizationId(resolved);
-    setOrganizationId(resolved);
-  }, []);
+  /** Drops every cached response so data from the previous scope is never rendered. */
+  const clearScopedData = useCallback(() => {
+    queryClient.clear();
+    void queryClient.invalidateQueries();
+  }, [queryClient]);
+
+  const syncOrganization = useCallback(
+    (nextUser: UserView) => {
+      const stored = tokenStore.getOrganizationId();
+      const validIds = nextUser.memberships.map((membership) => membership.organizationId);
+      const resolved = stored && validIds.includes(stored) ? stored : (validIds[0] ?? null);
+      if (stored !== resolved) clearScopedData();
+      tokenStore.setOrganizationId(resolved);
+      setOrganizationId(resolved);
+    },
+    [clearScopedData],
+  );
 
   const applyAuth = useCallback(
     (response: AuthResponse) => {
@@ -143,19 +155,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     tokenStore.clear();
     tokenStore.setOrganizationId(null);
+    clearScopedData();
     setUser(null);
     setOrganizationId(null);
     setStatus('unauthenticated');
-  }, []);
+  }, [clearScopedData]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     await api.post('/auth/change-password', { currentPassword, newPassword });
   }, []);
 
-  const selectOrganization = useCallback((id: number | null) => {
-    tokenStore.setOrganizationId(id);
-    setOrganizationId(id);
-  }, []);
+  const selectOrganization = useCallback(
+    (id: number | null) => {
+      if (
+        id !== null &&
+        !(user?.memberships ?? []).some((membership) => membership.organizationId === id)
+      ) {
+        throw new Error('That organization is not available to this account.');
+      }
+      if (id === organizationId) return;
+      tokenStore.setOrganizationId(id);
+      clearScopedData();
+      setOrganizationId(id);
+    },
+    [user, organizationId, clearScopedData],
+  );
 
   const value = useMemo<AuthContextValue>(() => {
     const context = contextFromUser(user);

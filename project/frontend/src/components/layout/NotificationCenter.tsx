@@ -21,6 +21,7 @@ function unreadFrom(value: unknown): number {
 export function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -44,13 +45,18 @@ export function NotificationCenter() {
     onError: (error) => toast.error('Could not update notification', getErrorMessage(error)),
   });
 
+  const closePopover = (restoreFocus = false) => {
+    setOpen(false);
+    if (restoreFocus) triggerRef.current?.focus();
+  };
+
   useEffect(() => {
     if (!open) return;
     const handleOutside = (event: MouseEvent) => {
-      if (!anchorRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!anchorRef.current?.contains(event.target as Node)) closePopover();
     };
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
+      if (event.key === 'Escape') closePopover(true);
     };
     document.addEventListener('mousedown', handleOutside);
     document.addEventListener('keydown', handleKey);
@@ -66,6 +72,7 @@ export function NotificationCenter() {
   return (
     <div className="menu-anchor" ref={anchorRef}>
       <button
+        ref={triggerRef}
         type="button"
         className="btn btn-ghost btn-icon"
         aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}
@@ -77,7 +84,16 @@ export function NotificationCenter() {
         {unread > 0 && <span className="badge badge-danger" style={{ padding: '0 5px' }}>{unread}</span>}
       </button>
       {open && (
-        <div className="popover" role="dialog" aria-label="Notifications">
+        <div
+          className="popover"
+          role="dialog"
+          aria-label="Notifications"
+          onBlur={(event) => {
+            // Tab is left to the browser. Closing when focus leaves the dialog
+            // keeps it from trapping keyboard users in the popover.
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+          }}
+        >
           <div className="popover-header">
             <span>Notifications</span>
             <span className="text-muted text-xs">{unread} unread</span>

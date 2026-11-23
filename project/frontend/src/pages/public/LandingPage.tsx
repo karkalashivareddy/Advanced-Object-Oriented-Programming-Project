@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -9,18 +10,19 @@ import {
   HeartHandshake,
   HeartPulse,
   LockKeyhole,
+  Menu,
   Route,
   ScanLine,
   ShieldCheck,
   Siren,
-  UserRoundPlus,
   UsersRound,
+  X,
 } from 'lucide-react';
 
 const howItWorks = [
   {
-    title: 'Register your organization',
-    text: 'Blood banks and hospitals create a verified profile that defines their service area and team.',
+    title: 'Start with an account',
+    text: 'Self-registration creates a donor account. Organization profiles and staff memberships are assigned by an administrator.',
   },
   {
     title: 'Capture donations and inventory',
@@ -77,11 +79,18 @@ const trustFeatures = [
   },
 ];
 
+const trustMetrics = [
+  { label: 'Authorization', value: 'Server-side', detail: 'The API enforces access on every request.' },
+  { label: 'Data scope', value: 'Organization', detail: 'Memberships define what a user can see.' },
+  { label: 'Critical actions', value: 'Idempotent', detail: 'Keys reduce duplicate reservations and dispatches.' },
+  { label: 'Investigation', value: 'Auditable', detail: 'Correlation IDs connect actions to records.' },
+];
+
 const faqs = [
   {
     question: 'Who is LifeLink for?',
     answer:
-      'It is designed for blood banks and hospitals that need a shared, permission-aware record of donations, inventory, emergency requests, and dispatch.',
+      'It is designed for blood banks and hospitals that need a shared, permission-aware record of donations, inventory, emergency requests, and dispatch. Donors can review their own profile, appointments, and donations.',
   },
   {
     question: 'Does LifeLink make clinical decisions?',
@@ -94,13 +103,28 @@ const faqs = [
       'Accounts belong to organizations through memberships, and the API applies organization scoping. The UI also offers an organization switcher for users with more than one membership.',
   },
   {
-    question: 'How do I get access?',
+    question: 'Can I register my hospital or blood bank here?',
     answer:
-      'Accounts and demo credentials are provisioned by the backend seed and your administrator. The registration screen creates an account through the same API used by the application.',
+      'Self-registration creates a donor account. An administrator creates and verifies organization profiles, then adds staff memberships with the appropriate role.',
+  },
+  {
+    question: 'How do I get staff access?',
+    answer:
+      'Use the sign-in screen with credentials provisioned by your organization administrator. If you are a donor, the registration screen creates your account through the same API used by the application.',
   },
 ];
 
+const marketingLinks = [
+  { label: 'Product', href: '#product' },
+  { label: 'How it works', href: '#how-it-works' },
+  { label: 'Security', href: '#security' },
+  { label: 'FAQ', href: '#faq' },
+];
+
 export function LandingPage() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMenu = () => setMobileOpen(false);
+
   return (
     <div className="marketing">
       <a className="skip-link" href="#main-content">
@@ -108,29 +132,55 @@ export function LandingPage() {
       </a>
       <header className="marketing-header">
         <div className="marketing-header-inner">
-          <Link to="/" className="brand" aria-label="LifeLink home" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to="/" className="brand" aria-label="LifeLink home">
             <span className="brand-mark">
               <HeartPulse size={19} aria-hidden="true" />
             </span>
             <span className="brand-name">LifeLink</span>
           </Link>
-          <nav className="marketing-nav" aria-label="Marketing navigation">
-            <a href="#product">Product</a>
-            <a href="#how-it-works">How it works</a>
-            <a href="#security">Security</a>
-            <a href="#faq">FAQ</a>
+          <nav className="marketing-nav" aria-label="Primary navigation">
+            {marketingLinks.map((link) => (
+              <a href={link.href} key={link.label}>
+                {link.label}
+              </a>
+            ))}
             <Link to="/login">Sign in</Link>
             <Link className="btn btn-primary btn-sm" to="/register">
-              Get started <ArrowRight size={14} aria-hidden="true" />
+              Create account <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </nav>
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon mobile-menu-button"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="marketing-mobile-nav"
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            {mobileOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
+          </button>
         </div>
+        {mobileOpen && (
+          <nav className="cluster marketing-container" id="marketing-mobile-nav" aria-label="Mobile navigation">
+            {marketingLinks.map((link) => (
+              <a href={link.href} key={link.label} onClick={closeMenu}>
+                {link.label}
+              </a>
+            ))}
+            <Link to="/login" onClick={closeMenu}>
+              Sign in
+            </Link>
+            <Link className="btn btn-primary btn-sm" to="/register" onClick={closeMenu}>
+              Create account <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </nav>
+        )}
       </header>
 
       <main id="main-content">
         <section className="marketing-hero">
           <div className="marketing-container">
-            <div>
+            <div className="page-enter">
               <span className="eyebrow">
                 <HeartPulse size={14} aria-hidden="true" /> Blood supply coordination
               </span>
@@ -143,19 +193,19 @@ export function LandingPage() {
               </p>
               <div className="hero-actions">
                 <Link className="btn btn-primary btn-lg" to="/register">
-                  Create your workspace <ArrowRight size={17} aria-hidden="true" />
+                  Create account <ArrowRight size={17} aria-hidden="true" />
                 </Link>
                 <Link className="btn btn-secondary btn-lg" to="/login">
                   Sign in
                 </Link>
               </div>
-              <p className="hero-note">Access is provisioned by your organization administrator.</p>
+              <p className="hero-note">Donors can self-register. Staff access is provisioned by an organization administrator.</p>
             </div>
 
-            <div className="product-preview" id="product" aria-label="Illustrative product preview">
+            <div className="hero-visual surface-glass surface-raised stagger-1" id="product" aria-label="Illustrative product preview">
               <div className="preview-bar">
-                <i /><i /><i />
-                <span>LifeLink · Workspace preview</span>
+                <i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
+                <span>LifeLink · Workspace example</span>
               </div>
               <div className="preview-body">
                 <div className="preview-side" aria-hidden="true">
@@ -164,22 +214,21 @@ export function LandingPage() {
                 <div className="preview-main">
                   <div className="preview-cards" aria-hidden="true">
                     <div className="preview-card">
-                      <small>Inventory</small><strong>—</strong>
+                      <small>Available units</small><strong>Example</strong>
                     </div>
                     <div className="preview-card">
-                      <small>Requests</small><strong>—</strong>
+                      <small>Open requests</small><strong>Example</strong>
                     </div>
                     <div className="preview-card">
-                      <small>Dispatch</small><strong>—</strong>
+                      <small>In transit</small><strong>Example</strong>
                     </div>
                   </div>
-                  <div className="preview-row" aria-hidden="true"><i /><span /><span className="short" /></div>
-                  <div className="preview-row" aria-hidden="true"><i /><span /><span className="short" /></div>
-                  <div className="preview-row" aria-hidden="true"><i /><span /><span className="short" /></div>
-                  <div className="preview-row" aria-hidden="true"><i /><span /><span className="short" /></div>
-                  <div className="preview-row" aria-hidden="true"><i /><span /><span className="short" /></div>
-                  <p className="text-xs text-subtle" style={{ marginTop: 12 }}>
-                    Illustrative layout. Live values appear after you sign in.
+                  <div className="preview-row" aria-hidden="true"><i /><span>O- · red cells</span><span className="short">AVAILABLE</span></div>
+                  <div className="preview-row" aria-hidden="true"><i /><span>Request RQ-1042</span><span className="short">CRITICAL</span></div>
+                  <div className="preview-row" aria-hidden="true"><i /><span>Unit U-2081</span><span className="short">EXPIRES SOON</span></div>
+                  <div className="preview-row" aria-hidden="true"><i /><span>Dispatch D-318</span><span className="short">IN_TRANSIT</span></div>
+                  <p className="freshness">
+                    Illustrative example records, not live data. Real values appear after sign-in.
                   </p>
                 </div>
               </div>
@@ -194,9 +243,10 @@ export function LandingPage() {
               <h2>One workflow, from intake to handover.</h2>
               <p>Each step builds on the last so teams share the same record of what happened and why.</p>
             </div>
-            <div className="steps">
-              {howItWorks.map((step) => (
-                <article className="step" key={step.title}>
+            <div className="step-grid">
+              {howItWorks.map((step, index) => (
+                <article className="step surface surface-interactive" key={step.title}>
+                  <span className="metric-label">Step {index + 1}</span>
                   <h3>{step.title}</h3>
                   <p>{step.text}</p>
                 </article>
@@ -213,8 +263,8 @@ export function LandingPage() {
             </div>
             <div className="feature-grid">
               {inventoryFeatures.map((feature) => (
-                <article className="feature-card" key={feature.title}>
-                  <div className="feature-icon"><feature.icon size={20} aria-hidden="true" /></div>
+                <article className="feature-card surface" key={feature.title}>
+                  <div className="task-icon"><feature.icon size={20} aria-hidden="true" /></div>
                   <h3>{feature.title}</h3>
                   <p>{feature.text}</p>
                 </article>
@@ -224,11 +274,11 @@ export function LandingPage() {
         </section>
 
         <section className="marketing-section">
-          <div className="marketing-container split-section">
+          <div className="marketing-container split-section split-layout">
             <div>
               <span className="eyebrow">Emergency coordination</span>
               <h2>Respond with shared context.</h2>
-              <p className="section-heading" style={{ marginBottom: 0 }}>
+              <p className="page-subtitle">
                 Emergency requests carry their required items, approval state, and event history. Authorized staff review
                 candidate units, confirm allocations with an idempotency key, and move reservations into dispatch.
               </p>
@@ -238,14 +288,14 @@ export function LandingPage() {
                 <li><Check size={16} aria-hidden="true" /> Reservation-to-dispatch traceability</li>
               </ul>
             </div>
-            <div className="feature-card">
-              <div className="feature-icon"><Siren size={20} aria-hidden="true" /></div>
+            <div className="feature-card surface-raised">
+              <div className="task-icon"><Siren size={20} aria-hidden="true" /></div>
               <h3>Coordinated response</h3>
               <p>
                 Requests, allocations, reservations, and dispatch are distinct steps with explicit permissions. Each action
                 stays attached to the same operational record.
               </p>
-              <div className="notice-banner" style={{ marginBottom: 0, marginTop: 16 }}>
+              <div className="alert alert-info">
                 <ShieldCheck size={17} aria-hidden="true" />
                 <div><strong>Decision support only</strong>Suggestions never replace clinical verification.</div>
               </div>
@@ -254,9 +304,9 @@ export function LandingPage() {
         </section>
 
         <section className="marketing-section soft">
-          <div className="marketing-container split-section">
-            <div className="feature-card">
-              <div className="feature-icon"><HeartHandshake size={20} aria-hidden="true" /></div>
+          <div className="marketing-container split-section split-layout">
+            <div className="feature-card surface">
+              <div className="task-icon"><HeartHandshake size={20} aria-hidden="true" /></div>
               <h3>Donor participation</h3>
               <p>
                 Donor profiles, consent records, and appointment requests live beside the donations and units they produce.
@@ -285,10 +335,19 @@ export function LandingPage() {
                 scope on every request.
               </p>
             </div>
+            <div className="metric-grid">
+              {trustMetrics.map((metric) => (
+                <article className="metric-card surface" key={metric.label}>
+                  <span className="metric-label">{metric.label}</span>
+                  <strong className="metric-value">{metric.value}</strong>
+                  <span className="metric-delta">{metric.detail}</span>
+                </article>
+              ))}
+            </div>
             <div className="feature-grid">
               {trustFeatures.map((feature) => (
-                <article className="feature-card" key={feature.title}>
-                  <div className="feature-icon"><feature.icon size={20} aria-hidden="true" /></div>
+                <article className="feature-card surface" key={feature.title}>
+                  <div className="task-icon"><feature.icon size={20} aria-hidden="true" /></div>
                   <h3>{feature.title}</h3>
                   <p>{feature.text}</p>
                 </article>
@@ -303,23 +362,23 @@ export function LandingPage() {
               <span className="eyebrow">Organization onboarding</span>
               <h2>Built for blood banks and hospitals.</h2>
               <p>
-                Each organization has its own profile, registration code, service area, and memberships. Administrators can
-                review accounts and verify partner organizations.
+                Administrators create each organization profile with its registration code, service area, and memberships.
+                Verification and staff access are managed separately from donor self-registration.
               </p>
             </div>
             <div className="feature-grid">
-              <article className="feature-card">
-                <div className="feature-icon"><UserRoundPlus size={20} aria-hidden="true" /></div>
-                <h3>Create a profile</h3>
-                <p>Register a blood bank or hospital with contact details and location.</p>
+              <article className="feature-card surface">
+                <div className="task-icon"><ShieldCheck size={20} aria-hidden="true" /></div>
+                <h3>Administrator-created profile</h3>
+                <p>An administrator registers a blood bank or hospital with contact details and location.</p>
               </article>
-              <article className="feature-card">
-                <div className="feature-icon"><UsersRound size={20} aria-hidden="true" /></div>
+              <article className="feature-card surface">
+                <div className="task-icon"><UsersRound size={20} aria-hidden="true" /></div>
                 <h3>Add your team</h3>
-                <p>Memberships connect users to an organization and a role.</p>
+                <p>Memberships connect existing accounts to an organization and a role.</p>
               </article>
-              <article className="feature-card">
-                <div className="feature-icon"><ShieldCheck size={20} aria-hidden="true" /></div>
+              <article className="feature-card surface">
+                <div className="task-icon"><ClipboardCheck size={20} aria-hidden="true" /></div>
                 <h3>Verify and operate</h3>
                 <p>Administrators verify the organization before day-to-day use.</p>
               </article>
@@ -346,11 +405,17 @@ export function LandingPage() {
 
         <section className="marketing-cta">
           <div className="marketing-container">
+            <span className="eyebrow">Get started</span>
             <h2>Ready to coordinate your blood supply?</h2>
-            <p>Sign in to your organization workspace or create an account through the API-backed registration flow.</p>
-            <Link className="btn btn-primary btn-lg" to="/register">
-              Get started <ArrowRight size={17} aria-hidden="true" />
-            </Link>
+            <p>Sign in to your organization workspace or create a donor account through the API-backed registration flow.</p>
+            <div className="hero-actions">
+              <Link className="btn btn-primary btn-lg" to="/register">
+                Create account <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+              <Link className="btn btn-secondary btn-lg" to="/login">
+                Sign in
+              </Link>
+            </div>
           </div>
         </section>
       </main>
@@ -360,7 +425,7 @@ export function LandingPage() {
           <div className="marketing-footer-grid">
             <div>
               <span className="brand-name">LifeLink</span>
-              <p style={{ marginTop: 10, maxWidth: '38ch' }}>
+              <p>
                 Coordinated blood inventory and emergency response for healthcare organizations.
               </p>
             </div>
@@ -376,7 +441,7 @@ export function LandingPage() {
               <h4>Account</h4>
               <ul>
                 <li><Link to="/login">Sign in</Link></li>
-                <li><Link to="/register">Register</Link></li>
+                <li><Link to="/register">Create account</Link></li>
                 <li><a href="#faq">FAQ</a></li>
               </ul>
             </div>

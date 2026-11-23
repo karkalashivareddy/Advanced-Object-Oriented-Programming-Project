@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Info, LoaderCircle, X } from 'lucide-react';
+import { cx } from '@/lib/utils';
 
 type ToastTone = 'success' | 'error' | 'warning' | 'info';
 
@@ -17,6 +18,7 @@ interface ToastItem {
   tone: ToastTone;
   title: string;
   detail?: string;
+  busy?: boolean;
 }
 
 interface ToastApi {
@@ -25,6 +27,8 @@ interface ToastApi {
   error: (title: string, detail?: string) => void;
   warning: (title: string, detail?: string) => void;
   info: (title: string, detail?: string) => void;
+  /** Announces an in-flight operation without implying success. */
+  busy: (title: string, detail?: string) => void;
 }
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -49,6 +53,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((current) => [...current.slice(-3), { id, tone, title, detail }]);
   }, [nextId]);
 
+  const showBusy = useCallback((title: string, detail?: string) => {
+    const id = nextId();
+    setToasts((current) => [...current.slice(-3), { id, tone: 'info', title, detail, busy: true }]);
+  }, [nextId]);
+
   const api = useMemo<ToastApi>(
     () => ({
       show,
@@ -56,14 +65,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       error: (title, detail) => show('error', title, detail),
       warning: (title, detail) => show('warning', title, detail),
       info: (title, detail) => show('info', title, detail),
+      busy: showBusy,
     }),
-    [show],
+    [show, showBusy],
   );
 
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div className="toast-region" role="region" aria-label="Notifications">
+      <div className="toast-region" role="region" aria-label="Notifications" aria-live="polite">
         {toasts.map((toast) => (
           <ToastView key={toast.id} toast={toast} onDismiss={dismiss} />
         ))}
@@ -83,15 +93,19 @@ function ToastView({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: num
     return () => window.clearTimeout(timer);
   }, [toast.id, onDismiss]);
 
-  const Icon = ICONS[toast.tone];
+  const Icon = toast.busy ? LoaderCircle : ICONS[toast.tone];
   return (
-    <div className={`toast toast-${toast.tone}`} role={toast.tone === 'error' ? 'alert' : 'status'}>
-      <Icon size={18} aria-hidden="true" />
-      <div>
-        <p>
-          {toast.title}
-          {toast.detail && <small>{toast.detail}</small>}
-        </p>
+    <div
+      className={cx('toast', `toast-${toast.tone}`, toast.busy && 'toast-busy')}
+      role={toast.tone === 'error' ? 'alert' : 'status'}
+      aria-busy={toast.busy || undefined}
+    >
+      <span className="toast-icon">
+        <Icon size={18} aria-hidden="true" />
+      </span>
+      <div className="toast-content">
+        <p className="toast-title">{toast.title}</p>
+        {toast.detail && <small className="toast-detail">{toast.detail}</small>}
       </div>
       <button
         type="button"

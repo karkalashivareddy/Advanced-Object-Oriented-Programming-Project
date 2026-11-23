@@ -34,6 +34,8 @@ export interface ApiRequestOptions {
   auth?: boolean;
   /** Sends an Idempotency-Key header. `true` generates a fresh UUID for this request. */
   idempotencyKey?: string | true;
+  /** Overrides the active X-Organization-Id for one request; `null` explicitly removes it. */
+  organizationId?: number | null;
   query?: QueryParams;
   signal?: AbortSignal;
   /** Internal: prevents a second refresh attempt on the retried request. */
@@ -99,6 +101,7 @@ async function request<T>(method: string, path: string, options: ApiRequestOptio
     body,
     auth = true,
     idempotencyKey,
+    organizationId,
     query,
     signal,
     skipAuthRefresh = false,
@@ -106,6 +109,14 @@ async function request<T>(method: string, path: string, options: ApiRequestOptio
 
   const headers = new Headers({ Accept: 'application/json' });
   if (body !== undefined) headers.set('Content-Type', 'application/json');
+  // The active organization is part of every request's identity, including public
+  // auth calls (registration codes are organization-scoped). Read it per request so
+  // a switch takes effect immediately, even for requests already in flight.
+  const requestOrganizationId =
+    organizationId !== undefined ? organizationId : tokenStore.getOrganizationId();
+  if (requestOrganizationId !== null) {
+    headers.set('X-Organization-Id', String(requestOrganizationId));
+  }
   if (auth) {
     const token = tokenStore.getAccessToken();
     if (token) headers.set('Authorization', `Bearer ${token}`);

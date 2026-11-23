@@ -1,11 +1,21 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarDays, HeartHandshake, Pencil, Plus, Search } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  AlertTriangle,
+  CalendarDays,
+  HeartHandshake,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Search,
+  Users,
+} from 'lucide-react';
 import { api, getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { BLOOD_GROUPS, DONOR_AVAILABILITY } from '@/lib/constants';
 import { PERMISSIONS } from '@/lib/permissions';
+import { useInvalidateDomains } from '@/lib/queryCache';
 import { formatDate, formatDateTime, humanize, toDateInput } from '@/lib/utils';
 import {
   DataTable,
@@ -20,18 +30,19 @@ import {
   useToast,
   type DataTableColumn,
 } from '@/components/ui';
+import type { PageResponse } from '@/types/api';
 import type {
   AppointmentView,
   BloodGroup,
   ConsentView,
   DonorAvailability,
   DonorView,
+  OrganizationView,
+  UserView,
 } from '@/types/domain';
 
 interface DonorForm {
   userId: string;
-  fullName: string;
-  email: string;
   bloodGroup: BloodGroup;
   dateOfBirth: string;
   address: string;
@@ -49,11 +60,11 @@ interface AppointmentForm {
 
 type AppointmentAction = 'CONFIRM' | 'COMPLETE' | 'CANCEL' | 'REJECT';
 
-function emptyForm(userId: number): DonorForm {
+const PAGE_SIZE = 10;
+
+function emptyForm(): DonorForm {
   return {
-    userId: userId ? String(userId) : '',
-    fullName: '',
-    email: '',
+    userId: '',
     bloodGroup: 'O_POSITIVE',
     dateOfBirth: '',
     address: '',
@@ -64,15 +75,26 @@ function emptyForm(userId: number): DonorForm {
   };
 }
 
+function consentLabel(item: ConsentView): { status: string; label: string } {
+  if (item.withdrawnAt) return { status: 'CANCELLED', label: 'Withdrawn' };
+  return item.granted ? { status: 'APPROVED', label: 'Granted' } : { status: 'REJECTED', label: 'Not granted' };
+}
+
 export function DonorsPage() {
   const auth = useAuth();
   const toast = useToast();
-  const queryClient = useQueryClient();
+  const invalidateDomains = useInvalidateDomains();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search);
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [availability, setAvailability] = useState('');
+  const [city, setCity] = useState('');
+  const [page, setPage] = useState(0);
+  const [userQuery, setUserQuery] = useState('');
+  const debouncedUserQuery = useDebouncedValue(userQuery);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [editing, setEditing] = useState<DonorView | 'new' | null>(null);
-  const [form, setForm] = useState<DonorForm>(() => emptyForm(auth.user?.id ?? 0));
+  const [form, setForm] = useState<DonorForm>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState({ type: 'GENERAL', granted: true });
   const [appointment, setAppointment] = useState<AppointmentForm>({
@@ -81,9 +103,30 @@ export function DonorsPage() {
     notes: '',
   });
 
+  const canBrowseUsers = auth.hasPermission(PERMISSIONS.USER_READ);
+  const canChooseOrganization = auth.hasPermission(PERMISSIONS.ORGANIZATION_READ);
+  const activeMembership =
+    auth.user?.memberships.find((membership) => membership.organizationId === auth.organizationId) ??
+    auth.user?.memberships[0];
+
   const donorsQuery = useQuery({
     queryKey: ['donors', 'list'],
     queryFn: () => api.get<DonorView[]>('/donors'),
+  });
+
+  const usersQuery = useQuery({
+    queryKey: ['users', 'account-picker', debouncedUserQuery],
+    queryFn: () =>
+      api.get<PageResponse<UserView>>('/users', {
+        query: { search: debouncedUserQuery || undefined, size: 20 },
+      }),
+    enabled: editing === 'new' && canBrowseUsers,
+  });
+
+  const organizationsQuery = useQuery({
+    queryKey: ['organizations', 'options', auth.organizationId],
+    queryFn: () => api.get<PageResponse<OrganizationView>>('/organizations', { query: { size: 100 } }),
+    enabled: canChooseOrganization,
   });
 
   const detailQuery = useQuery({
@@ -104,7 +147,20 @@ export function DonorsPage() {
     enabled: selectedId !== null,
   });
 
-  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['donors'] });
+  const membershipOptions = (auth.user?.memberships ?? []).map((membership) => ({
+    id: membership.organizationId,
+    name: membership.organizationName,
+  }));
+  const organizationOptions = Array.from(
+    new Map(
+      (canChooseOrganization && organizationsQuery.data?.content.length
+        ? organizationsQuery.data.content.map((organization) => ({ id: organization.id, name: organization.name }))
+        : membershipOptions
+      ).map((option) => [option.id, option]),
+    ).values(),
+  );
+
+  const invalidate = () => invalidateDomains(['donors']);
 
   const saveDonor = useMutation({
     mutationFn: () => {
@@ -128,7 +184,7 @@ export function DonorsPage() {
       });
     },
     onSuccess: () => {
-      toast.success(editing === 'new' ? 'Donor profile created' : 'Donor profile updated');
+      toast.success(editing === 'new' ? 'Donor profile linked' : 'Donor profile updated');
       setEditing(null);
       invalidate();
     },
@@ -136,10 +192,11 @@ export function DonorsPage() {
   });
 
   const addConsent = useMutation({
-    mutationFn: () => api.post<ConsentView>(`/donors/${selectedId}/consents`, {
-      type: consent.type.trim(),
-      granted: consent.granted,
-    }),
+    mutationFn: () =>
+      api.post<ConsentView>(`/donors/${selectedId}/consents`, {
+        type: consent.type.trim(),
+        granted: consent.granted,
+      }),
     onSuccess: () => {
       toast.success('Consent recorded');
       setConsent({ type: 'GENERAL', granted: true });
@@ -148,12 +205,23 @@ export function DonorsPage() {
     onError: (error) => toast.error('Could not record consent', getErrorMessage(error)),
   });
 
+  const withdrawConsent = useMutation({
+    mutationFn: ({ donorId, consentId }: { donorId: number; consentId: number }) =>
+      api.patch(`/donors/${donorId}/consents/${consentId}`),
+    onSuccess: () => {
+      toast.success('Consent withdrawn');
+      invalidate();
+    },
+    onError: (error) => toast.error('Could not withdraw consent', getErrorMessage(error)),
+  });
+
   const addAppointment = useMutation({
-    mutationFn: () => api.post<AppointmentView>(`/donors/${selectedId}/appointments`, {
-      organizationId: Number(appointment.organizationId),
-      scheduledAt: new Date(appointment.scheduledAt).toISOString(),
-      notes: appointment.notes.trim() || undefined,
-    }),
+    mutationFn: () =>
+      api.post<AppointmentView>(`/donors/${selectedId}/appointments`, {
+        organizationId: Number(appointment.organizationId),
+        scheduledAt: new Date(appointment.scheduledAt).toISOString(),
+        notes: appointment.notes.trim() || undefined,
+      }),
     onSuccess: () => {
       toast.success('Appointment requested');
       setAppointment((current) => ({ ...current, scheduledAt: '', notes: '' }));
@@ -173,16 +241,16 @@ export function DonorsPage() {
   });
 
   const openEditor = (donor: DonorView | 'new') => {
-    setEditing(donor);
+    saveDonor.reset();
     setErrors({});
+    setEditing(donor);
     if (donor === 'new') {
-      setForm(emptyForm(auth.user?.id ?? 0));
+      setUserQuery('');
+      setForm(emptyForm());
       return;
     }
     setForm({
       userId: String(donor.userId),
-      fullName: donor.fullName,
-      email: donor.email,
       bloodGroup: donor.bloodGroup,
       dateOfBirth: toDateInput(donor.dateOfBirth),
       address: donor.address ?? '',
@@ -193,30 +261,70 @@ export function DonorsPage() {
     });
   };
 
+  const openDetail = (id: number) => {
+    addConsent.reset();
+    withdrawConsent.reset();
+    addAppointment.reset();
+    appointmentAction.reset();
+    setSelectedId(id);
+  };
+
   const submitDonor = () => {
     const next: Record<string, string> = {};
-    if (editing !== 'new') {
-      // Editable profile fields all have safe empty values.
-    } else {
-      if (!/^\d+$/.test(form.userId)) next.userId = 'Enter a numeric user ID.';
-      if (!form.fullName.trim()) next.fullName = 'Full name is required.';
-      if (!form.email.trim()) next.email = 'Email is required.';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) next.email = 'Enter a valid email.';
+    if (editing === 'new') {
+      if (!/^\d+$/.test(form.userId) || Number(form.userId) <= 0) {
+        next.userId = 'Choose an existing user account.';
+      }
     }
     setErrors(next);
     if (Object.keys(next).length === 0) saveDonor.mutate();
   };
 
+  const clearFilters = () => {
+    setSearch('');
+    setBloodGroup('');
+    setAvailability('');
+    setCity('');
+    setPage(0);
+  };
+
   const allDonors = donorsQuery.data ?? [];
   const term = debouncedSearch.trim().toLowerCase();
-  const donors = term
-    ? allDonors.filter((donor) =>
-        donor.fullName.toLowerCase().includes(term) || donor.email.toLowerCase().includes(term))
-    : allDonors;
+  const filteredDonors = allDonors.filter((donor) => {
+    const matchesTerm =
+      !term ||
+      `${donor.fullName} ${donor.email} ${donor.publicId} ${donor.city ?? ''}`.toLowerCase().includes(term);
+    const matchesBloodGroup = !bloodGroup || donor.bloodGroup === bloodGroup;
+    const matchesAvailability = !availability || (donor.availability ?? 'AVAILABLE') === availability;
+    const matchesCity = !city || (donor.city ?? '').toLowerCase().includes(city.trim().toLowerCase());
+    return matchesTerm && matchesBloodGroup && matchesAvailability && matchesCity;
+  });
+  const totalPages = Math.max(1, Math.ceil(filteredDonors.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const donors = filteredDonors.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+  const accountResults = usersQuery.data?.content ?? [];
+  const selectedUserId = Number(form.userId);
+  const selectedUser =
+    accountResults.find((user) => user.id === selectedUserId) ??
+    (auth.user?.id === selectedUserId ? auth.user : null);
 
   const consents = consentsQuery.data ?? [];
   const appointments = appointmentsQuery.data ?? [];
   const detail = detailQuery.data;
+
+  const renderActions = (donor: DonorView) => (
+    <>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => openDetail(donor.id)}>
+        View
+      </button>
+      {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => openEditor(donor)}>
+          <Pencil size={13} aria-hidden="true" /> Edit
+        </button>
+      )}
+    </>
+  );
 
   const columns: DataTableColumn<DonorView>[] = [
     {
@@ -241,28 +349,32 @@ export function DonorsPage() {
       render: (donor) => <StatusBadge status={donor.availability ?? 'AVAILABLE'} />,
     },
     {
+      key: 'city',
+      header: 'City',
+      render: (donor) => donor.city ?? '—',
+    },
+    {
       key: 'actions',
       header: 'Actions',
       align: 'right',
       render: (donor) => (
-        <div className="table-actions" onClick={(event) => event.stopPropagation()}>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSelectedId(donor.id)}>View</button>
-          {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => openEditor(donor)}>
-              <Pencil size={13} aria-hidden="true" /> Edit
-            </button>
-          )}
+        <div
+          className="table-actions"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          {renderActions(donor)}
         </div>
       ),
     },
   ];
 
   return (
-    <>
+    <div className="app-page">
       <PageHeader
         eyebrow="Operations"
         title="Donors"
-        description="Donor profiles, consent records, and appointment requests returned by the donor API."
+        description="Link existing accounts to donor profiles and manage consent and appointments."
         actions={
           auth.hasPermission(PERMISSIONS.DONOR_MANAGE) ? (
             <button type="button" className="btn btn-primary" onClick={() => openEditor('new')}>
@@ -272,31 +384,160 @@ export function DonorsPage() {
         }
       />
 
+      <section className="metric-grid page-enter stagger-1" aria-label="Donor summary">
+        <article className="metric-card surface">
+          <span className="metric-label">Profiles returned</span>
+          <strong className="metric-value">{allDonors.length}</strong>
+          <span className="metric-delta">From the donor API</span>
+        </article>
+        <article className="metric-card surface">
+          <span className="metric-label">Available donors</span>
+          <strong className="metric-value">
+            {allDonors.filter((donor) => (donor.availability ?? 'AVAILABLE') === 'AVAILABLE').length}
+          </strong>
+          <span className="metric-delta">Ready to donate</span>
+        </article>
+        <article className="metric-card surface">
+          <span className="metric-label">Matching filters</span>
+          <strong className="metric-value">{filteredDonors.length}</strong>
+          <span className="metric-delta">Filtered locally</span>
+        </article>
+      </section>
+
       <DataTable
         ariaLabel="Donor list"
+        caption="Donor profiles returned by the donor API"
+        loadingLabel="Loading donors…"
         rowKey={(row) => row.id}
         columns={columns}
         rows={donors}
         loading={donorsQuery.isPending}
-        onRowClick={(donor) => setSelectedId(donor.id)}
+        page={safePage}
+        size={PAGE_SIZE}
+        totalElements={filteredDonors.length}
+        onPageChange={setPage}
+        onRowClick={(donor) => openDetail(donor.id)}
         emptyTitle="No donors found"
-        emptyDescription="Try a different search or create a donor profile."
+        emptyDescription="Try a different filter or link an existing user account."
+        emptyAction={
+          <button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>
+            <RotateCcw size={14} aria-hidden="true" /> Clear filters
+          </button>
+        }
+        mobileCard={(donor) => (
+          <>
+            <strong className="task-title">{donor.fullName}</strong>
+            <dl className="mobile-card-fields">
+              <div>
+                <dt>Email</dt>
+                <dd>{donor.email}</dd>
+              </div>
+              <div>
+                <dt>Blood group</dt>
+                <dd>{humanize(donor.bloodGroup)}</dd>
+              </div>
+              <div>
+                <dt>Availability</dt>
+                <dd>
+                  <StatusBadge status={donor.availability ?? 'AVAILABLE'} />
+                </dd>
+              </div>
+              <div>
+                <dt>City</dt>
+                <dd>{donor.city ?? '—'}</dd>
+              </div>
+            </dl>
+            <div className="action-row">{renderActions(donor)}</div>
+          </>
+        )}
         toolbar={
-          <div className="search-input-wrap">
-            <Search size={15} aria-hidden="true" />
-            <input
-              className="input"
-              type="search"
-              aria-label="Search donors"
-              placeholder="Search by name or email…"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
+          <div className="surface-interactive" style={{ width: '100%' }}>
+            <div className="filter-grid">
+              <div className="filter-field">
+                <label htmlFor="donor-search">Search donors</label>
+                <div className="search-input-wrap">
+                  <Search size={15} aria-hidden="true" />
+                  <input
+                    id="donor-search"
+                    className="input toolbar-search"
+                    type="search"
+                    aria-describedby="donor-filter-note"
+                    placeholder="Name, email or public ID…"
+                    value={search}
+                    onChange={(event) => {
+                      setSearch(event.target.value);
+                      setPage(0);
+                    }}
+                  />
+                </div>
+                <span className="text-xs text-subtle" id="donor-filter-note">
+                  The donor API has no query or paging parameters, so filters and paging apply to its result set.
+                </span>
+              </div>
+              <div className="filter-field">
+                <label htmlFor="donor-blood-group">Blood group</label>
+                <select
+                  id="donor-blood-group"
+                  className="select"
+                  value={bloodGroup}
+                  onChange={(event) => {
+                    setBloodGroup(event.target.value);
+                    setPage(0);
+                  }}
+                >
+                  <option value="">All blood groups</option>
+                  {BLOOD_GROUPS.map((group) => (
+                    <option key={group} value={group}>
+                      {humanize(group)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="filter-field">
+                <label htmlFor="donor-availability">Availability</label>
+                <select
+                  id="donor-availability"
+                  className="select"
+                  value={availability}
+                  onChange={(event) => {
+                    setAvailability(event.target.value);
+                    setPage(0);
+                  }}
+                >
+                  <option value="">Any availability</option>
+                  {DONOR_AVAILABILITY.map((item) => (
+                    <option key={item} value={item}>
+                      {humanize(item)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="filter-field">
+                <label htmlFor="donor-city">City</label>
+                <input
+                  id="donor-city"
+                  className="input"
+                  type="search"
+                  placeholder="Any city"
+                  value={city}
+                  onChange={(event) => {
+                    setCity(event.target.value);
+                    setPage(0);
+                  }}
+                />
+              </div>
+              <div className="section-actions">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={clearFilters}>
+                  <RotateCcw size={14} aria-hidden="true" /> Reset
+                </button>
+              </div>
+            </div>
           </div>
         }
       />
+
       {donorsQuery.isError && (
-        <div className="card" style={{ marginTop: 16 }}>
+        <div className="surface" style={{ marginTop: 16 }}>
           <ErrorState error={donorsQuery.error} onRetry={() => void donorsQuery.refetch()} />
         </div>
       )}
@@ -307,132 +548,305 @@ export function DonorsPage() {
         title={detail?.fullName ?? 'Donor profile'}
         description={detail?.email}
       >
-        {detailQuery.isPending && <div className="skeleton-lines"><Skeleton height={18} /><Skeleton height={18} /></div>}
-        {detailQuery.isError && <ErrorState error={detailQuery.error} onRetry={() => void detailQuery.refetch()} />}
+        {detailQuery.isPending && (
+          <div className="skeleton-lines" role="status" aria-live="polite">
+            <Skeleton height={18} />
+            <Skeleton height={18} />
+          </div>
+        )}
+        {detailQuery.isError && (
+          <ErrorState error={detailQuery.error} onRetry={() => void detailQuery.refetch()} />
+        )}
         {detail && (
           <>
+            <div className="section-heading">
+              <h3>Profile</h3>
+              <StatusBadge
+                status={detail.availability ?? 'AVAILABLE'}
+                label={`Donor ${humanize(detail.availability ?? 'AVAILABLE').toLowerCase()}`}
+              />
+            </div>
+            <span className="freshness">
+              Details loaded {formatDateTime(new Date(detailQuery.dataUpdatedAt).toISOString())}
+            </span>
             <dl className="detail-grid">
-              <div className="detail-item"><dt>User ID</dt><dd>{detail.userId}</dd></div>
-              <div className="detail-item"><dt>Public ID</dt><dd className="mono">{detail.publicId}</dd></div>
-              <div className="detail-item"><dt>Blood group</dt><dd>{humanize(detail.bloodGroup)}</dd></div>
-              <div className="detail-item"><dt>Date of birth</dt><dd>{formatDate(detail.dateOfBirth)}</dd></div>
-              <div className="detail-item"><dt>Availability</dt><dd><StatusBadge status={detail.availability ?? 'AVAILABLE'} /></dd></div>
-              <div className="detail-item"><dt>Preferred contact</dt><dd>{detail.preferredContact ?? '—'}</dd></div>
+              <div className="detail-item">
+                <dt>User ID</dt>
+                <dd className="mono">{detail.userId}</dd>
+              </div>
+              <div className="detail-item">
+                <dt>Public ID</dt>
+                <dd className="mono">{detail.publicId}</dd>
+              </div>
+              <div className="detail-item">
+                <dt>Blood group</dt>
+                <dd>{humanize(detail.bloodGroup)}</dd>
+              </div>
+              <div className="detail-item">
+                <dt>Date of birth</dt>
+                <dd>{formatDate(detail.dateOfBirth)}</dd>
+              </div>
+              <div className="detail-item">
+                <dt>Preferred contact</dt>
+                <dd>{detail.preferredContact ?? '—'}</dd>
+              </div>
+              <div className="detail-item">
+                <dt>City</dt>
+                <dd>{detail.city ?? '—'}</dd>
+              </div>
               <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
                 <dt>Address</dt>
                 <dd>{[detail.address, detail.city, detail.state].filter(Boolean).join(', ') || '—'}</dd>
               </div>
             </dl>
 
-            <hr className="divider" />
-            <h3>Consents</h3>
-            {consentsQuery.isPending && <Skeleton height={50} />}
-            {consents.length === 0 && consentsQuery.isSuccess && (
-              <EmptyState title="No consent records" description="Record a consent below." />
-            )}
-            {consents.map((item) => (
-              <div className="item-header" key={item.id}>
-                <div>
-                  <strong>{humanize(item.type)}</strong>
-                  <div className="text-xs text-muted">{formatDateTime(item.grantedAt)}</div>
-                </div>
-                <StatusBadge status={item.granted ? 'APPROVED' : 'REJECTED'} label={item.granted ? 'Granted' : 'Withdrawn'} />
+            <section className="surface surface-raised" style={{ marginTop: 16 }}>
+              <div className="section-heading">
+                <h3>Consents</h3>
+                <span className="status-chip">{consents.length} records</span>
               </div>
-            ))}
-            {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
-              <div className="inline-form" style={{ marginTop: 12 }}>
-                <FormField label="Consent type" required full>
-                  <input className="input" value={consent.type} onChange={(event) => setConsent({ ...consent, type: event.target.value })} />
-                </FormField>
-                <label className="checkbox-row">
-                  <input type="checkbox" checked={consent.granted} onChange={(event) => setConsent({ ...consent, granted: event.target.checked })} />
-                  Consent granted
-                </label>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={addConsent.isPending || !consent.type.trim()}
-                  onClick={() => addConsent.mutate()}
-                >
-                  Record consent
-                </button>
-              </div>
-            )}
-
-            <hr className="divider" />
-            <h3>Appointments</h3>
-            {appointmentsQuery.isPending && <Skeleton height={50} />}
-            {appointments.length === 0 && appointmentsQuery.isSuccess && (
-              <EmptyState title="No appointments" description="Request an appointment below." />
-            )}
-            {appointments.map((item) => (
-              <div className="item-header" key={item.id}>
-                <div>
-                  <strong style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <CalendarDays size={14} aria-hidden="true" /> {formatDateTime(item.scheduledAt)}
-                  </strong>
-                  <div className="text-xs text-muted">{item.organizationName ?? `Organization #${item.organizationId}`}</div>
-                  {item.notes && <div className="text-xs text-subtle">{item.notes}</div>}
-                </div>
-                <StatusBadge status={item.status} />
-              </div>
-            ))}
-            {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
-              <div className="inline-form" style={{ marginTop: 12 }}>
-                <FormField label="Organization ID" required full>
-                  <input
-                    className="input"
-                    inputMode="numeric"
-                    value={appointment.organizationId}
-                    onChange={(event) => setAppointment({ ...appointment, organizationId: event.target.value })}
-                  />
-                </FormField>
-                <FormField label="Appointment date and time" required full>
-                  <input
-                    className="input"
-                    type="datetime-local"
-                    value={appointment.scheduledAt}
-                    onChange={(event) => setAppointment({ ...appointment, scheduledAt: event.target.value })}
-                  />
-                </FormField>
-                <FormField label="Notes" hint="Optional" full>
-                  <textarea
-                    className="textarea"
-                    value={appointment.notes}
-                    onChange={(event) => setAppointment({ ...appointment, notes: event.target.value })}
-                  />
-                </FormField>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={addAppointment.isPending || !appointment.scheduledAt || !/^\d+$/.test(appointment.organizationId)}
-                  onClick={() => addAppointment.mutate()}
-                >
-                  Request appointment
-                </button>
-              </div>
-            )}
-            {auth.hasPermission(PERMISSIONS.APPOINTMENT_MANAGE) && (
-              <div className="action-row">
-                {appointments
-                  .filter((item) => ['REQUESTED', 'CONFIRMED'].includes(item.status.toUpperCase()))
-                  .flatMap((item) => {
-                    const status = item.status.toUpperCase();
-                    const actions: AppointmentAction[] = status === 'REQUESTED' ? ['CONFIRM', 'REJECT', 'CANCEL'] : ['COMPLETE', 'CANCEL'];
-                    return actions.map((action) => (
-                      <button
-                        key={`${item.id}-${action}`}
-                        type="button"
-                        className={`btn btn-sm ${action === 'CONFIRM' || action === 'COMPLETE' ? 'btn-primary' : 'btn-secondary'}`}
-                        disabled={appointmentAction.isPending}
-                        onClick={() => appointmentAction.mutate({ id: item.id, action })}
-                      >
-                        {humanize(action)} · {formatDate(item.scheduledAt)}
-                      </button>
-                    ));
+              {consentsQuery.isPending && <Skeleton height={50} />}
+              {consentsQuery.isError && (
+                <ErrorState
+                  error={consentsQuery.error}
+                  title="Consent records could not be loaded"
+                  onRetry={() => void consentsQuery.refetch()}
+                />
+              )}
+              {consentsQuery.isSuccess && consents.length === 0 && (
+                <EmptyState title="No consent records" description="Record a consent below." />
+              )}
+              {consents.length > 0 && (
+                <ul className="timeline-list">
+                  {consents.map((item) => {
+                    const badge = consentLabel(item);
+                    return (
+                      <li key={item.id}>
+                        <div className="item-header">
+                          <div>
+                            <strong>{humanize(item.type)}</strong>
+                            <div className="text-xs text-muted">{formatDateTime(item.grantedAt)}</div>
+                            {item.withdrawnAt && (
+                              <div className="text-xs text-subtle">Withdrawn {formatDateTime(item.withdrawnAt)}</div>
+                            )}
+                          </div>
+                          <StatusBadge status={badge.status} label={badge.label} />
+                        </div>
+                        {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && item.granted && !item.withdrawnAt && (
+                          <div className="form-actions">
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              disabled={withdrawConsent.isPending}
+                              onClick={() => {
+                                withdrawConsent.reset();
+                                withdrawConsent.mutate({ donorId: detail.id, consentId: item.id });
+                              }}
+                            >
+                              {withdrawConsent.isPending ? 'Withdrawing…' : 'Withdraw consent'}
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    );
                   })}
+                </ul>
+              )}
+              {withdrawConsent.isError && (
+                <div className="alert alert-danger" role="alert">
+                  <AlertTriangle size={15} aria-hidden="true" />
+                  <span>Could not withdraw consent: {getErrorMessage(withdrawConsent.error)}</span>
+                </div>
+              )}
+              {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
+                <div className="form-grid" style={{ marginTop: 12 }}>
+                  <FormField label="Consent type" required full>
+                    <input
+                      className="input"
+                      value={consent.type}
+                      onChange={(event) => setConsent({ ...consent, type: event.target.value })}
+                    />
+                  </FormField>
+                  <fieldset className="form-field form-field-full">
+                    <legend>Decision</legend>
+                    <label className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={consent.granted}
+                        onChange={(event) => setConsent({ ...consent, granted: event.target.checked })}
+                      />
+                      Consent granted
+                    </label>
+                  </fieldset>
+                </div>
+              )}
+              {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
+                <>
+                  {addConsent.isError && (
+                    <div className="alert alert-danger" role="alert">
+                      <AlertTriangle size={15} aria-hidden="true" />
+                      <span>Could not record consent: {getErrorMessage(addConsent.error)}</span>
+                    </div>
+                  )}
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={addConsent.isPending || !consent.type.trim()}
+                      onClick={() => {
+                        addConsent.reset();
+                        addConsent.mutate();
+                      }}
+                    >
+                      {addConsent.isPending ? 'Recording consent…' : 'Record consent'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </section>
+
+            <section className="surface surface-raised" style={{ marginTop: 16 }}>
+              <div className="section-heading">
+                <h3>Appointments</h3>
+                <span className="status-chip">{appointments.length} total</span>
               </div>
-            )}
+              {appointmentsQuery.isPending && <Skeleton height={50} />}
+              {appointmentsQuery.isError && (
+                <ErrorState
+                  error={appointmentsQuery.error}
+                  title="Appointments could not be loaded"
+                  onRetry={() => void appointmentsQuery.refetch()}
+                />
+              )}
+              {appointmentsQuery.isSuccess && appointments.length === 0 && (
+                <EmptyState title="No appointments" description="Request an appointment below." />
+              )}
+              {appointments.length > 0 && (
+                <ul className="timeline-list">
+                  {appointments.map((item) => {
+                    const status = item.status.toUpperCase();
+                    const actions: AppointmentAction[] =
+                      status === 'REQUESTED'
+                        ? ['CONFIRM', 'REJECT', 'CANCEL']
+                        : status === 'CONFIRMED'
+                          ? ['COMPLETE', 'CANCEL']
+                          : [];
+                    return (
+                      <li key={item.id}>
+                        <div className="item-header">
+                          <div>
+                            <strong style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <CalendarDays size={14} aria-hidden="true" /> {formatDateTime(item.scheduledAt)}
+                            </strong>
+                            <div className="text-xs text-muted">
+                              {item.organizationName ?? `Organization #${item.organizationId}`}
+                            </div>
+                            {item.notes && <div className="text-xs text-subtle">{item.notes}</div>}
+                          </div>
+                          <StatusBadge status={item.status} />
+                        </div>
+                        {auth.hasPermission(PERMISSIONS.APPOINTMENT_MANAGE) && actions.length > 0 && (
+                          <div className="action-row">
+                            {actions.map((action) => (
+                              <button
+                                key={`${item.id}-${action}`}
+                                type="button"
+                                className={`btn btn-sm ${action === 'CONFIRM' || action === 'COMPLETE' ? 'btn-primary' : 'btn-secondary'}`}
+                                disabled={appointmentAction.isPending}
+                                onClick={() => {
+                                  appointmentAction.reset();
+                                  appointmentAction.mutate({ id: item.id, action });
+                                }}
+                              >
+                                {appointmentAction.isPending ? 'Updating…' : `${humanize(action)} · ${formatDate(item.scheduledAt)}`}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {appointmentAction.isError && (
+                <div className="alert alert-danger" role="alert">
+                  <AlertTriangle size={15} aria-hidden="true" />
+                  <span>Could not update appointment: {getErrorMessage(appointmentAction.error)}</span>
+                </div>
+              )}
+              {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
+                <div className="form-grid" style={{ marginTop: 12 }}>
+                  <FormField
+                    label="Organization"
+                    required
+                    full
+                    hint="Defaults to your active membership"
+                  >
+                    <select
+                      className="select"
+                      value={appointment.organizationId}
+                      onChange={(event) => setAppointment({ ...appointment, organizationId: event.target.value })}
+                    >
+                      <option value="">Select an organization</option>
+                      {organizationOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.name}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                  {canChooseOrganization && organizationsQuery.isError && (
+                    <ErrorState
+                      error={organizationsQuery.error}
+                      title="Organizations could not be loaded"
+                      onRetry={() => void organizationsQuery.refetch()}
+                    />
+                  )}
+                  <FormField label="Appointment date and time" required full>
+                    <input
+                      className="input"
+                      type="datetime-local"
+                      value={appointment.scheduledAt}
+                      onChange={(event) => setAppointment({ ...appointment, scheduledAt: event.target.value })}
+                    />
+                  </FormField>
+                  <FormField label="Notes" hint="Optional" full>
+                    <textarea
+                      className="textarea"
+                      value={appointment.notes}
+                      onChange={(event) => setAppointment({ ...appointment, notes: event.target.value })}
+                    />
+                  </FormField>
+                </div>
+              )}
+              {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
+                <>
+                  {addAppointment.isError && (
+                    <div className="alert alert-danger" role="alert">
+                      <AlertTriangle size={15} aria-hidden="true" />
+                      <span>Could not request appointment: {getErrorMessage(addAppointment.error)}</span>
+                    </div>
+                  )}
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={
+                        addAppointment.isPending ||
+                        !appointment.scheduledAt ||
+                        !Number(appointment.organizationId)
+                      }
+                      onClick={() => {
+                        addAppointment.reset();
+                        addAppointment.mutate();
+                      }}
+                    >
+                      {addAppointment.isPending ? 'Requesting appointment…' : 'Request appointment'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </section>
           </>
         )}
       </Drawer>
@@ -440,60 +854,184 @@ export function DonorsPage() {
       <Modal
         open={editing !== null}
         onClose={() => setEditing(null)}
-        title={editing === 'new' ? 'New donor profile' : 'Edit donor profile'}
-        description="Submitted through the donors API."
+        title={editing === 'new' ? 'Link a donor account' : 'Edit donor profile'}
+        description="Donor profiles link to existing user accounts; credentials are created through registration."
         footer={
           <>
-            <button type="button" className="btn btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
-            <button type="button" className="btn btn-primary" disabled={saveDonor.isPending} onClick={submitDonor}>Save donor</button>
+            <button type="button" className="btn btn-secondary" onClick={() => setEditing(null)}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn-primary" disabled={saveDonor.isPending} onClick={submitDonor}>
+              {saveDonor.isPending
+                ? editing === 'new'
+                  ? 'Linking donor…'
+                  : 'Saving donor…'
+                : editing === 'new'
+                  ? 'Link donor'
+                  : 'Save donor'}
+            </button>
           </>
         }
       >
         <div className="form-grid">
           {editing === 'new' ? (
             <>
-              <FormField label="User ID" error={errors.userId} hint="ID of the account this profile belongs to" required full>
-                <input className="input" inputMode="numeric" value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })} />
-              </FormField>
-              <FormField label="Full name" error={errors.fullName} required full>
-                <input className="input" value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} />
-              </FormField>
-              <FormField label="Email" error={errors.email} required full>
-                <input className="input" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-              </FormField>
+              <div className="surface surface-raised form-field-full">
+                <div className="section-heading">
+                  <h3>Existing user account</h3>
+                  <Users size={16} aria-hidden="true" />
+                </div>
+                <p className="text-sm text-subtle">
+                  Select the account to link. Full name and email come from the user record and are not entered here.
+                </p>
+                {canBrowseUsers ? (
+                  <>
+                    <FormField
+                      label="Search user accounts"
+                      hint="Searches /users by name or email"
+                      error={errors.userId}
+                      full
+                    >
+                      <input
+                        className="input toolbar-search"
+                        type="search"
+                        placeholder="Name or email…"
+                        value={userQuery}
+                        onChange={(event) => setUserQuery(event.target.value)}
+                      />
+                    </FormField>
+                    {usersQuery.isPending && <Skeleton height={36} width="100%" />}
+                    {usersQuery.isError && (
+                      <ErrorState
+                        error={usersQuery.error}
+                        title="User accounts could not be loaded"
+                        onRetry={() => void usersQuery.refetch()}
+                      />
+                    )}
+                    {usersQuery.isSuccess && accountResults.length === 0 && (
+                      <EmptyState title="No matching accounts" description="Try a different name or email." />
+                    )}
+                    {accountResults.length > 0 && (
+                      <ul className="timeline-list" aria-label="User accounts">
+                        {accountResults.map((user) => (
+                          <li key={user.id}>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm"
+                              aria-pressed={selectedUserId === user.id}
+                              onClick={() => {
+                                setForm((current) => ({ ...current, userId: String(user.id) }));
+                                setErrors((current) => ({ ...current, userId: '' }));
+                              }}
+                            >
+                              <strong>{user.fullName}</strong> · {user.email}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <FormField
+                    label="User ID"
+                    error={errors.userId}
+                    hint="Your role cannot browse accounts; enter the numeric user ID."
+                    required
+                    full
+                  >
+                    <input
+                      className="input"
+                      inputMode="numeric"
+                      value={form.userId}
+                      onChange={(event) => setForm({ ...form, userId: event.target.value })}
+                    />
+                  </FormField>
+                )}
+                {selectedUserId > 0 && (
+                  <p className="chip">
+                    {selectedUser
+                      ? `Selected: ${selectedUser.fullName} (${selectedUser.email})`
+                      : `Selected user #${form.userId}`}
+                  </p>
+                )}
+              </div>
               <FormField label="Blood group" required>
-                <select className="select" value={form.bloodGroup} onChange={(event) => setForm({ ...form, bloodGroup: event.target.value as BloodGroup })}>
-                  {BLOOD_GROUPS.map((group) => <option key={group} value={group}>{humanize(group)}</option>)}
+                <select
+                  className="select"
+                  value={form.bloodGroup}
+                  onChange={(event) => setForm({ ...form, bloodGroup: event.target.value as BloodGroup })}
+                >
+                  {BLOOD_GROUPS.map((group) => (
+                    <option key={group} value={group}>
+                      {humanize(group)}
+                    </option>
+                  ))}
                 </select>
               </FormField>
               <FormField label="Date of birth">
-                <input className="input" type="date" value={form.dateOfBirth} onChange={(event) => setForm({ ...form, dateOfBirth: event.target.value })} />
+                <input
+                  className="input"
+                  type="date"
+                  value={form.dateOfBirth}
+                  onChange={(event) => setForm({ ...form, dateOfBirth: event.target.value })}
+                />
               </FormField>
             </>
           ) : (
             <FormField label="Availability" full>
-              <select className="select" value={form.availability} onChange={(event) => setForm({ ...form, availability: event.target.value as DonorAvailability })}>
-                {DONOR_AVAILABILITY.map((item) => <option key={item} value={item}>{humanize(item)}</option>)}
+              <select
+                className="select"
+                value={form.availability}
+                onChange={(event) => setForm({ ...form, availability: event.target.value as DonorAvailability })}
+              >
+                {DONOR_AVAILABILITY.map((item) => (
+                  <option key={item} value={item}>
+                    {humanize(item)}
+                  </option>
+                ))}
               </select>
             </FormField>
           )}
           <FormField label="Address" full>
-            <input className="input" value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+            <input
+              className="input"
+              value={form.address}
+              onChange={(event) => setForm({ ...form, address: event.target.value })}
+            />
           </FormField>
           <FormField label="City">
-            <input className="input" value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} />
+            <input
+              className="input"
+              value={form.city}
+              onChange={(event) => setForm({ ...form, city: event.target.value })}
+            />
           </FormField>
           <FormField label="State">
-            <input className="input" value={form.state} onChange={(event) => setForm({ ...form, state: event.target.value })} />
+            <input
+              className="input"
+              value={form.state}
+              onChange={(event) => setForm({ ...form, state: event.target.value })}
+            />
           </FormField>
           <FormField label="Preferred contact" full>
-            <input className="input" value={form.preferredContact} onChange={(event) => setForm({ ...form, preferredContact: event.target.value })} />
+            <input
+              className="input"
+              value={form.preferredContact}
+              onChange={(event) => setForm({ ...form, preferredContact: event.target.value })}
+            />
           </FormField>
         </div>
+        {saveDonor.isError && (
+          <div className="alert alert-danger" role="alert">
+            <AlertTriangle size={15} aria-hidden="true" />
+            <span>Could not save donor: {getErrorMessage(saveDonor.error)}</span>
+          </div>
+        )}
         <p className="text-xs text-subtle" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <HeartHandshake size={13} aria-hidden="true" /> Consent and appointment records are managed from the donor drawer.
+          <HeartHandshake size={13} aria-hidden="true" /> Consent and appointment records are managed from the donor
+          drawer. {activeMembership ? `Active organization: ${activeMembership.organizationName}.` : ''}
         </p>
       </Modal>
-    </>
+    </div>
   );
 }

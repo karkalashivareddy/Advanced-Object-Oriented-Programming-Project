@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cx } from '@/lib/utils';
@@ -12,10 +12,84 @@ interface ModalProps {
   footer?: ReactNode;
   size?: 'normal' | 'wide';
   variant?: 'modal' | 'drawer';
+  /** Point at an existing heading id when the dialog title lives outside the default header. */
+  labelledBy?: string;
+  describedBy?: string;
+  titleId?: string;
+  descriptionId?: string;
 }
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+type DialogKind = 'modal' | 'drawer';
+interface DialogEntry {
+  id: symbol;
+  kind: DialogKind;
+  label: string;
+}
+
+/** Last opened dialog is the only one allowed to handle Escape/Tab. */
+const dialogStack: DialogEntry[] = [];
+let bodyLockCount = 0;
+let bodyOverflowBeforeLock = '';
+
+function lockBodyScroll(): () => void {
+  if (bodyLockCount === 0) {
+    bodyOverflowBeforeLock = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  bodyLockCount += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    bodyLockCount = Math.max(0, bodyLockCount - 1);
+    if (bodyLockCount === 0) document.body.style.overflow = bodyOverflowBeforeLock;
+  };
+}
+
+/**
+ * Registers an open dialog and reports whether it is the topmost one.
+ *
+ * Page agents: close a drawer (`setDetailOpen(false)`) before opening a confirm
+ * modal. Nested dialogs confuse focus restoration and Escape handling, so the
+ * guard warns in development and only the top dialog responds to the keyboard.
+ * Call this hook directly when a page owns a custom overlay:
+ *
+ * ```tsx
+ * const isTopDialog = useNestedDialogGuard(open, 'Confirm release', 'modal');
+ * ```
+ */
+export function useNestedDialogGuard(
+  open: boolean,
+  label: string,
+  kind: DialogKind = 'modal',
+): () => boolean {
+  const idRef = useRef<symbol | null>(null);
+  if (!idRef.current) idRef.current = Symbol(label);
+  const id = idRef.current;
+
+  useEffect(() => {
+    if (!open) return;
+    const top = dialogStack[dialogStack.length - 1];
+    if (top && import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[dialog] "${label}" opened while "${top.label}" is still open. Close the ${
+          top.kind === 'drawer' ? 'drawer' : 'dialog'
+        } first to keep focus restoration predictable.`,
+      );
+    }
+    dialogStack.push({ id, kind, label });
+    return () => {
+      const index = dialogStack.findIndex((entry) => entry.id === id);
+      if (index >= 0) dialogStack.splice(index, 1);
+    };
+  }, [open, label, kind, id]);
+
+  return useCallback(() => dialogStack[dialogStack.length - 1]?.id === id, [id]);
+}
 
 export function Modal({
   open,
@@ -26,26 +100,34 @@ export function Modal({
   footer,
   size = 'normal',
   variant = 'modal',
+  labelledBy,
+  describedBy,
+  titleId,
+  descriptionId,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef(onClose);
-  const titleId = useId();
-  const descriptionId = useId();
+  const generatedTitleId = useId();
+  const generatedDescriptionId = useId();
+  const resolvedTitleId = titleId ?? generatedTitleId;
+  const resolvedDescriptionId = descriptionId ?? generatedDescriptionId;
+  const isTopDialog = useNestedDialogGuard(open, title, variant);
   closeRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const dialog = dialogRef.current;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const releaseScrollLock = lockBodyScroll();
 
     const focusables = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE)) : [];
     (focusables[0] ?? dialog)?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isTopDialog()) return;
       if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopImmediatePropagation();
         closeRef.current();
         return;
       }
@@ -70,13 +152,13 @@ export function Modal({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, true);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown, true);
+      releaseScrollLock();
       previouslyFocused?.focus();
     };
-  }, [open]);
+  }, [open, isTopDialog]);
 
   if (!open) return null;
 
@@ -90,17 +172,18 @@ export function Modal({
       <div
         ref={dialogRef}
         className={cx('modal', variant === 'drawer' && 'drawer', size === 'wide' && 'modal-wide')}
+        data-dialog-kind={variant}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={description ? descriptionId : undefined}
+        aria-labelledby={labelledBy ?? resolvedTitleId}
+        aria-describedby={describedBy ?? (description ? resolvedDescriptionId : undefined)}
         tabIndex={-1}
       >
         <div className="modal-header">
           <div>
-            <h2 id={titleId}>{title}</h2>
+            <h2 id={resolvedTitleId}>{title}</h2>
             {description && (
-              <p id={descriptionId} className="text-muted">
+              <p id={resolvedDescriptionId} className="text-muted">
                 {description}
               </p>
             )}

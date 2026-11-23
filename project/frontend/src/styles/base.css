@@ -13,11 +13,15 @@ body {
   margin: 0;
   min-width: 320px;
   max-width: 100%;
-  background: var(--color-canvas);
+  background:
+    radial-gradient(1100px 520px at 92% -12%, rgb(168 31 46 / 5%), transparent 62%),
+    var(--color-canvas);
+  background-attachment: fixed;
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   line-height: 1.55;
+  font-feature-settings: 'cv11' 1, 'ss01' 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -105,6 +109,10 @@ svg {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  box-shadow: var(--shadow-focus);
 }
 
 ::selection {
@@ -204,13 +212,55 @@ svg {
   margin: var(--space-4) 0;
 }
 
+@media (forced-colors: active) {
+  *,
+  *::before,
+  *::after {
+    forced-color-adjust: auto;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+
+  .card,
+  .surface,
+  .surface-glass,
+  .surface-raised,
+  .surface-interactive,
+  .metric-card,
+  .task-card,
+  .mobile-card,
+  .premium-table th,
+  .premium-table td,
+  .overlay,
+  .modal,
+  .popover {
+    border: 1px solid CanvasText !important;
+    background: Canvas !important;
+    color: CanvasText !important;
+  }
+
+  :focus-visible,
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+
+  .badge,
+  .status-chip,
+  .live-pill {
+    border: 1px solid CanvasText !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }

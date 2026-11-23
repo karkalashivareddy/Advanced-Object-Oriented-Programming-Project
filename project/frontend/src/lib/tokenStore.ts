@@ -83,6 +83,8 @@ export const tokenStore = {
     accessToken = null;
     refreshToken = null;
     writeStorage(sessionStorageLike(), REFRESH_KEY, null);
+    // Scope belongs to the session too; never send a stale org header after logout.
+    writeStorage(sessionStorageLike(), ORG_KEY, null);
   },
 
   /** Clears tokens and notifies the auth context so the UI reflects the expired session. */

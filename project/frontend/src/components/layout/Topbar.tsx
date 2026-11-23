@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { NAV_ITEMS } from '@/lib/navigation';
 import { initials } from '@/lib/utils';
 import { NotificationCenter } from './NotificationCenter';
+import { OrganizationSwitcher } from './OrganizationSwitcher';
 
 interface TopbarProps {
   onOpenMobileMenu: () => void;
@@ -18,7 +19,9 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const userRef = useRef<HTMLDivElement | null>(null);
+  const userTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const suggestions = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -36,9 +39,13 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
       if (!userRef.current?.contains(event.target as Node)) setUserOpen(false);
     };
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setSearchOpen(false);
+      if (event.key !== 'Escape') return;
+      if (userOpen) {
         setUserOpen(false);
+        userTriggerRef.current?.focus();
+      } else if (searchOpen) {
+        setSearchOpen(false);
+        searchInputRef.current?.focus();
       }
     };
     document.addEventListener('mousedown', handleOutside);
@@ -47,7 +54,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
       document.removeEventListener('mousedown', handleOutside);
       document.removeEventListener('keydown', handleKey);
     };
-  }, []);
+  }, [userOpen, searchOpen]);
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
@@ -59,7 +66,6 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
   };
 
   const currentSection = NAV_ITEMS.find((item) => location.pathname.startsWith(item.to));
-  const memberships = auth.user?.memberships ?? [];
 
   return (
     <header className="topbar">
@@ -78,11 +84,18 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
         <strong>{currentSection?.label ?? 'Dashboard'}</strong>
       </nav>
 
-      <div className="topbar-search" ref={searchRef}>
+      <div
+        className="topbar-search"
+        ref={searchRef}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false);
+        }}
+      >
         <form onSubmit={submitSearch} role="search">
           <div className="search-input-wrap">
             <Search size={15} aria-hidden="true" />
             <input
+              ref={searchInputRef}
               className="input"
               type="search"
               aria-label="Search sections"
@@ -97,7 +110,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
           </div>
         </form>
         {searchOpen && search.trim() !== '' && (
-          <div className="popover" role="listbox" aria-label="Section results">
+          <nav className="popover" aria-label="Section results">
             {suggestions.length === 0 ? (
               <p className="card-pad text-muted text-sm">No matching section.</p>
             ) : (
@@ -106,8 +119,6 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
                   key={item.to}
                   type="button"
                   className="popover-item"
-                  role="option"
-                  aria-selected={false}
                   onClick={() => {
                     navigate(item.to);
                     setSearch('');
@@ -119,34 +130,17 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
                 </button>
               ))
             )}
-          </div>
+          </nav>
         )}
       </div>
 
       <div className="topbar-actions">
-        <label className="sr-only" htmlFor="organization-switcher">
-          Active organization
-        </label>
-        <select
-          id="organization-switcher"
-          className="select org-select"
-          value={auth.organizationId ?? ''}
-          disabled={memberships.length === 0}
-          onChange={(event) =>
-            auth.selectOrganization(event.target.value ? Number(event.target.value) : null)
-          }
-        >
-          {memberships.length === 0 && <option value="">No organization</option>}
-          {memberships.map((membership) => (
-            <option key={membership.organizationId} value={membership.organizationId}>
-              {membership.organizationName}
-            </option>
-          ))}
-        </select>
+        <OrganizationSwitcher />
         <span className="topbar-divider" aria-hidden="true" />
         <NotificationCenter />
         <div className="menu-anchor" ref={userRef}>
           <button
+            ref={userTriggerRef}
             type="button"
             className="user-trigger"
             aria-label="Open user menu"
@@ -162,7 +156,17 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
             <ChevronDown size={14} aria-hidden="true" />
           </button>
           {userOpen && (
-            <div className="popover" role="menu" aria-label="User menu">
+            <div
+              className="popover"
+              role="menu"
+              aria-label="User menu"
+              onBlur={(event) => {
+                // Tab/Shift+Tab move through the menu items normally; the
+                // popover closes once focus leaves it. Escape is handled by
+                // the document listener, which restores focus to the trigger.
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setUserOpen(false);
+              }}
+            >
               <div className="popover-header">
                 <span>
                   <strong>{auth.user?.fullName}</strong>

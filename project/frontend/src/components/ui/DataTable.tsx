@@ -22,11 +22,17 @@ interface DataTableProps<T> {
   rows: T[];
   rowKey: (row: T) => string | number;
   ariaLabel: string;
+  /** Visible table caption. Without one, the accessible name is visually hidden. */
+  caption?: ReactNode;
   loading?: boolean;
+  loadingLabel?: string;
   toolbar?: ReactNode;
   sort?: SortState;
   onSort?: (key: string) => void;
   onRowClick?: (row: T) => void;
+  /** Optional compact card renderer for the mobile card-list alternative. */
+  mobileCard?: (row: T) => ReactNode;
+  mobileCardTitle?: (row: T) => ReactNode;
   page?: number;
   size?: number;
   totalElements?: number;
@@ -41,11 +47,15 @@ export function DataTable<T>({
   rows,
   rowKey,
   ariaLabel,
+  caption,
   loading = false,
+  loadingLabel,
   toolbar,
   sort,
   onSort,
   onRowClick,
+  mobileCard,
+  mobileCardTitle,
   page,
   size,
   totalElements,
@@ -59,17 +69,26 @@ export function DataTable<T>({
   const enablePagination = onPageChange && totalElements !== undefined;
 
   const handleRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>, row: T) => {
-    if (event.key === 'Enter' || event.key === ' ') {
+    // A button/link inside a cell owns its own keyboard behaviour; only activate
+    // the row when the row itself is the event target.
+    if (event.target !== event.currentTarget) return;
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
       event.preventDefault();
       onRowClick?.(row);
     }
   };
 
   return (
-    <section className="card" aria-label={ariaLabel}>
+    <section className="card surface data-table-card" aria-label={ariaLabel} aria-busy={loading || undefined}>
       {toolbar && <div className="table-toolbar">{toolbar}</div>}
+      {loading && (
+        <p className="sr-only" role="status" aria-live="polite">
+          {loadingLabel ?? `Loading ${ariaLabel}…`}
+        </p>
+      )}
       <div className="table-scroll">
-        <table className="data-table">
+        <table className="data-table premium-table" aria-label={ariaLabel}>
+          <caption className={caption ? 'table-caption' : 'sr-only'}>{caption ?? ariaLabel}</caption>
           <thead>
             <tr>
               {columns.map((column) => (
@@ -108,7 +127,7 @@ export function DataTable<T>({
           <tbody>
             {loading &&
               Array.from({ length: 5 }).map((_, index) => (
-                <tr key={`skeleton-${index}`}>
+                <tr key={`skeleton-${index}`} aria-hidden="true">
                   {columns.map((column) => (
                     <td key={column.key}>
                       <Skeleton height={14} width={index % 2 === 0 ? '65%' : '85%'} />
@@ -134,10 +153,47 @@ export function DataTable<T>({
               ))}
           </tbody>
         </table>
-        {!loading && rows.length === 0 && (
-          <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
-        )}
       </div>
+
+      <div className="mobile-card-list" role="list" aria-label={`${ariaLabel} card view`}>
+        {loading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <div className="mobile-card surface" role="listitem" key={`mobile-skeleton-${index}`}>
+              <Skeleton width="55%" height={16} />
+              <Skeleton height={12} width="85%" />
+              <Skeleton height={12} width="65%" />
+            </div>
+          ))}
+        {!loading &&
+          rows.map((row) => (
+            <article className="mobile-card surface" role="listitem" key={rowKey(row)}>
+              {mobileCard ? mobileCard(row) : (
+                <>
+                  <strong className="task-title">
+                    {mobileCardTitle ? mobileCardTitle(row) : columns[0]?.render(row)}
+                  </strong>
+                  <dl className="mobile-card-fields">
+                    {columns.slice(1).map((column) => (
+                      <div key={column.key}>
+                        <dt>{column.header}</dt>
+                        <dd>{column.render(row)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </>
+              )}
+              {onRowClick && (
+                <button type="button" className="task-cta" onClick={() => onRowClick(row)}>
+                  View details <ChevronRight size={15} aria-hidden="true" />
+                </button>
+              )}
+            </article>
+          ))}
+      </div>
+
+      {!loading && rows.length === 0 && (
+        <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
+      )}
       {enablePagination && !loading && rows.length > 0 && (
         <footer className="table-footer">
           <span>

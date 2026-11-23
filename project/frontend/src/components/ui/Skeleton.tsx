@@ -1,24 +1,37 @@
 import type { CSSProperties } from 'react';
+import { cx } from '@/lib/utils';
 
 interface SkeletonProps {
   width?: string | number;
   height?: string | number;
   borderRadius?: string;
   className?: string;
+  /** Optional accessible label; decorative by default. */
+  label?: string;
 }
 
-export function Skeleton({ width, height = 14, borderRadius, className = '' }: SkeletonProps) {
+export function Skeleton({ width, height = 14, borderRadius, className = '', label }: SkeletonProps) {
   const style: CSSProperties = {
     width: typeof width === 'number' ? `${width}px` : width,
     height: typeof height === 'number' ? `${height}px` : height,
     borderRadius,
   };
-  return <span className={`skeleton ${className}`} style={style} aria-hidden="true" />;
+  return (
+    <span
+      className={cx('skeleton', className)}
+      style={style}
+      aria-hidden={label ? undefined : true}
+      role={label ? 'status' : undefined}
+    >
+      {label && <span className="sr-only">{label}</span>}
+    </span>
+  );
 }
 
-export function PageSkeleton({ rows = 5 }: { rows?: number }) {
+export function PageSkeleton({ rows = 5, label = 'Loading content' }: { rows?: number; label?: string }) {
   return (
-    <div className="stack" aria-label="Loading content" role="status">
+    <div className="stack" aria-label={label} aria-busy="true" role="status">
+      <span className="sr-only">{label}…</span>
       <div className="skeleton-lines">
         <Skeleton width={220} height={28} />
         <Skeleton width={340} height={14} />

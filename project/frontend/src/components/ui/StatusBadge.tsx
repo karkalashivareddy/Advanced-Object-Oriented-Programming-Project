@@ -1,6 +1,13 @@
 import { humanize } from '@/lib/utils';
 
-export type BadgeTone = 'neutral' | 'success' | 'warning' | 'info' | 'danger';
+export type BadgeTone =
+  | 'neutral'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'danger'
+  | 'teal'
+  | 'violet';
 
 const TONES: Record<BadgeTone, readonly string[]> = {
   success: [
@@ -8,6 +15,7 @@ const TONES: Record<BadgeTone, readonly string[]> = {
     'AVAILABLE',
     'DELIVERED',
     'APPROVED',
+    'DONATION_APPROVED',
     'CONFIRMED',
     'COMPLETED',
     'VERIFIED',
@@ -15,19 +23,38 @@ const TONES: Record<BadgeTone, readonly string[]> = {
     'SUCCESS',
     'FULFILLED',
   ],
+  teal: [
+    'RECORDED',
+    'DONATION_RECORDED',
+    'SCREENED',
+    'DONATION_SCREENED',
+    'DONATED',
+    'COLLECTED',
+    'DONOR_AVAILABLE',
+  ],
   warning: [
     'PENDING',
     'PENDING_VERIFICATION',
     'SCREENING',
     'QUARANTINED',
-    'COLLECTED',
-    'IN_TRANSIT',
+    'TEMPORARILY_UNAVAILABLE',
+    'PREPARING',
     'SCHEDULED',
     'EXPIRING',
     'REQUESTED',
     'LOW',
+    'AWAITING_SCREENING',
   ],
-  info: ['RESERVED', 'DISPATCHED', 'IN_PROGRESS', 'REVIEW', 'OPEN', 'MEDIUM'],
+  info: [
+    'RESERVED',
+    'DISPATCHED',
+    'IN_PROGRESS',
+    'REVIEW',
+    'OPEN',
+    'MEDIUM',
+    'IN_TRANSIT',
+    'ALLOCATING',
+  ],
   danger: [
     'EXPIRED',
     'DISCARDED',
@@ -40,8 +67,12 @@ const TONES: Record<BadgeTone, readonly string[]> = {
     'CRITICAL',
     'HIGH',
     'BREACH',
+    'INCIDENT',
+    'UNAVAILABLE',
+    'DONOR_UNAVAILABLE',
   ],
-  neutral: ['DRAFT', 'CLOSED', 'UNKNOWN'],
+  violet: ['PREPARING_DISPATCH', 'ALLOCATED', 'HOLD', 'IN_REVIEW'],
+  neutral: ['DRAFT', 'CLOSED', 'UNKNOWN', 'PENDING_DONOR'],
 };
 
 export function toneForStatus(status: string): BadgeTone {

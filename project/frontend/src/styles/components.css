@@ -217,6 +217,18 @@
   color: var(--color-danger);
 }
 
+.badge-teal {
+  background: var(--color-teal-soft);
+  border-color: var(--color-teal-border);
+  color: var(--color-teal);
+}
+
+.badge-violet {
+  background: var(--color-violet-soft);
+  border-color: var(--color-violet-border);
+  color: var(--color-violet);
+}
+
 .chip {
   display: inline-flex;
   align-items: center;
@@ -674,7 +686,7 @@
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 65%), transparent);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 72%), transparent);
   animation: shimmer 1.5s infinite;
 }
 
@@ -709,6 +721,16 @@
   border-radius: 50%;
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
+}
+
+.state-icon-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.state-block--busy .state-icon {
+  background: var(--color-info-soft);
+  color: var(--color-info);
 }
 
 .state-block h3 {
@@ -747,16 +769,52 @@
 .toast-error { border-left-color: var(--color-danger); }
 .toast-warning { border-left-color: var(--color-warning); }
 
-.toast p {
-  flex: 1;
-  color: var(--color-text-strong);
-  font-weight: 600;
+.toast-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-soft);
+  color: var(--color-info);
 }
 
-.toast small {
+.toast-success .toast-icon { color: var(--color-success); background: var(--color-success-soft); }
+.toast-error .toast-icon { color: var(--color-danger); background: var(--color-danger-soft); }
+.toast-warning .toast-icon { color: var(--color-warning); background: var(--color-warning-soft); }
+
+.toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast p,
+.toast-title {
+  color: var(--color-text-strong);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.toast small,
+.toast-detail {
   display: block;
+  margin-top: 2px;
   color: var(--color-text-muted);
   font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.toast-busy {
+  border-left-color: var(--color-info);
+}
+
+.toast-busy .toast-icon svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Key/value and misc ----------------------------------------------------- */
