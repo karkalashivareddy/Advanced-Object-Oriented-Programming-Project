@@ -105,10 +105,9 @@ public class OrganizationService {
         if (membershipRepository.existsByUserIdAndOrganizationId(userId, organizationId)) {
             throw new BusinessRuleViolationException("User already belongs to this organization");
         }
+        // Roles are organization-scoped. Do not mutate the user's global role set here;
+        // permissions are derived per organization from membership roles.
         membershipRepository.save(new OrganizationMembership(user, organization, role));
-        java.util.EnumSet<Role> updatedRoles = java.util.EnumSet.copyOf(user.getRoles());
-        updatedRoles.add(role);
-        user.assignRoles(updatedRoles);
         auditService.record("MEMBER_ADD", "USER", user.getPublicId(), organizationId, "SUCCESS",
                 Map.of("role", role.name()));
     }

@@ -9,6 +9,7 @@ import com.lifelink.dispatch.dto.DispatchDtos.IncidentRequest;
 import com.lifelink.dispatch.dto.DispatchDtos.View;
 import com.lifelink.emergency.EmergencyRequest;
 import com.lifelink.emergency.EmergencyRequestService;
+import com.lifelink.identity.AuthenticatedUser;
 import com.lifelink.identity.Permission;
 import com.lifelink.identity.TenantAccessService;
 import com.lifelink.inventory.BloodUnit;
@@ -51,43 +52,59 @@ public class DispatchService {
 
     @Transactional(readOnly = true)
     public List<View> list() {
-        tenantAccess.requirePermission(Permission.DISPATCH_READ);
-        var user = tenantAccess.currentUser();
+        AuthenticatedUser user = tenantAccess.currentUser();
         return repository.findAll().stream()
-                .filter(d -> user.isPlatformAdmin() || user.organizationIds().contains(d.getOrganization().getId()))
+                .filter(dispatch -> user.isPlatformAdmin()
+                        || (user.belongsTo(dispatch.getOrganization().getId())
+                        && user.hasPermissionForOrganization(Permission.DISPATCH_READ,
+                                dispatch.getOrganization().getId())))
                 .map(View::of).toList();
     }
 
     @Transactional(readOnly = true)
     public View get(Long id) {
-        tenantAccess.requirePermission(Permission.DISPATCH_READ);
         Dispatch dispatch = find(id);
-        tenantAccess.requireOrganization(dispatch.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(dispatch.getOrganization().getId(),
+                Permission.DISPATCH_READ);
         return View.of(dispatch);
     }
 
     @Transactional
-    public View create(CreateRequest request) {
-        tenantAccess.requirePermission(Permission.DISPATCH_CREATE);
+    public View create(CreateRequest request, String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new BusinessRuleViolationException("Idempotency-Key header is required");
+        }
+        String key = idempotencyKey.trim();
+        var replay = repository.findByIdempotencyKey(key);
+        if (replay.isPresent()) {
+            Dispatch existing = replay.get();
+            tenantAccess.requireOrganizationAndPermission(existing.getOrganization().getId(),
+                    Permission.DISPATCH_CREATE);
+            if (!existing.getReservation().getId().equals(request.reservationId())) {
+                throw new BusinessRuleViolationException("Idempotency key was used for a different dispatch");
+            }
+            return View.of(existing);
+        }
         Reservation reservation = reservationRepository.findById(request.reservationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation", request.reservationId()));
         if (reservation.getStatus() != Reservation.Status.CONFIRMED) {
             throw new BusinessRuleViolationException("Only confirmed reservations can be dispatched");
         }
+        Organization organization = reservation.getOrganization();
+        tenantAccess.requireOrganizationAndPermission(organization.getId(), Permission.DISPATCH_CREATE);
         if (repository.findAll().stream().anyMatch(d -> d.getReservation().getId().equals(reservation.getId()))) {
             throw new BusinessRuleViolationException("A dispatch already exists for this reservation");
         }
-        Organization organization = reservation.getOrganization();
-        tenantAccess.requireOrganization(organization.getId());
         EmergencyRequest emergencyRequest = reservation.getRequest();
         BloodUnit unit = unitRepository.findByIdForUpdate(reservation.getBloodUnit().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("BloodUnit", reservation.getBloodUnit().getId()));
+        Dispatch dispatch = new Dispatch(reservation, emergencyRequest, organization,
+                request.assignedStaff(), key);
+        repository.saveAndFlush(dispatch);
         unit.dispatch();
         movementRepository.save(new InventoryMovement(unit, BloodUnit.Status.RESERVED.name(),
                 BloodUnit.Status.DISPATCHED.name(), "Dispatch created", null));
         requestService.markState(emergencyRequest.getId(), EmergencyRequest.Status.IN_TRANSIT, "DISPATCH_CREATED");
-        Dispatch dispatch = new Dispatch(reservation, emergencyRequest, organization, request.assignedStaff());
-        repository.save(dispatch);
         auditService.record("DISPATCH_CREATE", "DISPATCH", dispatch.getPublicId(),
                 organization.getId(), "SUCCESS", Map.of("unit", unit.getUnitNumber()));
         return View.of(dispatch);
@@ -95,9 +112,9 @@ public class DispatchService {
 
     @Transactional
     public View depart(Long id) {
-        tenantAccess.requirePermission(Permission.DISPATCH_MANAGE);
         Dispatch dispatch = find(id);
-        tenantAccess.requireOrganization(dispatch.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(dispatch.getOrganization().getId(),
+                Permission.DISPATCH_MANAGE);
         dispatch.depart();
         auditService.record("DISPATCH_DEPART", "DISPATCH", dispatch.getPublicId(),
                 dispatch.getOrganization().getId(), "SUCCESS", Map.of());
@@ -106,9 +123,9 @@ public class DispatchService {
 
     @Transactional
     public View deliver(Long id, DeliveryRequest request) {
-        tenantAccess.requirePermission(Permission.DISPATCH_MANAGE);
         Dispatch dispatch = find(id);
-        tenantAccess.requireOrganization(dispatch.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(dispatch.getOrganization().getId(),
+                Permission.DISPATCH_MANAGE);
         if (dispatch.getStatus() != Dispatch.Status.IN_TRANSIT) {
             throw new BusinessRuleViolationException("Dispatch must be in transit before delivery");
         }
@@ -128,9 +145,9 @@ public class DispatchService {
 
     @Transactional
     public View incident(Long id, IncidentRequest request) {
-        tenantAccess.requirePermission(Permission.DISPATCH_MANAGE);
         Dispatch dispatch = find(id);
-        tenantAccess.requireOrganization(dispatch.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(dispatch.getOrganization().getId(),
+                Permission.DISPATCH_MANAGE);
         dispatch.reportIncident(request.description());
         auditService.record("DISPATCH_INCIDENT", "DISPATCH", dispatch.getPublicId(),
                 dispatch.getOrganization().getId(), "FAILURE", Map.of("reason", request.description()));

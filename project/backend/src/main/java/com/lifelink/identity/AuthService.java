@@ -17,6 +17,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.EnumSet;
 import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -108,7 +109,7 @@ public class AuthService {
     @Transactional(noRollbackFor = AuthenticationFailedException.class)
     public AuthResponse refresh(RefreshRequest request) {
         String hash = hash(request.refreshToken());
-        RefreshToken stored = refreshTokenRepository.findByTokenHash(hash)
+        RefreshToken stored = refreshTokenRepository.findByTokenHashForUpdate(hash)
                 .orElseThrow(() -> new AuthenticationFailedException("Invalid refresh token"));
         Instant now = Instant.now();
         if (stored.getRevokedAt() != null) {
@@ -132,9 +133,13 @@ public class AuthService {
         if (rawToken == null || rawToken.isBlank()) {
             return;
         }
-        refreshTokenRepository.findByTokenHash(hash(rawToken))
-                .ifPresent(token -> token.revoke(Instant.now()));
-        auditService.record("LOGOUT", "USER", "", null, "SUCCESS", Map.of());
+        String target = refreshTokenRepository.findByTokenHash(hash(rawToken))
+                .map(token -> {
+                    token.revoke(Instant.now());
+                    return token.getUser().getPublicId();
+                })
+                .orElse("unknown");
+        auditService.record("LOGOUT", "USER", target, null, "SUCCESS", Map.of());
     }
 
     @Transactional
@@ -160,27 +165,44 @@ public class AuthService {
     }
 
     public UserView toView(User user) {
-        Set<OrganizationMembershipView> memberships = membershipRepository.findByUserId(user.getId()).stream()
-                .map(m -> new OrganizationMembershipView(m.getOrganization().getId(),
-                        m.getOrganization().getName(), m.getRole()))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        return UserView.of(user, user.effectivePermissions(), memberships);
+        Set<OrganizationMembershipView> memberships = membershipViews(user);
+        return UserView.of(user, effectivePermissions(user, memberships), memberships);
     }
 
     @Transactional(readOnly = true)
     public AuthenticatedUser principal(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
-        Set<OrganizationMembershipView> memberships = membershipRepository.findByUserId(user.getId()).stream()
-                .map(m -> new OrganizationMembershipView(m.getOrganization().getId(),
-                        m.getOrganization().getName(), m.getRole()))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (user.getStatus() != User.Status.ACTIVE) {
+            throw new AuthenticationFailedException("Account is not active");
+        }
+        Set<OrganizationMembershipView> memberships = membershipViews(user);
         return new AuthenticatedUser(user.getId(), user.getEmail(), user.getFullName(), user.getRoles(),
-                user.effectivePermissions(),
+                effectivePermissions(user, memberships),
                 memberships.stream().map(OrganizationMembershipView::organizationId).collect(Collectors.toSet()),
                 memberships.stream()
                         .map(m -> new AuthenticatedUser.OrganizationRole(m.organizationId(), m.organizationName(), m.role()))
                         .collect(Collectors.toSet()));
+    }
+
+    /** Public so account-status changes can revoke every active refresh session. */
+    @Transactional
+    public void revokeAllForUser(User user) {
+        revokeAll(user, Instant.now());
+    }
+
+    private Set<OrganizationMembershipView> membershipViews(User user) {
+        return membershipRepository.findByUserId(user.getId()).stream()
+                .map(m -> new OrganizationMembershipView(m.getOrganization().getId(),
+                        m.getOrganization().getName(), m.getRole()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private Set<Permission> effectivePermissions(User user, Set<OrganizationMembershipView> memberships) {
+        Set<Permission> permissions = EnumSet.noneOf(Permission.class);
+        permissions.addAll(user.effectivePermissions());
+        memberships.forEach(membership -> permissions.addAll(membership.role().permissions()));
+        return Set.copyOf(permissions);
     }
 
     private AuthResponse issueTokens(User user) {

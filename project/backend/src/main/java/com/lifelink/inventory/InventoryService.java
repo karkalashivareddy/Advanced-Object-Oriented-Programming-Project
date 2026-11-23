@@ -60,11 +60,12 @@ public class InventoryService {
     @Transactional(readOnly = true)
     public PageResponse<View> search(Long organizationId, BloodGroup bloodGroup, ComponentType componentType,
                                      BloodUnit.Status status, Integer expiringWithinDays, Pageable pageable) {
-        tenantAccess.requirePermission(Permission.INVENTORY_READ);
         AuthenticatedUser user = tenantAccess.currentUser();
-        Long resolvedOrg = user.isPlatformAdmin() ? organizationId : user.organizationIds().iterator().next();
+        Long resolvedOrg = user.isPlatformAdmin()
+                ? organizationId
+                : tenantAccess.requireActiveOrganization(organizationId);
         if (!user.isPlatformAdmin()) {
-            tenantAccess.requireOrganization(resolvedOrg);
+            tenantAccess.requireOrganizationAndPermission(resolvedOrg, Permission.INVENTORY_READ);
         }
         Instant cutoff = expiringWithinDays == null ? null : Instant.now().plus(expiringWithinDays, ChronoUnit.DAYS);
         Page<View> page = unitRepository.search(resolvedOrg, bloodGroup, componentType, status,
@@ -74,9 +75,8 @@ public class InventoryService {
 
     @Transactional(readOnly = true)
     public View get(Long id) {
-        tenantAccess.requirePermission(Permission.INVENTORY_READ);
         BloodUnit unit = find(id);
-        tenantAccess.requireOrganization(unit.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(unit.getOrganization().getId(), Permission.INVENTORY_READ);
         return View.of(unit);
     }
 
@@ -118,9 +118,8 @@ public class InventoryService {
 
     @Transactional
     public View release(Long id) {
-        tenantAccess.requirePermission(Permission.INVENTORY_RELEASE);
         BloodUnit unit = lockedUnit(id);
-        tenantAccess.requireOrganization(unit.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(unit.getOrganization().getId(), Permission.INVENTORY_RELEASE);
         String before = unit.getStatus().name();
         unit.release(Instant.now());
         recordMovement(unit, before, unit.getStatus().name(), "Authorized release");
@@ -131,9 +130,8 @@ public class InventoryService {
 
     @Transactional
     public View expire(Long id) {
-        tenantAccess.requirePermission(Permission.INVENTORY_WRITE);
         BloodUnit unit = lockedUnit(id);
-        tenantAccess.requireOrganization(unit.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(unit.getOrganization().getId(), Permission.INVENTORY_WRITE);
         String before = unit.getStatus().name();
         unit.markExpired();
         recordMovement(unit, before, unit.getStatus().name(), "Marked expired");
@@ -144,9 +142,8 @@ public class InventoryService {
 
     @Transactional
     public View adjust(com.lifelink.inventory.dto.InventoryDtos.AdjustmentRequest request) {
-        tenantAccess.requirePermission(Permission.INVENTORY_WRITE);
         BloodUnit unit = lockedUnit(request.unitId());
-        tenantAccess.requireOrganization(unit.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(unit.getOrganization().getId(), Permission.INVENTORY_WRITE);
         String before = unit.getStatus().name();
         if (request.location() != null && !request.location().isBlank()) {
             unit.changeLocation(request.location());
@@ -162,31 +159,43 @@ public class InventoryService {
 
     @Transactional(readOnly = true)
     public List<MovementView> movements(Long unitId) {
-        tenantAccess.requirePermission(Permission.INVENTORY_READ);
         BloodUnit unit = find(unitId);
-        tenantAccess.requireOrganization(unit.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(unit.getOrganization().getId(), Permission.INVENTORY_READ);
         return movementRepository.findByUnitIdOrderByOccurredAtDesc(unitId).stream()
                 .map(MovementView::of).toList();
     }
 
     @Transactional(readOnly = true)
     public Alerts alerts() {
-        tenantAccess.requirePermission(Permission.INVENTORY_READ);
         AuthenticatedUser user = tenantAccess.currentUser();
         Instant soon = Instant.now().plus(7, ChronoUnit.DAYS);
         long expiring = unitRepository.findExpiring(soon, ACTIVE_STATUSES).stream()
-                .filter(u -> user.isPlatformAdmin() || user.organizationIds().contains(u.getOrganization().getId()))
+                .filter(u -> isVisibleForRead(user, u))
                 .count();
         long expired = unitRepository.findExpiring(Instant.now(), ACTIVE_STATUSES).stream()
-                .filter(u -> user.isPlatformAdmin() || user.organizationIds().contains(u.getOrganization().getId()))
+                .filter(u -> isVisibleForRead(user, u))
                 .count();
         return new Alerts(expiring, expired, 0);
     }
 
     @Transactional(readOnly = true)
     public List<View> unitsForDonation(Long donationId) {
-        tenantAccess.requirePermission(Permission.DONATION_READ);
-        return unitRepository.findByDonationId(donationId).stream().map(View::of).toList();
+        AuthenticatedUser user = tenantAccess.currentUser();
+        return unitRepository.findByDonationId(donationId).stream()
+                .filter(unit -> user.isPlatformAdmin()
+                        || (user.belongsTo(unit.getOrganization().getId())
+                        && user.hasPermissionForOrganization(Permission.DONATION_READ,
+                                unit.getOrganization().getId())))
+                .map(View::of).toList();
+    }
+
+    private boolean isVisibleForRead(AuthenticatedUser user, BloodUnit unit) {
+        if (user.isPlatformAdmin()) {
+            return true;
+        }
+        Long organizationId = unit.getOrganization().getId();
+        return user.belongsTo(organizationId)
+                && user.hasPermissionForOrganization(Permission.INVENTORY_READ, organizationId);
     }
 
     @Transactional

@@ -3,7 +3,7 @@ package com.lifelink.donor;
 import com.lifelink.audit.AuditService;
 import com.lifelink.common.exception.BusinessRuleViolationException;
 import com.lifelink.common.exception.ResourceNotFoundException;
-import com.lifelink.common.exception.UnauthorizedOperationException;
+import com.lifelink.common.exception.TenantAccessDeniedException;
 import com.lifelink.donor.dto.DonorDtos.AppointmentActionRequest;
 import com.lifelink.donor.dto.DonorDtos.AppointmentRequest;
 import com.lifelink.donor.dto.DonorDtos.AppointmentView;
@@ -14,7 +14,6 @@ import com.lifelink.donor.dto.DonorDtos.ProfileView;
 import com.lifelink.donor.dto.DonorDtos.UpdateProfileRequest;
 import com.lifelink.identity.AuthenticatedUser;
 import com.lifelink.identity.Permission;
-import com.lifelink.identity.Role;
 import com.lifelink.identity.TenantAccessService;
 import com.lifelink.identity.User;
 import com.lifelink.identity.UserRepository;
@@ -62,7 +61,8 @@ public class DonorService {
             return donorRepository.findAll().stream().map(ProfileView::of).toList();
         }
         Set<Long> donorIds = donationRepository.findAll().stream()
-                .filter(d -> user.organizationIds().contains(d.getOrganization().getId()))
+                .filter(d -> user.belongsTo(d.getOrganization().getId())
+                        && user.hasPermissionForOrganization(Permission.DONOR_READ, d.getOrganization().getId()))
                 .map(d -> d.getDonor().getId())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         donorIds.addAll(donorRepository.findAll().stream()
@@ -74,10 +74,7 @@ public class DonorService {
     @Transactional(readOnly = true)
     public ProfileView get(Long id) {
         DonorProfile profile = find(id);
-        AuthenticatedUser user = tenantAccess.currentUser();
-        if (!user.isPlatformAdmin() && !profile.getUser().getId().equals(user.userId())) {
-            tenantAccess.requirePermission(Permission.DONOR_READ);
-        }
+        requireDonorAccess(profile, Permission.DONOR_READ);
         return ProfileView.of(profile);
     }
 
@@ -103,7 +100,7 @@ public class DonorService {
     @Transactional
     public ProfileView update(Long id, UpdateProfileRequest request) {
         DonorProfile profile = find(id);
-        requireOwnerOrPermission(profile, Permission.DONOR_MANAGE);
+        requireDonorAccess(profile, Permission.DONOR_MANAGE);
         profile.updateContact(request.address(), request.city(), request.state(), request.preferredContact());
         if (request.availability() != null) {
             profile.setAvailability(request.availability());
@@ -115,7 +112,7 @@ public class DonorService {
     @Transactional
     public ConsentView addConsent(Long donorId, ConsentRequest request) {
         DonorProfile profile = find(donorId);
-        requireOwnerOrPermission(profile, Permission.DONOR_MANAGE);
+        requireDonorAccess(profile, Permission.DONOR_MANAGE);
         ConsentRecord consent = new ConsentRecord(profile, request.type(), request.granted());
         consentRepository.save(consent);
         auditService.record("CONSENT_RECORD", "DONOR", profile.getPublicId(), null, "SUCCESS",
@@ -125,14 +122,14 @@ public class DonorService {
 
     @Transactional(readOnly = true)
     public List<ConsentView> consents(Long donorId) {
-        find(donorId);
+        requireDonorAccess(find(donorId), Permission.DONOR_READ);
         return consentRepository.findByDonorId(donorId).stream().map(ConsentView::of).toList();
     }
 
     @Transactional
     public void withdrawConsent(Long donorId, Long consentId) {
         DonorProfile profile = find(donorId);
-        requireOwnerOrPermission(profile, Permission.DONOR_MANAGE);
+        requireDonorAccess(profile, Permission.DONOR_MANAGE);
         ConsentRecord consent = consentRepository.findById(consentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Consent", consentId));
         if (!consent.getDonor().getId().equals(donorId)) {
@@ -159,7 +156,7 @@ public class DonorService {
             throw new BusinessRuleViolationException("Appointments require a verified blood bank");
         }
         if (!donorSelfBooking) {
-            tenantAccess.requireOrganization(organizationId);
+            tenantAccess.requireOrganizationAndPermission(organizationId, Permission.APPOINTMENT_MANAGE);
         }
         Appointment appointment = new Appointment(profile, organization, request.scheduledAt(), request.notes());
         appointmentRepository.save(appointment);
@@ -170,10 +167,10 @@ public class DonorService {
 
     @Transactional
     public AppointmentView actionAppointment(Long appointmentId, AppointmentActionRequest request) {
-        tenantAccess.requirePermission(Permission.APPOINTMENT_MANAGE);
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
-        tenantAccess.requireOrganization(appointment.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(appointment.getOrganization().getId(),
+                Permission.APPOINTMENT_MANAGE);
         switch (request.action() == null ? "" : request.action().toUpperCase()) {
             case "CONFIRM" -> appointment.confirm();
             case "COMPLETE" -> appointment.complete();
@@ -188,15 +185,22 @@ public class DonorService {
 
     @Transactional(readOnly = true)
     public List<AppointmentView> appointments(Long donorId) {
-        find(donorId);
+        requireDonorAccess(find(donorId), Permission.DONOR_READ);
         return appointmentRepository.findByDonorIdOrderByScheduledAtDesc(donorId)
                 .stream().map(AppointmentView::of).toList();
     }
 
-    private void requireOwnerOrPermission(DonorProfile profile, Permission permission) {
+    /** Owner access is allowed for a donor's own records; staff access must be scoped to an organization that owns a donation for that donor. */
+    private void requireDonorAccess(DonorProfile profile, Permission permission) {
         AuthenticatedUser user = tenantAccess.currentUser();
-        if (!profile.getUser().getId().equals(user.userId()) && !user.hasPermission(permission)) {
-            throw new UnauthorizedOperationException("Donor profile access denied");
+        if (user.isPlatformAdmin() || profile.getUser().getId().equals(user.userId())) {
+            return;
+        }
+        boolean allowed = donationRepository.findByDonorIdOrderByDonatedAtDesc(profile.getId()).stream()
+                .anyMatch(donation -> user.belongsTo(donation.getOrganization().getId())
+                        && user.hasPermissionForOrganization(permission, donation.getOrganization().getId()));
+        if (!allowed) {
+            throw new TenantAccessDeniedException(profile.getId());
         }
     }
 

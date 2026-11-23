@@ -1,10 +1,13 @@
 package com.lifelink.reservation;
 
+import com.lifelink.allocation.CompatibilitySpecification;
 import com.lifelink.audit.AuditService;
 import com.lifelink.common.exception.BusinessRuleViolationException;
 import com.lifelink.common.exception.ResourceNotFoundException;
+import com.lifelink.common.exception.TenantAccessDeniedException;
 import com.lifelink.emergency.EmergencyRequest;
 import com.lifelink.emergency.EmergencyRequestRepository;
+import com.lifelink.identity.AuthenticatedUser;
 import com.lifelink.identity.Permission;
 import com.lifelink.identity.TenantAccessService;
 import com.lifelink.inventory.BloodUnit;
@@ -33,13 +36,15 @@ public class ReservationService {
     private final InventoryMovementRepository movementRepository;
     private final TenantAccessService tenantAccess;
     private final AuditService auditService;
+    private final CompatibilitySpecification specification;
 
     public ReservationService(ReservationRepository repository, BloodUnitRepository unitRepository,
                               EmergencyRequestRepository requestRepository,
                               OrganizationRepository organizationRepository,
                               InventoryMovementRepository movementRepository,
                               TenantAccessService tenantAccess,
-                              AuditService auditService) {
+                              AuditService auditService,
+                              CompatibilitySpecification specification) {
         this.repository = repository;
         this.unitRepository = unitRepository;
         this.requestRepository = requestRepository;
@@ -47,34 +52,33 @@ public class ReservationService {
         this.movementRepository = movementRepository;
         this.tenantAccess = tenantAccess;
         this.auditService = auditService;
+        this.specification = specification;
     }
 
     @Transactional(readOnly = true)
     public List<View> list() {
-        tenantAccess.requirePermission(Permission.RESERVATION_READ);
         var user = tenantAccess.currentUser();
         return repository.findAll().stream()
-                .filter(r -> user.isPlatformAdmin() || user.organizationIds().contains(r.getOrganization().getId()))
+                .filter(r -> user.isPlatformAdmin()
+                        || (user.belongsTo(r.getOrganization().getId())
+                        && user.hasPermissionForOrganization(Permission.RESERVATION_READ, r.getOrganization().getId())))
                 .map(View::of).toList();
     }
 
     @Transactional(readOnly = true)
     public View get(Long id) {
-        tenantAccess.requirePermission(Permission.RESERVATION_READ);
         Reservation reservation = find(id);
-        tenantAccess.requireOrganization(reservation.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(reservation.getOrganization().getId(),
+                Permission.RESERVATION_READ);
         return View.of(reservation);
     }
 
     @Transactional
     public View create(CreateRequest request) {
-        tenantAccess.requirePermission(Permission.RESERVATION_CREATE);
-        var existing = repository.findByIdempotencyKey(request.idempotencyKey());
-        if (existing.isPresent()) {
-            return View.of(existing.get());
-        }
         BloodUnit unit = unitRepository.findByIdForUpdate(request.unitId())
                 .orElseThrow(() -> new ResourceNotFoundException("BloodUnit", request.unitId()));
+        Long unitOrgId = unit.getOrganization().getId();
+        tenantAccess.requireOrganizationAndPermission(unitOrgId, Permission.RESERVATION_CREATE);
         var raced = repository.findByIdempotencyKey(request.idempotencyKey());
         if (raced.isPresent()) {
             return View.of(raced.get());
@@ -85,8 +89,15 @@ public class ReservationService {
                 && emergencyRequest.getStatus() != EmergencyRequest.Status.ALLOCATING) {
             throw new BusinessRuleViolationException("Request is not approved for reservation");
         }
+        if (unit.getComponentType() != emergencyRequest.getComponentType()
+                || !specification.isSatisfiedBy(emergencyRequest.getBloodGroup(), unit.getBloodGroup())) {
+            throw new BusinessRuleViolationException("Selected unit is not compatible with this request");
+        }
         Organization organization = emergencyRequest.getRequestingOrganization();
-        tenantAccess.requireOrganization(organization.getId());
+        AuthenticatedUser user = tenantAccess.currentUser();
+        if (!user.isPlatformAdmin() && !user.belongsTo(organization.getId()) && !user.belongsTo(unitOrgId)) {
+            throw new TenantAccessDeniedException(organization.getId());
+        }
         Reservation reservation = new Reservation(unit, emergencyRequest, organization,
                 Instant.now().plus(RESERVATION_TTL), request.idempotencyKey());
         repository.saveAndFlush(reservation);
@@ -101,9 +112,9 @@ public class ReservationService {
 
     @Transactional
     public View confirm(Long id) {
-        tenantAccess.requirePermission(Permission.RESERVATION_CONFIRM);
         Reservation reservation = find(id);
-        tenantAccess.requireOrganization(reservation.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(reservation.getOrganization().getId(),
+                Permission.RESERVATION_CONFIRM);
         reservation.confirm(Instant.now());
         auditService.record("RESERVATION_CONFIRM", "RESERVATION", reservation.getPublicId(),
                 reservation.getOrganization().getId(), "SUCCESS", Map.of());
@@ -113,7 +124,8 @@ public class ReservationService {
     @Transactional
     public View cancel(Long id) {
         Reservation reservation = find(id);
-        tenantAccess.requireOrganization(reservation.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(reservation.getOrganization().getId(),
+                Permission.RESERVATION_CREATE);
         BloodUnit unit = unitRepository.findByIdForUpdate(reservation.getBloodUnit().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("BloodUnit", reservation.getBloodUnit().getId()));
         reservation.cancel();

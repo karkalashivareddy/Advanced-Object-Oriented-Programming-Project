@@ -36,6 +36,9 @@ public class Dispatch extends BaseEntity {
     @Column(name = "assigned_staff", nullable = false, length = 160)
     private String assignedStaff;
 
+    @Column(name = "idempotency_key", length = 120, unique = true)
+    private String idempotencyKey;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private Status status = Status.PREPARING;
@@ -55,14 +58,19 @@ public class Dispatch extends BaseEntity {
     protected Dispatch() {
     }
 
-    public Dispatch(Reservation reservation, EmergencyRequest request, Organization organization, String assignedStaff) {
+    public Dispatch(Reservation reservation, EmergencyRequest request, Organization organization,
+                    String assignedStaff, String idempotencyKey) {
         if (assignedStaff == null || assignedStaff.isBlank()) {
             throw new IllegalArgumentException("Assigned staff is required");
+        }
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new IllegalArgumentException("Idempotency key is required");
         }
         this.reservation = reservation;
         this.request = request;
         this.organization = organization;
         this.assignedStaff = assignedStaff.trim();
+        this.idempotencyKey = idempotencyKey.trim();
     }
 
     public void depart() {
@@ -105,6 +113,7 @@ public class Dispatch extends BaseEntity {
     public EmergencyRequest getRequest() { return request; }
     public Organization getOrganization() { return organization; }
     public String getAssignedStaff() { return assignedStaff; }
+    public String getIdempotencyKey() { return idempotencyKey; }
     public Status getStatus() { return status; }
     public Instant getDispatchedAt() { return dispatchedAt; }
     public Instant getDeliveredAt() { return deliveredAt; }

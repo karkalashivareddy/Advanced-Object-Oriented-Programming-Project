@@ -20,7 +20,7 @@ public class InAppNotificationChannel implements NotificationChannel {
     @Override
     public DeliveryResult send(Notification notification) {
         messagingTemplate.convertAndSendToUser(
-                String.valueOf(notification.getUser().getId()),
+                notification.getUser().getEmail(),
                 "/queue/notifications",
                 new NotificationEvent(notification.getPublicId(), notification.getTitle(),
                         notification.getBody(), notification.getType()));

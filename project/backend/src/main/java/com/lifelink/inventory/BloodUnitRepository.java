@@ -21,6 +21,23 @@ public interface BloodUnitRepository extends JpaRepository<BloodUnit, Long> {
 
     @Query("""
             select u from BloodUnit u
+            where u.organization.id in :organizationIds
+              and u.status = com.lifelink.inventory.BloodUnit$Status.AVAILABLE
+              and u.released = true
+              and u.expiresAt > :now
+              and u.activeReservationId is null
+              and (:bloodGroup is null or u.bloodGroup = :bloodGroup)
+              and (:componentType is null or u.componentType = :componentType)
+            order by u.expiresAt asc, u.id asc
+            """)
+    List<BloodUnit> findAvailableCandidatesForOrganizations(
+            @Param("organizationIds") java.util.Collection<Long> organizationIds,
+            @Param("bloodGroup") BloodGroup bloodGroup,
+            @Param("componentType") ComponentType componentType,
+            @Param("now") Instant now);
+
+    @Query("""
+            select u from BloodUnit u
             where (:organizationId is null or u.organization.id = :organizationId)
               and u.status = com.lifelink.inventory.BloodUnit$Status.AVAILABLE
               and u.released = true

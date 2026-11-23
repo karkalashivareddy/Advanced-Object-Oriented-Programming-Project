@@ -31,8 +31,18 @@ public class TenantAccessService {
     }
 
     public void requireOrganizationAndPermission(Long organizationId, Permission permission) {
-        requirePermission(permission);
-        requireOrganization(organizationId);
+        AuthenticatedUser user = currentUser();
+        if (!user.belongsTo(organizationId)) {
+            throw new TenantAccessDeniedException(organizationId);
+        }
+        if (!user.hasPermissionForOrganization(permission, organizationId)) {
+            throw new UnauthorizedOperationException("Missing permission: " + permission);
+        }
+    }
+
+    /** Coarse global check for platform-level actions that are not organization scoped. */
+    public void requirePermissionForOrganization(Long organizationId, Permission permission) {
+        requireOrganizationAndPermission(organizationId, permission);
     }
 
     public Long requireActiveOrganization(Long requestedOrganizationId) {

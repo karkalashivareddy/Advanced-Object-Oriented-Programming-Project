@@ -50,7 +50,9 @@ public class EmergencyRequestService {
         AuthenticatedUser user = tenantAccess.currentUser();
         return repository.findAll().stream()
                 .filter(request -> user.isPlatformAdmin()
-                        || user.organizationIds().contains(request.getRequestingOrganization().getId()))
+                        || (user.belongsTo(request.getRequestingOrganization().getId())
+                        && user.hasPermissionForOrganization(Permission.REQUEST_READ,
+                                request.getRequestingOrganization().getId())))
                 .filter(request -> status == null || request.getStatus() == status)
                 .map(View::of)
                 .toList();
@@ -58,9 +60,9 @@ public class EmergencyRequestService {
 
     @Transactional(readOnly = true)
     public Detail detail(Long id) {
-        tenantAccess.requirePermission(Permission.REQUEST_READ);
         EmergencyRequest request = find(id);
-        tenantAccess.requireOrganization(request.getRequestingOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(request.getRequestingOrganization().getId(),
+                Permission.REQUEST_READ);
         List<EventView> events = eventRepository.findByRequestIdOrderByOccurredAtDesc(id).stream()
                 .map(EventView::of).toList();
         return new Detail(View.of(request), events);
@@ -87,9 +89,9 @@ public class EmergencyRequestService {
 
     @Transactional
     public View verify(Long id) {
-        tenantAccess.requirePermission(Permission.REQUEST_APPROVE);
         EmergencyRequest request = find(id);
-        tenantAccess.requireOrganization(request.getRequestingOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(request.getRequestingOrganization().getId(),
+                Permission.REQUEST_APPROVE);
         Long actor = tenantAccess.currentUser().userId();
         request.verify(actor);
         recordEvent(request, "VERIFIED", "Request verified by authorized staff");
@@ -100,9 +102,9 @@ public class EmergencyRequestService {
 
     @Transactional
     public View approve(Long id) {
-        tenantAccess.requirePermission(Permission.REQUEST_APPROVE);
         EmergencyRequest request = find(id);
-        tenantAccess.requireOrganization(request.getRequestingOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(request.getRequestingOrganization().getId(),
+                Permission.REQUEST_APPROVE);
         request.approve(tenantAccess.currentUser().userId());
         recordEvent(request, "APPROVED", "Request approved for allocation review");
         auditService.record("REQUEST_APPROVE", "EMERGENCY_REQUEST", request.getPublicId(),
@@ -112,9 +114,9 @@ public class EmergencyRequestService {
 
     @Transactional
     public View reject(Long id, ReasonRequest request) {
-        tenantAccess.requirePermission(Permission.REQUEST_APPROVE);
         EmergencyRequest entity = find(id);
-        tenantAccess.requireOrganization(entity.getRequestingOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(entity.getRequestingOrganization().getId(),
+                Permission.REQUEST_APPROVE);
         entity.reject();
         recordEvent(entity, "REJECTED", request.reason());
         auditService.record("REQUEST_REJECT", "EMERGENCY_REQUEST", entity.getPublicId(),
@@ -125,7 +127,15 @@ public class EmergencyRequestService {
     @Transactional
     public View cancel(Long id, ReasonRequest request) {
         EmergencyRequest entity = find(id);
-        tenantAccess.requireOrganization(entity.getRequestingOrganization().getId());
+        Long organizationId = entity.getRequestingOrganization().getId();
+        tenantAccess.requireOrganization(organizationId);
+        AuthenticatedUser user = tenantAccess.currentUser();
+        if (!user.isPlatformAdmin()
+                && !user.hasPermissionForOrganization(Permission.REQUEST_CREATE, organizationId)
+                && !user.hasPermissionForOrganization(Permission.REQUEST_APPROVE, organizationId)) {
+            throw new com.lifelink.common.exception.UnauthorizedOperationException(
+                    "Missing permission to cancel this request");
+        }
         entity.cancel();
         recordEvent(entity, "CANCELLED", request.reason());
         auditService.record("REQUEST_CANCEL", "EMERGENCY_REQUEST", entity.getPublicId(),
@@ -135,9 +145,9 @@ public class EmergencyRequestService {
 
     @Transactional
     public View changePriority(Long id, PriorityRequest request) {
-        tenantAccess.requirePermission(Permission.REQUEST_APPROVE);
         EmergencyRequest entity = find(id);
-        tenantAccess.requireOrganization(entity.getRequestingOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(entity.getRequestingOrganization().getId(),
+                Permission.REQUEST_APPROVE);
         entity.changePriority(request.priority(), true);
         recordEvent(entity, "PRIORITY_CHANGE", "Priority set to " + request.priority());
         auditService.record("REQUEST_PRIORITY", "EMERGENCY_REQUEST", entity.getPublicId(),

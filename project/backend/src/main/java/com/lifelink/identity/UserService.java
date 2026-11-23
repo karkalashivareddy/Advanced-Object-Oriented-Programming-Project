@@ -45,6 +45,9 @@ public class UserService {
             case DISABLED -> user.disable();
             case PENDING_VERIFICATION -> user.markPendingVerification();
         }
+        if (status != User.Status.ACTIVE) {
+            authService.revokeAllForUser(user);
+        }
         auditService.record("USER_STATUS", "USER", user.getPublicId(), null, "SUCCESS",
                 Map.of("status", status.name()));
         return authService.toView(user);

@@ -1,6 +1,7 @@
 package com.lifelink.identity;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,5 +53,22 @@ public record AuthenticatedUser(
     public boolean hasOrganizationRole(Long organizationId, Role role) {
         return memberships.stream()
                 .anyMatch(m -> Objects.equals(m.organizationId(), organizationId) && m.role() == role);
+    }
+
+    /** Permissions effective at one organization. Global roles apply everywhere; membership roles apply only to their organization. */
+    public Set<Permission> permissionsForOrganization(Long organizationId) {
+        if (isPlatformAdmin()) {
+            return EnumSet.allOf(Permission.class);
+        }
+        Set<Permission> result = EnumSet.noneOf(Permission.class);
+        roles.forEach(role -> result.addAll(role.permissions()));
+        memberships.stream()
+                .filter(m -> Objects.equals(m.organizationId(), organizationId))
+                .forEach(m -> result.addAll(m.role().permissions()));
+        return Set.copyOf(result);
+    }
+
+    public boolean hasPermissionForOrganization(Permission permission, Long organizationId) {
+        return permission != null && permissionsForOrganization(organizationId).contains(permission);
     }
 }

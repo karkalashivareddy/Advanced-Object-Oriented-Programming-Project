@@ -8,6 +8,7 @@ import com.lifelink.donor.dto.DonationDtos.CreateRequest;
 import com.lifelink.donor.dto.DonationDtos.RejectRequest;
 import com.lifelink.donor.dto.DonationDtos.ScreeningRequest;
 import com.lifelink.donor.dto.DonationDtos.View;
+import com.lifelink.identity.AuthenticatedUser;
 import com.lifelink.identity.Permission;
 import com.lifelink.identity.TenantAccessService;
 import com.lifelink.identity.User;
@@ -52,19 +53,33 @@ public class DonationService {
 
     @Transactional(readOnly = true)
     public List<View> list(Long donorId, Long organizationId) {
-        tenantAccess.requirePermission(Permission.DONATION_READ);
+        AuthenticatedUser user = tenantAccess.currentUser();
         if (donorId != null) {
-            return repository.findByDonorIdOrderByDonatedAtDesc(donorId).stream().map(View::of).toList();
+            var donations = repository.findByDonorIdOrderByDonatedAtDesc(donorId);
+            if (user.isPlatformAdmin()) {
+                return donations.stream().map(View::of).toList();
+            }
+            DonorProfile donor = donorRepository.findById(donorId)
+                    .orElseThrow(() -> new ResourceNotFoundException("DonorProfile", donorId));
+            if (donor.getUser().getId().equals(user.userId())) {
+                return donations.stream().map(View::of).toList();
+            }
+            return donations.stream()
+                    .filter(donation -> user.belongsTo(donation.getOrganization().getId())
+                            && user.hasPermissionForOrganization(Permission.DONATION_READ,
+                                    donation.getOrganization().getId()))
+                    .map(View::of).toList();
         }
         Long org = tenantAccess.requireActiveOrganization(organizationId);
+        tenantAccess.requireOrganizationAndPermission(org, Permission.DONATION_READ);
         return repository.findByOrganizationIdOrderByDonatedAtDesc(org).stream().map(View::of).toList();
     }
 
     @Transactional(readOnly = true)
     public View get(Long id) {
-        tenantAccess.requirePermission(Permission.DONATION_READ);
         Donation donation = find(id);
-        tenantAccess.requireOrganization(donation.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(donation.getOrganization().getId(),
+                Permission.DONATION_READ);
         return View.of(donation);
     }
 
@@ -88,9 +103,9 @@ public class DonationService {
 
     @Transactional
     public View screen(Long id, ScreeningRequest request) {
-        tenantAccess.requirePermission(Permission.SCREENING_REVIEW);
         Donation donation = find(id);
-        tenantAccess.requireOrganization(donation.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(donation.getOrganization().getId(),
+                Permission.SCREENING_REVIEW);
         User actor = userRepository.findById(tenantAccess.currentUser().userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", tenantAccess.currentUser().userId()));
         ScreeningRecord screening = new ScreeningRecord(donation, request.passed(), request.notes(), actor);
@@ -103,11 +118,11 @@ public class DonationService {
 
     @Transactional
     public View approve(Long id, ApprovalRequest request) {
-        tenantAccess.requirePermission(Permission.DONATION_APPROVE);
         Donation donation = find(id);
-        tenantAccess.requireOrganization(donation.getOrganization().getId());
-        List<ScreeningRecord> screenings = screeningRepository.findByDonationId(id);
-        if (screenings.isEmpty() || !screenings.get(screenings.size() - 1).isPassed()) {
+        tenantAccess.requireOrganizationAndPermission(donation.getOrganization().getId(),
+                Permission.DONATION_APPROVE);
+        List<ScreeningRecord> screenings = screeningRepository.findByDonationIdOrderByCreatedAtDesc(id);
+        if (screenings.isEmpty() || !screenings.get(0).isPassed()) {
             throw new BusinessRuleViolationException("Donation cannot be approved without a passing screening");
         }
         donation.approve();
@@ -119,9 +134,9 @@ public class DonationService {
 
     @Transactional
     public View reject(Long id, RejectRequest request) {
-        tenantAccess.requirePermission(Permission.DONATION_APPROVE);
         Donation donation = find(id);
-        tenantAccess.requireOrganization(donation.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(donation.getOrganization().getId(),
+                Permission.DONATION_APPROVE);
         donation.reject();
         auditService.record("DONATION_REJECT", "DONATION", donation.getPublicId(),
                 donation.getOrganization().getId(), "SUCCESS", Map.of("reason", request.reason()));
@@ -130,9 +145,9 @@ public class DonationService {
 
     @Transactional(readOnly = true)
     public List<InventoryDtos.View> units(Long id) {
-        tenantAccess.requirePermission(Permission.DONATION_READ);
         Donation donation = find(id);
-        tenantAccess.requireOrganization(donation.getOrganization().getId());
+        tenantAccess.requireOrganizationAndPermission(donation.getOrganization().getId(),
+                Permission.DONATION_READ);
         return inventoryService.unitsForDonation(id);
     }
 

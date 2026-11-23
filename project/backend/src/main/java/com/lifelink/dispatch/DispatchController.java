@@ -37,7 +37,7 @@ public class DispatchController {
     @PostMapping
     public ApiResponse<View> create(@Valid @RequestBody CreateRequest request,
                                     @RequestHeader(value = "Idempotency-Key", required = false) String key) {
-        return ApiResponse.ok(service.create(request), "Dispatch created");
+        return ApiResponse.ok(service.create(request, key), "Dispatch created");
     }
 
     @PostMapping("/{id}/depart")

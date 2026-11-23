@@ -10,7 +10,8 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> 
     @Query("""
             select e from OutboxEvent e
             where e.status in (com.lifelink.notification.OutboxEvent$Status.PENDING,
-                               com.lifelink.notification.OutboxEvent$Status.FAILED)
+                               com.lifelink.notification.OutboxEvent$Status.FAILED,
+                               com.lifelink.notification.OutboxEvent$Status.PROCESSING)
               and e.nextAttemptAt <= :now
             order by e.nextAttemptAt asc
             """)
