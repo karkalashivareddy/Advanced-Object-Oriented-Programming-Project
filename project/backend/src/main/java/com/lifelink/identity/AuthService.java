@@ -1,0 +1,216 @@
+package com.lifelink.identity;
+
+import com.lifelink.audit.AuditService;
+import com.lifelink.common.exception.AuthenticationFailedException;
+import com.lifelink.common.exception.BusinessRuleViolationException;
+import com.lifelink.common.exception.ResourceNotFoundException;
+import com.lifelink.identity.dto.AuthDtos.AuthResponse;
+import com.lifelink.identity.dto.AuthDtos.ChangePasswordRequest;
+import com.lifelink.identity.dto.AuthDtos.LoginRequest;
+import com.lifelink.identity.dto.AuthDtos.OrganizationMembershipView;
+import com.lifelink.identity.dto.AuthDtos.RefreshRequest;
+import com.lifelink.identity.dto.AuthDtos.RegisterRequest;
+import com.lifelink.identity.dto.AuthDtos.UserView;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class AuthService {
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final int LOCK_THRESHOLD = 5;
+    private static final Duration LOCK_DURATION = Duration.ofMinutes(15);
+
+    private final UserRepository userRepository;
+    private final OrganizationMembershipRepository membershipRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final LoginAttemptRepository loginAttemptRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final AuditService auditService;
+    private final long refreshTokenDays;
+
+    public AuthService(UserRepository userRepository,
+                       OrganizationMembershipRepository membershipRepository,
+                       RefreshTokenRepository refreshTokenRepository,
+                       LoginAttemptRepository loginAttemptRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService,
+                       AuditService auditService,
+                       @Value("${security.jwt.refresh-token-days}") long refreshTokenDays) {
+        this.userRepository = userRepository;
+        this.membershipRepository = membershipRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.loginAttemptRepository = loginAttemptRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.auditService = auditService;
+        this.refreshTokenDays = refreshTokenDays;
+    }
+
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        String email = request.email().trim().toLowerCase();
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessRuleViolationException("An account with this email already exists");
+        }
+        User user = new User(email, passwordEncoder.encode(request.password()), request.fullName(),
+                request.phone(), User.Status.ACTIVE, Set.of(Role.DONOR));
+        userRepository.save(user);
+        auditService.record("REGISTER", "USER", user.getPublicId(), null, "SUCCESS", Map.of());
+        return issueTokens(user);
+    }
+
+    @Transactional
+    public AuthResponse login(LoginRequest request) {
+        String email = request.email().trim().toLowerCase();
+        LoginAttempt attempt = loginAttemptRepository.findByEmail(email).orElseGet(() -> new LoginAttempt(email));
+        Instant now = Instant.now();
+        if (attempt.isLocked(now)) {
+            auditService.record("LOGIN", "USER", email, null, "FAILURE", Map.of("reason", "LOCKED"));
+            throw new AuthenticationFailedException("Account temporarily locked due to failed login attempts");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    attempt.registerFailure(now, LOCK_THRESHOLD, LOCK_DURATION);
+                    loginAttemptRepository.save(attempt);
+                    auditService.record("LOGIN", "USER", email, null, "FAILURE", Map.of("reason", "UNKNOWN_USER"));
+                    return new AuthenticationFailedException("Invalid email or password");
+                });
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            attempt.registerFailure(now, LOCK_THRESHOLD, LOCK_DURATION);
+            loginAttemptRepository.save(attempt);
+            auditService.record("LOGIN", "USER", user.getPublicId(), null, "FAILURE", Map.of("reason", "BAD_PASSWORD"));
+            throw new AuthenticationFailedException("Invalid email or password");
+        }
+        if (user.getStatus() != User.Status.ACTIVE) {
+            auditService.record("LOGIN", "USER", user.getPublicId(), null, "FAILURE", Map.of("reason", user.getStatus().name()));
+            throw new AuthenticationFailedException("Account is not active");
+        }
+        attempt.clear();
+        loginAttemptRepository.save(attempt);
+        auditService.record("LOGIN", "USER", user.getPublicId(), null, "SUCCESS", Map.of());
+        return issueTokens(user);
+    }
+
+    @Transactional(noRollbackFor = AuthenticationFailedException.class)
+    public AuthResponse refresh(RefreshRequest request) {
+        String hash = hash(request.refreshToken());
+        RefreshToken stored = refreshTokenRepository.findByTokenHash(hash)
+                .orElseThrow(() -> new AuthenticationFailedException("Invalid refresh token"));
+        Instant now = Instant.now();
+        if (stored.getRevokedAt() != null) {
+            revokeAll(stored.getUser(), now);
+            auditService.record("REFRESH_REUSE", "USER", stored.getUser().getPublicId(), null, "FAILURE", Map.of());
+            throw new AuthenticationFailedException("Refresh token reuse detected; all sessions revoked");
+        }
+        if (!stored.isActive(now)) {
+            throw new AuthenticationFailedException("Refresh token has expired");
+        }
+        if (stored.getUser().getStatus() != User.Status.ACTIVE) {
+            throw new AuthenticationFailedException("Account is not active");
+        }
+        stored.revoke(now);
+        auditService.record("REFRESH", "USER", stored.getUser().getPublicId(), null, "SUCCESS", Map.of());
+        return issueTokens(stored.getUser());
+    }
+
+    @Transactional
+    public void logout(String rawToken) {
+        if (rawToken == null || rawToken.isBlank()) {
+            return;
+        }
+        refreshTokenRepository.findByTokenHash(hash(rawToken))
+                .ifPresent(token -> token.revoke(Instant.now()));
+        auditService.record("LOGOUT", "USER", "", null, "SUCCESS", Map.of());
+    }
+
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new AuthenticationFailedException("Current password is incorrect");
+        }
+        if (request.currentPassword().equals(request.newPassword())) {
+            throw new BusinessRuleViolationException("New password must differ from the current password");
+        }
+        user.changePassword(passwordEncoder.encode(request.newPassword()));
+        revokeAll(user, Instant.now());
+        auditService.record("PASSWORD_CHANGE", "USER", user.getPublicId(), null, "SUCCESS", Map.of());
+    }
+
+    @Transactional(readOnly = true)
+    public UserView me(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        return toView(user);
+    }
+
+    public UserView toView(User user) {
+        Set<OrganizationMembershipView> memberships = membershipRepository.findByUserId(user.getId()).stream()
+                .map(m -> new OrganizationMembershipView(m.getOrganization().getId(),
+                        m.getOrganization().getName(), m.getRole()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return UserView.of(user, user.effectivePermissions(), memberships);
+    }
+
+    @Transactional(readOnly = true)
+    public AuthenticatedUser principal(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        Set<OrganizationMembershipView> memberships = membershipRepository.findByUserId(user.getId()).stream()
+                .map(m -> new OrganizationMembershipView(m.getOrganization().getId(),
+                        m.getOrganization().getName(), m.getRole()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return new AuthenticatedUser(user.getId(), user.getEmail(), user.getFullName(), user.getRoles(),
+                user.effectivePermissions(),
+                memberships.stream().map(OrganizationMembershipView::organizationId).collect(Collectors.toSet()),
+                memberships.stream()
+                        .map(m -> new AuthenticatedUser.OrganizationRole(m.organizationId(), m.organizationName(), m.role()))
+                        .collect(Collectors.toSet()));
+    }
+
+    private AuthResponse issueTokens(User user) {
+        AuthenticatedUser principal = principal(user.getId());
+        String access = jwtService.generateAccessToken(principal);
+        String rawRefresh = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(randomBytes(32));
+        RefreshToken token = new RefreshToken(user, hash(rawRefresh),
+                Instant.now().plus(Duration.ofDays(refreshTokenDays)));
+        refreshTokenRepository.save(token);
+        return new AuthResponse(access, rawRefresh, jwtService.accessTokenSeconds(), toView(user));
+    }
+
+    private void revokeAll(User user, Instant now) {
+        refreshTokenRepository.findByUserId(user.getId()).forEach(t -> t.revoke(now));
+    }
+
+    private byte[] randomBytes(int length) {
+        byte[] bytes = new byte[length];
+        RANDOM.nextBytes(bytes);
+        return bytes;
+    }
+
+    private String hash(String raw) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(raw.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Unable to hash token", ex);
+        }
+    }
+}

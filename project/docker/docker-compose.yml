@@ -33,30 +33,6 @@ services:
     mem_limit: 512m
     cpus: 0.75
 
-  redis:
-    image: redis:7-alpine
-    container_name: lifelink-redis
-    restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
-    volumes:
-      - redis_data:/data
-    # Localhost-only; remove this ports block for full network isolation.
-    ports:
-      - target: 6379
-        published: ${REDIS_PORT:-6379}
-        host_ip: 127.0.0.1
-        protocol: tcp
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
-    networks:
-      - lifelink_net
-    mem_limit: 256m
-    cpus: 0.5
-
   backend:
     build:
       context: ../backend
@@ -72,8 +48,6 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-lifelink}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lifelink}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lifelink_dev_only}
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
       JAVA_OPTS: ${JAVA_OPTS:--Xms128m -Xmx512m -XX:MaxRAMPercentage=65.0}
     ports:
       - target: 8080
@@ -82,10 +56,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
-      # TCP check works even before Spring Boot Actuator is added to the backend.
+      # TCP liveness probe only; /actuator/health is verified by backend tests.
       test: ["CMD-SHELL", "nc -z 127.0.0.1 8080 || exit 1"]
       interval: 10s
       timeout: 5s
@@ -125,7 +97,6 @@ services:
 
 volumes:
   postgres_data:
-  redis_data:
 
 networks:
   lifelink_net:

@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: lifelink
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:mem:lifelink;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DEFAULT_NULL_ORDERING=HIGH}
+    username: ${DATABASE_USER:sa}
+    password: ${DATABASE_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: 2
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 20
+        query:
+          fail_on_pagination_over_collection_fetch: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+  websocket:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  mvc:
+    problemdetails:
+      enabled: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  compression:
+    enabled: true
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:local-development-only-secret-change-me-lifelink-2026}
+    access-token-minutes: ${JWT_ACCESS_MINUTES:15}
+    refresh-token-days: ${JWT_REFRESH_DAYS:7}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+lifelink:
+  seed:
+    enabled: ${SEED_DEMO_DATA:true}
+  allocation:
+    rule-version: "1.0-local-conservative"
+    compatibility-mode: STRICT_SAME_GROUP
+    clinical-approval-required: true
+  rate-limit:
+    auth-max-attempts: 10
+    auth-window-seconds: 60
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.lifelink: INFO
+  pattern:
+    correlation: "[%X{correlationId:-}] "

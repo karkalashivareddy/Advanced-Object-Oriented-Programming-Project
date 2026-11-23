@@ -164,7 +164,7 @@ flowchart LR
     CI --> CDN
 ```
 
-- **Local development:** Maven Wrapper (Java 21 bytecode target), Node/Vite dev server proxying `/api/v1`, optional Docker Compose PostgreSQL and Redis. Fast tests use H2 in PostgreSQL mode and require no Docker.
+- **Local development:** Maven Wrapper (Java 21 bytecode target), Node/Vite dev server proxying `/api/v1`, optional Docker Compose PostgreSQL. Fast tests use H2 in PostgreSQL mode and require no Docker. Redis is not used; inventory consistency relies on database locks and persisted idempotency keys.
 - **Build:** one executable jar; frontend produces static assets; Flyway migrations run at startup before application traffic.
 - **Configuration:** environment variables for datasource, JWT signing key, CORS origins, and profile selection; no secrets committed.
 - **Deployed profiles:** `local`, `test`, `prod` (prod is a target, not a claimed deployment). Health probes gate traffic; logs and metrics are collected by the hosting environment.

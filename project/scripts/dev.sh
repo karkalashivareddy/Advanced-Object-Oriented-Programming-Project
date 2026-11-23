@@ -30,7 +30,6 @@ echo
 echo "==> Health / log commands (run from $DOCKER_DIR)"
 echo "  docker compose logs -f backend frontend"
 echo "  docker compose exec -T db pg_isready -U \${POSTGRES_USER:-lifelink} -d \${POSTGRES_DB:-lifelink}"
-echo "  docker compose exec -T redis redis-cli ping"
 echo "  docker compose exec -T backend nc -z 127.0.0.1 8080 && echo backend-up"
 echo "  docker compose down        # stop, keep data"
 echo "  docker compose down -v     # stop and DELETE local data"

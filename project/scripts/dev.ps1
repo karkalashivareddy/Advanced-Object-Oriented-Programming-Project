@@ -30,7 +30,6 @@ try {
     Write-Host "==> Health / log commands (run from $dockerDir)"
     Write-Host '  docker compose logs -f backend frontend'
     Write-Host '  docker compose exec -T db pg_isready -U lifelink -d lifelink'
-    Write-Host '  docker compose exec -T redis redis-cli ping'
     Write-Host '  docker compose exec -T backend nc -z 127.0.0.1 8080'
     Write-Host '  docker compose down        # stop, keep data'
     Write-Host '  docker compose down -v     # stop and DELETE local data'

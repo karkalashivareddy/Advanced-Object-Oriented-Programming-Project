@@ -1,8 +1,11 @@
 # LifeLink Deployment & Local Development Guide
 
-> Status: **scaffolding / documentation only**. Nothing in this repository has
-> been deployed to any environment. All commands below are for local development
-> unless explicitly described as a production checklist item.
+> Status: **implementation present; no deployment performed**. The backend,
+> frontend, database migrations and tests exist in `project/`. Backend build,
+> Spring context startup and 17 automated tests were verified locally. Docker
+> image builds and the full Compose stack were **not** executed in the authoring
+> environment. All commands below are for local development unless explicitly
+> described as a production checklist item.
 
 ## 1. Prerequisites
 
@@ -38,8 +41,10 @@ docker compose ps
 docker compose logs -f backend
 ```
 
-The helper scripts start PostgreSQL 16, Redis 7, the Spring Boot backend and
-the nginx-served SPA, then print the URLs and useful health commands.
+The helper scripts start PostgreSQL 16, the Spring Boot backend and the
+nginx-served SPA, then print the URLs and useful health commands. No Redis
+service is required: inventory concurrency is enforced with pessimistic
+database locks and allocation idempotency is persisted in PostgreSQL.
 
 ### Default local endpoints
 
@@ -50,10 +55,9 @@ the nginx-served SPA, then print the URLs and useful health commands.
 | Backend health | <http://localhost:8080/actuator/health> | Only if Spring Boot Actuator is enabled |
 | Frontend health | <http://localhost:5173/healthz> | Always available (nginx) |
 | PostgreSQL | `127.0.0.1:5432` | Localhost-only publish; remove `ports` block to close |
-| Redis | `127.0.0.1:6379` | Localhost-only publish; remove `ports` block to close |
 
-Inside the Compose network the services address each other by name: `db:5432`,
-`redis:6379`, `backend:8080`. The SPA calls same-origin `/api/...`, which nginx
+Inside the Compose network the services address each other by name: `db:5432`
+and `backend:8080`. The SPA calls same-origin `/api/...`, which nginx
 proxies to `http://backend:8080/api/...`; this avoids CORS in local dev.
 
 Useful commands:
@@ -63,17 +67,17 @@ cd project/docker
 docker compose ps
 docker compose logs -f backend frontend
 docker compose exec db pg_isready -U lifelink -d lifelink
-docker compose exec redis redis-cli ping
 docker compose exec backend nc -z 127.0.0.1 8080 && echo backend-up
+curl http://localhost:8080/actuator/health
 docker compose down              # keep named volumes
-docker compose down -v           # DESTROYS local database and Redis data
+docker compose down -v           # DESTROYS local database data
 ```
 
 ### Vite dev server (optional, no containers for frontend)
 
 Run `npm run dev` in `project/frontend`; Vite serves on 5173 and proxies `/api`
 to `http://localhost:8080`. You can still run only the backing services with
-`docker compose up -d db redis backend` from `project/docker`.
+`docker compose up -d db backend` from `project/docker`.
 
 ## 3. Environment variable reference
 
@@ -85,15 +89,14 @@ Defaults shown are the **development-only** values from `docker/.env.example`.
 | `POSTGRES_USER` | `lifelink` | db, backend | Database user |
 | `POSTGRES_PASSWORD` | `lifelink_dev_only` | db, backend | Dev password — replace in any real environment |
 | `POSTGRES_PORT` | `5432` | db | Host port, bound to `127.0.0.1` only |
-| `REDIS_PORT` | `6379` | redis | Host port, bound to `127.0.0.1` only |
 | `BACKEND_PORT` | `8080` | backend | Host port for the API |
 | `FRONTEND_PORT` | `5173` | frontend | Host port for the SPA |
 | `JAVA_OPTS` | `-Xms128m -Xmx512m -XX:MaxRAMPercentage=65.0` | backend | JVM tuning; container has a 768 MB limit |
 | `VITE_API_BASE_URL` | `/api` | frontend build arg | Base path baked into the SPA at build time |
 
 The backend container always sets `SPRING_PROFILES_ACTIVE=postgres` and derives
-`SPRING_DATASOURCE_*` / `SPRING_DATA_REDIS_*` from the variables above. Do not
-hard-code secrets in `docker-compose.yml` or the Dockerfiles.
+`SPRING_DATASOURCE_*` from the variables above. Do not hard-code secrets in
+`docker-compose.yml` or the Dockerfiles.
 
 ## 4. Production hardening checklist
 
@@ -106,9 +109,9 @@ the following must be addressed:
 - [ ] **Secrets management** — replace `.env` with injected secrets (Docker
       secrets, Kubernetes Secrets, or a vault). Rotate the dev password; use
       strong, unique credentials. Never commit `.env` (see `project/.gitignore`).
-- [ ] **Network segmentation** — remove the localhost `ports` blocks for `db`
-      and `redis`; put them on an internal-only network. Only the reverse proxy
-      and backend should be reachable.
+- [ ] **Network segmentation** — remove the localhost `ports` block for `db`;
+      put it on an internal-only network. Only the reverse proxy and backend
+      should be reachable.
 - [ ] **Non-root enforcement** — both application images already drop to
       unprivileged users (`app` UID 10001 for backend, `nginx` for frontend).
       Verify the orchestrator does not override this and apply read-only root
@@ -117,8 +120,7 @@ the following must be addressed:
       nosniff`, `X-Frame-Options`, `Referrer-Policy` at the proxy (the dev nginx
       config deliberately stays minimal).
 - [ ] **Backups and restore drills** — scheduled PostgreSQL logical/physical
-      backups with tested restores; Redis persistence is `appendonly yes` in
-      dev and needs a real retention/HA decision in production.
+      backups with tested restores and a documented retention/HA policy.
 - [ ] **Observability** — enable Spring Boot Actuator health/metrics, structured
       logs, centralized log shipping, metrics and alerting (e.g. Prometheus +
       Grafana). The current Docker `HEALTHCHECK` is only a liveness probe.
@@ -139,20 +141,22 @@ the following must be addressed:
 2. **CI workflow must be installed** into root `.github/workflows/` before GitHub
    will run it — see [CI.md](CI.md). The root directory is intentionally not
    created by the project subtree.
-3. **Dev credentials are intentionally weak** and the DB/Redis ports are
-   published on `127.0.0.1`. This is acceptable only on a trusted machine.
-4. **Backend healthcheck is a TCP check**, not an application readiness check.
-   Switch it to `/actuator/health` once Actuator is confirmed present.
-5. **nginx config is embedded in the frontend Dockerfile** because the frontend
+3. **Dev credentials are intentionally weak** and the database port is published
+   on `127.0.0.1`. This is acceptable only on a trusted machine.
+4. **Backend Compose healthcheck is a TCP liveness check**, not an application
+   readiness check. Actuator is present and `/actuator/health` was verified by
+   the backend integration suite, but the Compose check has not been switched
+   to an HTTP probe because Docker was unavailable in the authoring environment.
+5. **Docker image builds and Compose startup were not executed locally.** The
+   Docker daemon was unavailable (`npipe:////./pipe/dockerDesktopLinuxEngine`),
+   so container behavior is structurally documented but not runtime-verified.
+6. **nginx config is embedded in the frontend Dockerfile** because the frontend
    source directory is owned by another workstream. If you need a custom
    `nginx.conf`, move it into `project/frontend/` and switch to `COPY`.
-6. **No `.dockerignore` files** are provided (frontend/backend source dirs are
-   owned by other workstreams). Build contexts may include local
-   `node_modules`/`target`; `npm ci` and the Maven build still produce correct
-   images, but builds can be slower. Adding `.dockerignore` is recommended.
-7. **Vite output path is assumed to be `dist`**, the default. If the frontend
+7. **No `.dockerignore` files** are provided in the frontend/backend directories.
+   Build contexts may include local `node_modules`/`target`, so builds can be
+   slower even though `npm ci` and the Maven build still produce correct images.
+8. **Vite output path is assumed to be `dist`**, the default. If the frontend
    changes it, update the `COPY --from=build` line in `project/frontend/Dockerfile`.
-8. **Maven wrapper must exist** at `project/backend/mvnw` with `.mvn/` for the
-   Docker build and CI to work; the backend engineer owns those files.
 9. **Windows Make** requires a POSIX make implementation (e.g. Git Bash or
    Chocolatey `make`); use `dev.ps1` on native PowerShell instead.
