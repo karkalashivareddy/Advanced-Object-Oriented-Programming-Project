@@ -1,17 +1,17 @@
 # LifeLink Verified Test Results
 
-Date: 2026-11-23
+Date: 2026-11-23 (final review-fix verification)
 
 Repository area: `project/` only. Root `README.md`, `LAB-WORK/`, and original
-history were not modified.
+history were not modified. No push was performed.
 
 ## Summary
 
 | Workstream | Command | Result |
 | --- | --- | --- |
-| Backend | `./mvnw.cmd test` | **17 tests, 0 failures, 0 errors** |
+| Backend | `.\mvnw.cmd test -q` | **26 tests, 0 failures, 0 errors** |
 | Frontend | `npm ci` | **198 packages installed, 0 vulnerabilities** |
-| Frontend | `npm test` | **17 tests in 3 files passed** |
+| Frontend | `npm test` | **18 tests in 3 files passed** |
 | Frontend | `npm run build` | **TypeScript + Vite production build succeeded** |
 | Frontend | `npm audit` | **0 vulnerabilities** |
 
@@ -32,76 +32,103 @@ history were not modified.
 
 ## Backend detail
 
-Test breakdown from `target/surefire-reports`:
+Final Surefire breakdown:
 
 | Class | Tests | Result |
 | --- | --- | --- |
 | `com.lifelink.domain.BloodUnitTest` | 6 | passed |
 | `com.lifelink.domain.EmergencyRequestTest` | 3 | passed |
-| `com.lifelink.integration.SchemaAndApiIntegrationTest` | 8 | passed |
+| `com.lifelink.integration.SchemaAndApiIntegrationTest` | 13 | passed |
+| `com.lifelink.notification.StompAuthenticationInterceptorTest` | 4 | passed |
+
+The Spring integration run applied Flyway migrations `V1`, `V2`, and the new
+`V3__dispatch_idempotency.sql`, then passed Hibernate `ddl-auto=validate`.
 
 ### Verified by the integration suite
 
-- Full Spring context starts with `test` + `dev` profiles.
-- Flyway validates and applies `V1__core_schema.sql` and
-  `V2__operational_schema.sql` to an empty schema.
-- Hibernate `ddl-auto=validate` accepts every JPA mapping.
-- `GET /actuator/health` returns `200` with status `UP`.
-- Unauthenticated protected requests return `401` with
-  `AUTHENTICATION_REQUIRED` and a correlation ID.
-- Seed login succeeds; bad credentials return `401` with
-  `AUTHENTICATION_FAILED`.
-- Refresh tokens rotate; replaying an old token returns `401` and revokes the
-  whole token family, so the replacement token is also rejected.
-- A donor role is denied analytics access with `403`, and a hospital user is
-  denied access to a blood-bank organization with `TENANT_ACCESS_DENIED`.
-- Seeded organizations, users, inventory and requests are queryable.
-- The allocation suggestion → confirm → reservation confirm → dispatch →
-  depart → deliver workflow reaches `FULFILLED`, marks the unit `DELIVERED`, and
-  remains idempotent when the same confirmation is repeated.
-- Two simultaneous confirmations with the same idempotency key return the same
-  reservation; the unit and request both finish in `RESERVED`.
+- Full Spring context starts with `test` + `dev` profiles and embedded Tomcat.
+- `/actuator/health` returns `200 UP`; unauthenticated protected requests return
+  `401 AUTHENTICATION_REQUIRED`; malformed bearer tokens return
+  `401 TOKEN_INVALID` with a correlation ID.
+- Seed login succeeds; bad credentials return `401 AUTHENTICATION_FAILED`.
+- Refresh tokens rotate, replay revokes the whole token family, and disabled
+  accounts cannot use existing access or refresh tokens.
+- Authorization failures return `UNAUTHORIZED_OPERATION` or
+  `TENANT_ACCESS_DENIED`; a donor is denied analytics, and a hospital user is
+  denied access to a blood-bank organization.
+- Cross-tenant allocation confirmation is denied even when the caller has the
+  required permission in their own organization; allocation suggestions do not
+  expose blood-bank units to a hospital-only caller.
+- Donor profile, consent, appointment, and donation-list lookups do not expose
+  another organization's donor PII; the donor can read their own profile.
+- Global roles are not mutated by organization membership, while the
+  organization-scoped permission is still granted.
+- The allocation → reservation → dispatch → depart → deliver workflow reaches
+  `FULFILLED` and `DELIVERED`; allocation and dispatch idempotency replays return
+  the original resources; a missing dispatch `Idempotency-Key` is rejected.
+- Two simultaneous confirmations with the same key create one reservation.
+- Allocation confirmation rejects incompatible component types and a unit count
+  that differs from the requested quantity.
+- The STOMP interceptor unit tests cover missing JWT, valid JWT principal
+  resolution, rejection of another user's queue, and acceptance of the caller's
+  generic queue.
 
-### Defects found and fixed during verification
+### Independent review findings resolved in this batch
 
-1. `outbox_events` lacked the `public_id` column required by `BaseEntity`, which
-   broke Hibernate schema validation at startup.
-2. `SecurityConfig` defined `PasswordEncoder` while constructor-injecting the
-   JWT filter, creating a circular dependency. The encoder moved to its own
-   configuration class.
-3. An unused Spring Data Redis dependency produced a failing health indicator
-   and `503` on `/actuator/health`. It was removed from code, Compose, and docs.
-4. `AuthService.principal()` dereferenced a lazy `Organization` proxy outside a
-   transaction, breaking JWT authentication for some users. It now opens a
-   read-only transaction.
-5. Refresh-token reuse revocation was rolled back with the thrown exception.
-   `refresh()` now commits the revocation and audit record.
-6. Concurrent allocation confirmations could race past the idempotency check.
-   Confirmation now locks the emergency-request row, and reservation creation
-   re-checks the idempotency key after acquiring the blood-unit lock.
-7. A repeated allocation after the request left `APPROVED` incorrectly failed;
-   the persisted idempotency result is now checked before the state guard.
+| Severity | Finding | Verification |
+| --- | --- | --- |
+| High | Cross-tenant allocation and supplier scoping | Negative integration test |
+| High | Unit count and component/blood-group compatibility | Negative integration test |
+| High | Disabled-user access/refresh tokens accepted | Negative integration test |
+| High | Refresh-token race under concurrent rotation | Row lock + frontend single-flight test |
+| High | STOMP CONNECT/SUBSCRIBE unauthenticated | 4 interceptor unit tests |
+| High | Donor PII/IDOR and donation-list leakage | Negative integration test |
+| High | Organization membership mutated global roles | Negative integration test |
+| Medium | Dispatch creation was not idempotent | `V3` migration + replay/missing-header tests |
+| Medium | JWT issuer/audience and dev-secret fail-fast | Context startup + invalid-token test |
+| Medium | Stale `PROCESSING` outbox events were never retried | Repository query includes `PROCESSING` |
+| Medium | Frontend role fallback diverged from backend `Role.java` | Aligned with backend enum; typecheck/build |
+| Medium | API contract drift | Contract rewritten against controllers/DTOs |
+| Low | Makefile `dev`/`lint` targets were broken | `dev` now starts Vite; `lint` replaced by `typecheck` |
+
+No independent re-review was performed after these fixes. The verdict in
+[`../reviews/FINAL_INDEPENDENT_REVIEW.md`](../reviews/FINAL_INDEPENDENT_REVIEW.md)
+describes what is and is not claimed.
 
 ## Frontend detail
 
-- `npm ci` was run from the committed `package-lock.json`, matching CI.
-- Vitest 3.2.7 was initially resolved and reported three advisories, all in
-  dev-only test tooling (`vitest`, `@vitest/mocker`, `tinypool`). The project was
-  upgraded to Vitest 5.1.1; `npm audit` now reports zero vulnerabilities and the
-  production dependency tree alone also reports zero.
-- Test files: `src/lib/api.test.ts`, `src/lib/routeGuard.test.ts`, and
+- `npm ci` was run from the committed `package-lock.json`. npm emitted an
+  `allow-scripts` warning for esbuild's optional postinstall binary but all
+  commands succeeded and `npm audit` reported zero vulnerabilities.
+- Test files: `src/lib/api.test.ts` (including the new concurrent-401
+  single-flight regression), `src/lib/routeGuard.test.ts`, and
   `src/components/ui/components.test.tsx`.
-- `npm run build` produced `dist/` with a 366.25 kB main chunk (112.89 kB gzip)
+- `npm run build` produced `dist/` with a 366.37 kB main chunk (112.90 kB gzip)
   and a 476.63 kB analytics chunk (135.38 kB gzip).
+
+## Previously fixed defects (original implementation batch)
+
+1. `outbox_events` lacked the `public_id` column required by `BaseEntity`.
+2. `SecurityConfig` defined `PasswordEncoder` while constructor-injecting the
+   JWT filter, creating a circular dependency.
+3. An unused Spring Data Redis dependency produced a failing health indicator.
+4. `AuthService.principal()` dereferenced a lazy `Organization` proxy outside a
+   transaction.
+5. Refresh-token reuse revocation was rolled back with the thrown exception.
+6. Concurrent allocation confirmations could race past the idempotency check.
+7. A repeated allocation after the request left `APPROVED` incorrectly failed.
 
 ## Not verified in this environment
 
-- Docker image builds or `docker compose up`: the Docker daemon was unavailable.
+- Docker image builds or `docker compose up`: the Docker daemon was unavailable
+  (`npipe:////./pipe/dockerDesktopLinuxEngine`).
 - The PostgreSQL `postgres` profile: local runs used H2 in PostgreSQL mode.
-- GitHub Actions execution: the workflow must be copied to root
-  `.github/workflows/` first.
-- Real browser/E2E interaction with the SPA: coverage is jsdom-based.
-- External email/SMS delivery: no provider is configured and the adapter
-  deliberately reports failure rather than claiming delivery.
+- GitHub Actions execution: the workflow remains in `project/deployment/` and
+  must be copied to repository-root `.github/workflows/` before GitHub runs it.
+- Real-browser/E2E interaction and a live STOMP handshake: frontend tests use
+  jsdom/mocked messaging, and the WebSocket coverage is interceptor-level.
+- External email/SMS delivery: no provider is configured; the adapter reports
+  failure rather than fabricating delivery.
+- Load/soak testing, backup/restore, and production secret management.
 
 These limitations are tracked in [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md).

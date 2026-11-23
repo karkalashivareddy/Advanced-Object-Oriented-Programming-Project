@@ -1,10 +1,11 @@
 # LifeLink developer entry points. Run from the repository root or this directory.
 # Use `make -C project <target>` from the repository root.
 
-.PHONY: dev build test lint clean
+.PHONY: dev build test typecheck clean
 
 dev:
-	bash ./scripts/dev.sh
+	@echo "Starting the frontend dev server; start the backend separately with ./mvnw spring-boot:run"
+	npm --prefix frontend run dev
 
 build:
 	chmod +x backend/mvnw
@@ -17,10 +18,8 @@ test:
 	cd backend && ./mvnw -B verify
 	cd frontend && npm test
 
-lint:
-	chmod +x backend/mvnw
-	cd backend && ./mvnw -B checkstyle:check
-	cd frontend && npm run lint
+typecheck:
+	cd frontend && npm run typecheck
 
 clean:
 	rm -rf backend/target frontend/dist

@@ -18,46 +18,65 @@ intentionally avoids claiming behavior that was not exercised.
    must be copied to the repository-root `.github/workflows/` directory before
    GitHub will run it. The workflow itself was not executed.
 5. **Windows Make is unavailable** in this environment. The Makefile was checked
-   structurally; use `project/scripts/dev.ps1` on native PowerShell.
+   structurally: `dev` starts the Vite frontend (the backend must be started
+   separately), `typecheck` runs TypeScript, and `build`/`test` require POSIX
+   shells. `scripts/dev.sh` additionally requires Docker and bash.
 6. **TLS, reverse-proxy hardening, and secret management are not configured.**
-   The JWT secret and database credentials use development defaults. See
-   `docs/deployment/DEPLOYMENT_GUIDE.md` for the production checklist.
+   The JWT secret and database credentials use development defaults. Outside
+   `dev`/`test` profiles the JWT service fails fast unless `JWT_SECRET` is set,
+   but no production secret store is included.
+7. **No independent re-review after the final fix batch.** Two independent
+   reviews marked the earlier state `NOT_READY`. Their findings were fixed and
+   verified by automated tests, but no third reviewer re-audited the final
+   tree; see `docs/reviews/FINAL_INDEPENDENT_REVIEW.md`.
 
 ## Security and data
 
-7. **Development seed accounts use well-known weak passwords.** They are
+8. **Development seed accounts use well-known weak passwords.** They are
    enabled by default for local use and must be disabled or replaced outside a
    throwaway environment.
-8. **No external email/SMS provider is configured.** `UnconfiguredProviderChannel`
-   explicitly returns failure; the outbox records notification intents in the
-   database and the in-app channel uses the local WebSocket broker. No delivery
-   is fabricated.
-9. **Frontend permission checks are UX-only.** Navigation and controls are
-   hidden by role/permission, but the backend remains the authorization
-   authority and enforces every endpoint and organization scope.
-10. **Refresh tokens are stored in `sessionStorage`; access tokens are in memory
-    only.** This limits persistence but means a new tab or browser restart
-    requires a refresh/bootstrap cycle. No token is written to `localStorage`.
-11. **Concurrency guarantees assume one relational database.** Pessimistic locks
-    and persisted idempotency keys are correct for the current single-database
-    design. A multi-primary or sharded deployment needs a fresh concurrency
-    review.
+9. **No external email/SMS provider is configured.** `UnconfiguredProviderChannel`
+   returns failure; the outbox records notification intents in the database and
+   the in-app channel uses the local WebSocket broker. No delivery is
+   fabricated.
+10. **Frontend permission checks are UX-only.** Navigation and controls are
+    hidden by role/permission, but the backend remains the authorization
+    authority and enforces every endpoint and organization scope.
+11. **Refresh tokens are stored in `sessionStorage`; access tokens are in memory
+    only.** Concurrent 401s within one tab share a single rotation, but the
+    single-flight promise is tab-local: separate tabs can still rotate the same
+    refresh token independently. No token is written to `localStorage`.
+12. **Concurrency guarantees assume one relational database.** Pessimistic
+    locks and persisted idempotency keys are correct for the current
+    single-database design. A multi-primary or sharded deployment needs a fresh
+    concurrency review.
+13. **Outbox recovery is single-node.** `PROCESSING` events whose next attempt
+    is due are reclaimed by retries, but there is no distributed lease or leader
+    election; multiple application instances need a coordinated dispatcher or a
+    fresh design review.
+14. **WebSocket coverage is interceptor-level.** STOMP CONNECT authentication
+    and subscription restrictions are unit-tested; a live browser/SockJS
+    handshake against a deployed broker was not exercised.
 
 ## Test coverage
 
-12. **No real-browser E2E suite.** Frontend tests use Vitest + jsdom; API flows
+15. **No real-browser E2E suite.** Frontend tests use Vitest + jsdom; API flows
     are covered by backend HTTP integration tests instead.
-13. **No load or soak testing.** The concurrency test verifies idempotency under
+16. **No load or soak testing.** The concurrency test verifies idempotency under
     two simultaneous requests, not throughput or long-running stability.
-14. **No backup/restore drill.** PostgreSQL backups and retention are listed in
+17. **No backup/restore drill.** PostgreSQL backups and retention are listed in
     the deployment checklist but were not implemented or tested.
+18. **No external security audit or penetration test** was performed. The
+    negative integration tests cover the review findings, not the full attack
+    surface.
 
 ## Tooling notes
 
-15. **npm prints an `allow-scripts` warning for esbuild's postinstall hook.**
+19. **npm prints an `allow-scripts` warning for esbuild's postinstall hook.**
     The platform-specific esbuild binary is installed as an optional dependency;
-    `npm ci`, `npm test`, and `npm run build` all succeed, and `npm audit`
-    reports zero vulnerabilities.
-16. **Redis is intentionally absent.** Earlier deployment documentation included
+    `npm ci`, `npm test`, `npm run typecheck`, and `npm run build` all succeed,
+    and `npm audit` reports zero vulnerabilities.
+20. **Redis is intentionally absent.** Earlier deployment documentation included
     it, but no application code used it. Inventory consistency is enforced with
-    database locks and allocation idempotency is stored in PostgreSQL.
+    database locks, allocation idempotency is persisted, and dispatch
+    idempotency is persisted via `V3__dispatch_idempotency.sql`.

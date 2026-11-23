@@ -97,6 +97,41 @@ describe('api client', () => {
     expect(new Headers(fetchMock.mock.calls[1][1].headers).get('Authorization')).toBe('Bearer fresh-token');
   });
 
+  it('shares one refresh across concurrent 401s to avoid refresh-token reuse', async () => {
+    tokenStore.setTokens('expired-token', 'refresh-token');
+    let finishRefresh!: () => void;
+    const refreshMock = vi.fn(() => new Promise<boolean>((resolve) => {
+      finishRefresh = () => {
+        tokenStore.setTokens('fresh-token');
+        resolve(true);
+      };
+    }));
+    tokenStore.registerRefreshHandler(refreshMock);
+
+    const unauthorized = () => response(401, {
+      success: false,
+      error: { code: 'TOKEN_INVALID', message: 'Expired', correlationId: 'corr-401' },
+      timestamp: '2026-01-01T00:00:00Z',
+    });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(unauthorized())
+      .mockResolvedValueOnce(unauthorized())
+      .mockResolvedValueOnce(response(200, success({ id: 1 })))
+      .mockResolvedValueOnce(response(200, success({ id: 2 })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = api.get<{ id: number }>('/inventory/1');
+    const second = api.get<{ id: number }>('/inventory/2');
+    await vi.waitFor(() => expect(refreshMock).toHaveBeenCalledTimes(1));
+    finishRefresh();
+
+    await expect(Promise.all([first, second])).resolves.toEqual([{ id: 1 }, { id: 2 }]);
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(new Headers(fetchMock.mock.calls[2][1].headers).get('Authorization')).toBe('Bearer fresh-token');
+    expect(new Headers(fetchMock.mock.calls[3][1].headers).get('Authorization')).toBe('Bearer fresh-token');
+  });
+
   it('does not refresh public auth requests and clears the session on failed refresh', async () => {
     tokenStore.setTokens('expired-token', 'refresh-token');
     const refreshMock = vi.fn(async () => false);

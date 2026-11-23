@@ -10,6 +10,7 @@ const ORG_KEY = 'lifelink.organizationId';
 let accessToken: string | null = null;
 let refreshToken: string | null = readStorage(sessionStorageLike(), REFRESH_KEY);
 let refreshHandler: (() => Promise<boolean>) | null = null;
+let inFlightRefresh: Promise<boolean> | null = null;
 const sessionListeners = new Set<() => void>();
 
 function sessionStorageLike(): Storage | null {
@@ -64,9 +65,18 @@ export const tokenStore = {
     refreshHandler = handler;
   },
 
-  async refresh(): Promise<boolean> {
-    if (!refreshToken || !refreshHandler) return false;
-    return refreshHandler();
+  /** Single-flight: concurrent 401s wait for one rotation instead of replaying the same refresh token. */
+  refresh(): Promise<boolean> {
+    if (inFlightRefresh) return inFlightRefresh;
+    if (!refreshToken || !refreshHandler) return Promise.resolve(false);
+    inFlightRefresh = (async () => {
+      try {
+        return await refreshHandler!();
+      } finally {
+        inFlightRefresh = null;
+      }
+    })();
+    return inFlightRefresh;
   },
 
   clear(): void {
