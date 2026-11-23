@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-11-23T15:45:05.309Z",
+  "target": "http://127.0.0.1:15173",
+  "login": "ok",
+  "sockjsInfo": "ok",
+  "websocketTransport": "ok",
+  "stompConnect": "authenticated",
+  "personalQueueSubscribe": "accepted",
+  "notificationMessage": "delivered",
+  "frameSequence": [
+    "CONNECTED",
+    "MESSAGE"
+  ]
+}

@@ -1,258 +1,257 @@
 # LifeLink Domain Model
 
-**Status:** Planned domain design; no implementation is claimed.  
-**Authority:** Enum literals, endpoints, and view fields follow [`API_CONTRACTS.md`](API_CONTRACTS.md). Aggregate and transition rules here are the source of truth for [`UML.md`](UML.md) and `../academic/AOOP_CONCEPT_MAPPING.md`.
+Date: 2026-11-23
+Status: implementation-aligned working document.
+
+**Authority:** enum literals, endpoints, and view fields follow [`API_CONTRACTS.md`](API_CONTRACTS.md). The transition tables below are taken from the entity classes in `project/backend/src/main/java/com/lifelink`, not from the superseded planned design. Mermaid views are in [`UML.md`](UML.md); class-to-concept evidence is in [`../academic/AOOP_CONCEPT_MAPPING.md`](../academic/AOOP_CONCEPT_MAPPING.md).
+
+This replaces the earlier "planned domain design; no implementation claimed" version. The implementation is a JPA-annotated domain model inside a modular monolith: entities carry `@Entity`, extend `BaseEntity` (except `AuditEvent`), and expose guarded mutation methods. There are no typed identifier wrapper classes, no `RequestItem` aggregate, and no `BloodUnitFactory`.
 
 ---
 
 ## 1. Aggregate boundaries
 
-| Aggregate root | Contains | Consistency rule owned by the root | Boundary justification |
-| :--- | :--- | :--- | :--- |
-| `Organization` | `Membership`, address/contact value data | Only a verified, active organization may supply stock | Organization identity and verification are changed together. |
-| `User` (identity) | `RefreshToken`, role/permission claims snapshot | A disabled or locked user cannot obtain or use a token | Credential state belongs with the user. |
-| `Donor` | `Consent`, `Appointment` | A donor's own consents/appointments are reached through the donor | Appointments are read through `Donor`, but are separate roots for staff scheduling. |
-| `Donation` | `ScreeningResult`, unit references (`UnitId`) | Approval requires a passed screening; approval creates units | The screening-to-approval rule lives in one object. Units are separate roots because inventory has its own lifecycle and locking. |
-| `BloodUnit` | `Movement`, storage location, version | No release/reserve/dispatch outside its state machine; one active reservation | The unit is the concurrency hotspot and must be lockable alone. |
-| `EmergencyRequest` | `RequestItem`, request events | Approval requires at least one item; fulfilment requires all items delivered | Request items have no lifecycle apart from the request. |
-| `Reservation` | expiry policy, `UnitId`, org ids | One hold per unit; cancel releases the unit | Reservation owns the timeout and the unit relationship. |
-| `Dispatch` | recipient name, incident log | At most one dispatch per reservation | Delivery/tracking state belongs with dispatch. |
-| `Notification` | read state | Only the owner can mark read | Inbox entry is independent per user. |
-| `AuditLog` | — | Append-only | Never mutated; a new entry is added instead. |
+| Aggregate root | Owned data | Consistency rule owned by the root |
+| :--- | :--- | :--- |
+| `Organization` | `OrganizationMembership` rows (via repository), verification, active flag, `StorageLocation` rows | Only a verified, active organization may supply stock; membership grants scoped permissions. |
+| `User` (identity) | roles (`user_roles`), `RefreshToken`, `LoginAttempt` rows | Disabled/locked users cannot obtain or use tokens; token version and status are rechecked per request. |
+| `DonorProfile` | `ConsentRecord`, `Appointment` | Consents and appointments are reached through the donor and scoped to owner or staff organization. |
+| `Donation` | `ScreeningRecord` rows, optional `Appointment` link | Approval requires a stored passing screening and creates `BloodUnit` rows in the inventory aggregate. |
+| `BloodUnit` | `activeReservationId`, location string, `InventoryMovement` rows, `@Version` | No release/reserve/dispatch outside its guarded methods; one active reservation per unit. |
+| `EmergencyRequest` | `RequestEvent` rows, `quantity`, `priority`, timestamps | New requests start `PENDING_VERIFICATION`; verification precedes approval; fulfilment closes the request. |
+| `Reservation` | expiry, `idempotencyKey`, unit/request/organization references | One active reservation per unit; cancel/expire clears the unit hold. |
+| `Dispatch` | recipient, incident description, timestamps, `idempotencyKey` | At most one dispatch per reservation; only a `CONFIRMED` reservation may be dispatched. |
+| `Notification` | read state, channel, delivery status | Only the owner may mark read; outbox delivery is fault-isolated per event. |
+| `AuditEvent` | action, target, outcome, correlation id | Append-only in practice (the repository exposes save/query only); no retention or tamper-evidence. |
 
-**Rule:** references across aggregates are typed identifiers only. `Donation` stores `List<UnitId>`, not embedded `BloodUnit` JPA entities; `Reservation` stores `UnitId`, `RequestId`, `requestingOrganizationId`, and `supplyingOrganizationId`.
+Cross-aggregate references use `Long` ids and JPA `ManyToOne` associations. For example `Reservation` holds `BloodUnit`, `EmergencyRequest`, and `Organization` entity references, plus a unique `idempotencyKey` column.
+
+---
 
 ## 2. Entities
 
-| Entity | Identity | Key fields | Notes |
+| Entity | Table / identity | Key fields | Notes |
 | :--- | :--- | :--- | :--- |
-| `User` | `UserId` + `publicId` | `email`, `fullName`, `phone`, `status`, roles, permissions, memberships | `UserView` exposes `id`, `publicId`, `email`, `fullName`, `status`, `roles`, `permissions`, `memberships`. |
-| `Organization` | `OrganizationId` + `publicId` | `name`, `type`, `registrationCode`, `city`, `state`, `contactEmail`, `phone`, `verified`, `active`, `serviceArea` | Mirrors `OrganizationView`. |
-| `Donor` | `DonorId` + `publicId` | `fullName`, `bloodGroup`, `dateOfBirth`, `contact`, `organizationId`, `userId` | Owner or `DONOR_READ` may read. |
-| `Consent` | `ConsentId` | `donorId`, `purpose`, `grantedAt`, `revokedAt?` | Append-only decision record. |
-| `Appointment` | `AppointmentId` | `donorId`, `organizationId`, `requestedFor`, `status`, `notes` | Status transitions in §6.5. |
-| `Donation` | `DonationId` | `donorId`, `organizationId`, `AppointmentId?`, `collectedAt`, `status`, `screeningResult?`, `rejectionReason?` | Approve produces units. |
-| `BloodUnit` | `UnitId` + `publicId` + `unitNumber` | `bloodGroup`, `componentType`, `status`, `released`, `collectedAt`, `expiresAt`, `storageLocation`, `organizationId`, `donationId?`, `version` | Exactly the fields of `BloodUnitView`. |
-| `EmergencyRequest` | `RequestId` + `publicId` | `requestingOrganizationId`, `priority`, `status`, items, `requestedBy`, timestamps | Status values in §6.2. |
-| `RequestItem` | `RequestItemId` | `bloodGroup`, `componentType`, `requiredQuantity`, `fulfilledQuantity`, `neededBy` | Local to the request aggregate. |
-| `Reservation` | `ReservationId` + `publicId` | `unitId`, `requestId?`, `requestingOrganizationId`, `supplyingOrganizationId`, `status`, `expiresAt`, `idempotencyKey` | idempotency required on creation paths. |
-| `Dispatch` | `DispatchId` + `publicId` | `reservationId`, `unitId`, `status`, `recipientName?`, `incidents`, timestamps | Created only from a confirmed reservation. |
-| `Notification` | `NotificationId` | `userId`, `eventId`, `type`, `message`, `read`, `createdAt` | Unique on `(userId, eventId)`. |
-| `AuditLog` | `AuditLogId` | `actorId`, `action`, `targetType`, `targetId`, `organizationId`, `outcome`, `correlationId`, `occurredAt` | Immutable. |
+| `BaseEntity` | mapped superclass | `id`, `publicId`, `createdAt`, `updatedAt`, `@Version version` | Abstract; all main aggregates except `AuditEvent` extend it. |
+| `User` | `users`, `Long id` | `email`, `passwordHash`, `fullName`, `phone`, `Status`, `Set<Role>` | `UserView` exposes id, publicId, email, fullName, status, roles, permissions, memberships. |
+| `OrganizationMembership` | membership table, `Long id` | `User`, `Organization`, `Role` | Source of `TenantAccessService` membership validation. |
+| `Organization` | `organizations`, `Long id` | `name`, `Type`, `registrationCode`, `city`, `state`, `contactEmail`, `phone`, `verified`, `active`, `serviceArea` | Mirrors `OrganizationView`. |
+| `DonorProfile` | donor profiles table, `Long id` | `userId`, `donorNumber`, `bloodGroup`, `dateOfBirth`, address/contact | Owned by a user or scoped staff. |
+| `ConsentRecord` | consents table, `Long id` | `DonorProfile`, type, granted/revoked state | Withdrawal is an update on the record. |
+| `Appointment` | `appointments`, `Long id` | `DonorProfile`, `Organization`, `scheduledAt`, `Status`, `notes` | Status transitions in §6.6. |
+| `Donation` | `donations`, `Long id` | `DonorProfile`, `Organization`, optional `Appointment`, `donatedAt`, `Status`, `notes` | Screening evidence is a separate entity. |
+| `ScreeningRecord` | `screening_records`, `Long id` | `Donation`, `passed`, `notes`, `screenedBy`, `screenedAt` | A passing record is required before approval. |
+| `BloodUnit` | `blood_units`, `Long id` | `unitNumber`, `bloodGroup`, `componentType`, `Status`, `released`, `collectedAt`, `expiresAt`, `storageLocation` (String), `Organization`, optional `Donation`, `activeReservationId`, `version` | New units start `QUARANTINED`, `released=false`. |
+| `InventoryMovement` | movements table, `Long id` | unit, delta, reason, location, timestamps | Appended on adjustments and lifecycle changes. |
+| `StorageLocation` | `storage_locations`, `Long id` | `Organization`, `code`, `name`, `active` | Separate reference entity; `BloodUnit.storageLocation` is a free-text field. |
+| `EmergencyRequest` | `emergency_requests`, `Long id` | `requestNumber`, `Organization`, `patientRef`, `bloodGroup`, `componentType`, `quantity`, `priority`, `requiredBy`, `Status`, `reason`, actor ids | No `RequestItem` child entity exists. |
+| `RequestEvent` | request events table, `Long id` | request, action, detail, timestamps | Read through `GET /emergency-requests/{id}`. |
+| `Reservation` | `reservations`, `Long id` | `BloodUnit`, `EmergencyRequest`, `Organization`, `Status`, `expiresAt`, `confirmedAt`, `idempotencyKey` | `idempotencyKey` is unique; V4 adds `active_unit_id` sparse slot. |
+| `Dispatch` | `dispatches`, `Long id` | `Reservation` (unique), `EmergencyRequest`, `Organization`, `assignedStaff`, `Status`, `idempotencyKey`, `dispatchedAt`, `deliveredAt`, `recipientName`, `incidentDescription` | Created only from a `CONFIRMED` reservation. |
+| `Notification` | `notifications`, `Long id` | `User`, `title`, `body`, `type`, `Channel`, `Status`, `readAt` | `Channel` = `IN_APP`/`EMAIL`/`SMS`; `Status` = `PENDING`/`SENT`/`FAILED`. |
+| `OutboxEvent` | `outbox_events`, `Long id` | `eventId`, `topic`, `payload`, `Status`, `attempts`, `nextAttemptAt`, `lastError` | `Status` = `PENDING`/`PROCESSING`/`PROCESSED`/`FAILED`; retries up to 5 attempts. |
+| `AuditEvent` | `audit_events`, `Long id` | `actorId`, `organizationId`, `action`, `targetType`, `targetId`, `correlationId`, `metadata`, `outcome`, `occurredAt` | Does not extend `BaseEntity`; string `outcome` (for example `SUCCESS`). |
+| `IdempotencyRecord` | `idempotency_records`, `Long id` (V4) | `scope`, `key`, `request_hash`, `status`, `response_json`, `created_at`, `completed_at` | Unique `(scope, key)`; statuses `ACTIVE`/`COMPLETED`. |
+| `RefreshToken`, `LoginAttempt` | identity tables, `Long id` | token hashes/family, IP, account, failure counts, lock timestamps | Used for rotation, replay detection, rate limiting, and lockout. |
 
-## 3. Value objects
+---
 
-All are immutable, validate in their constructor, use value equality, and expose no setters. This directly applies the invariant-doorway lessons from `LAB-WORK/PRACTICAL-2` and `PRACTICAL-3`.
+## 3. Value types and enums
 
-| Value object | Fields / representation | Validation and meaning |
-| :--- | :--- | :--- |
-| `OrganizationId`, `UserId`, `DonorId`, `DonationId`, `UnitId`, `RequestId`, `ReservationId`, `DispatchId` | typed `long` wrappers | Positive value required; prevents passing a `UnitId` where a `ReservationId` is expected. |
-| `BloodGroup` | enum | The eight literals from the contract; no free text. |
-| `ComponentType` | enum | The five literals from the contract. |
-| `UnitStatus` | enum | The nine literals from the contract. |
-| `StorageLocation` | `bankSite`, `rack`, `shelf` | Nonblank parts; changes produce a `Movement`. |
-| `ExpiryWindow` | `collectedAt`, `expiresAt` (UTC) | `expiresAt` strictly after `collectedAt`; used by `expiringWithinDays` filter. |
-| `BloodRequirement` | `BloodGroup`, `ComponentType`, `quantity` | Quantity positive; used by request items and allocation specifications. |
-| `ScreeningResult` | `passed`, `notes`, `reviewedBy`, `reviewedAt` | Notes required when `passed == false`; immutable. |
-| `RejectionReason` | nonblank text | Required by donation and request rejection. |
-| `RecipientName` | nonblank text | Required by dispatch delivery. |
-| `IdempotencyKey` | nonblank text, max length | Stored once per `(scope, key)`; replay returns the original response. |
-| `CorrelationId` | nonblank text | Propagated to logs, errors, audit, and outbox. |
-| `Permission` / `Role` | enum/string constants | Names match the contract exactly. |
-| `AuditActor`, `AuditOutcome` | typed id + enum | Actor is a value, not a mutable user reference. |
-
-## 4. Enums (contract literals)
+The implementation uses JDK types (`String`, `Instant`, `long`), shared enums in `com.lifelink.common`, and nested enums on entities. There are no custom typed-id value objects, `ExpiryWindow`, `BloodRequirement`, or `RejectionReason` classes.
 
 | Enum | Literals |
 | :--- | :--- |
 | `Role` | `PLATFORM_ADMIN`, `BLOOD_BANK_ADMIN`, `INVENTORY_MANAGER`, `HOSPITAL_ADMIN`, `MEDICAL_STAFF`, `DONOR` |
-| `UserStatus` | `ACTIVE`, `PENDING_VERIFICATION`, `LOCKED`, `DISABLED` |
-| `OrganizationType` | `BLOOD_BANK`, `HOSPITAL` |
+| `Permission` | `USER_READ`, `USER_MANAGE`, `ORGANIZATION_READ`, `ORGANIZATION_MANAGE`, `DONOR_READ`, `DONOR_MANAGE`, `APPOINTMENT_MANAGE`, `DONATION_READ`, `DONATION_RECORD`, `SCREENING_REVIEW`, `DONATION_APPROVE`, `INVENTORY_READ`, `INVENTORY_WRITE`, `INVENTORY_RELEASE`, `REQUEST_READ`, `REQUEST_CREATE`, `REQUEST_APPROVE`, `ALLOCATION_REVIEW`, `ALLOCATION_CONFIRM`, `RESERVATION_READ`, `RESERVATION_CREATE`, `RESERVATION_CONFIRM`, `DISPATCH_READ`, `DISPATCH_CREATE`, `DISPATCH_MANAGE`, `NOTIFICATION_READ`, `AUDIT_READ`, `ANALYTICS_READ`, `PLATFORM_ADMIN` |
+| `User.Status` | `ACTIVE`, `PENDING_VERIFICATION`, `LOCKED`, `DISABLED` |
+| `Organization.Type` | `BLOOD_BANK`, `HOSPITAL` |
 | `BloodGroup` | `A_POSITIVE`, `A_NEGATIVE`, `B_POSITIVE`, `B_NEGATIVE`, `AB_POSITIVE`, `AB_NEGATIVE`, `O_POSITIVE`, `O_NEGATIVE` |
 | `ComponentType` | `WHOLE_BLOOD`, `RED_CELLS`, `PLASMA`, `PLATELETS`, `CRYOPRECIPITATE` |
-| `UnitStatus` | `COLLECTED`, `SCREENING`, `QUARANTINED`, `AVAILABLE`, `RESERVED`, `DISPATCHED`, `DELIVERED`, `EXPIRED`, `DISCARDED` |
-| `DonationStatus` | `RECORDED`, `SCREENING_PASSED`, `SCREENING_FAILED`, `APPROVED`, `REJECTED` (internal to donation; not exposed as a contract field) |
-| `AppointmentStatus` | `REQUESTED`, `CONFIRMED`, `REJECTED`, `COMPLETED`, `CANCELLED` (internal to donor) |
-| `EmergencyRequestStatus` | `PENDING_APPROVAL`, `APPROVED`, `REJECTED`, `CANCELLED`, `FULFILLED` (internal to emergency) |
-| `ReservationStatus` | `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`, `FULFILLED` (internal to reservation) |
-| `DispatchStatus` | `PREPARING`, `IN_TRANSIT`, `DELIVERED`, `INCIDENT` (internal to dispatch) |
-| `Priority` | `ROUTINE`, `URGENT`, `CRITICAL` (internal to emergency) |
+| `BloodUnit.Status` | `COLLECTED`, `SCREENING`, `QUARANTINED`, `AVAILABLE`, `RESERVED`, `DISPATCHED`, `DELIVERED`, `EXPIRED`, `DISCARDED` |
+| `Donation.Status` | `RECORDED`, `SCREENED`, `APPROVED`, `REJECTED` |
+| `EmergencyRequest.Status` | `DRAFT`, `PENDING_VERIFICATION`, `VERIFIED`, `APPROVED`, `ALLOCATING`, `RESERVED`, `IN_TRANSIT`, `FULFILLED`, `REJECTED`, `CANCELLED`, `EXPIRED` |
+| `EmergencyRequest.Priority` | `ROUTINE`, `URGENT`, `CRITICAL` |
+| `Reservation.Status` | `ACTIVE`, `CONFIRMED`, `CANCELLED`, `EXPIRED` |
+| `Dispatch.Status` | `PREPARING`, `IN_TRANSIT`, `DELIVERED`, `INCIDENT` |
+| `Appointment.Status` | `REQUESTED`, `CONFIRMED`, `COMPLETED`, `CANCELLED`, `REJECTED` |
+| `Notification.Channel` / `Notification.Status` | `IN_APP`, `EMAIL`, `SMS` / `PENDING`, `SENT`, `FAILED` |
+| `OutboxEvent.Status` | `PENDING`, `PROCESSING`, `PROCESSED`, `FAILED` |
 
-> Only enums present in `API_CONTRACTS.md` are serialized directly. Internal enums are projection/query fields; the contract does not fix their wire names.
+---
 
-## 5. Invariants
+## 4. Invariants
 
 | ID | Invariant | Enforced by |
 | :--- | :--- | :--- |
-| INV-01 | Domain objects have no public setters; all changes occur through guarded methods. | Domain classes; reflection test. |
-| INV-02 | `released == true` only for `AVAILABLE`, `RESERVED`, `DISPATCHED`, `DELIVERED`. `EXPIRED` and `DISCARDED` are never released. | `BloodUnit` methods + DB check. |
-| INV-03 | `expiresAt > collectedAt`; all timestamps UTC. | `ExpiryWindow` constructor + DB check. |
-| INV-04 | At most one active (`PENDING`/`CONFIRMED`) reservation per unit. | Pessimistic lock + partial unique index + domain guard. |
-| INV-05 | A reservation may only claim a unit in `AVAILABLE` status belonging to a verified, active bank organization. | `BloodUnit.reserve(...)` + service check. |
-| INV-06 | At most one dispatch per reservation; dispatch requires a `CONFIRMED` reservation. | Unique index + `DispatchService`. |
-| INV-07 | A `PENDING` reservation older than its TTL becomes `EXPIRED` and releases the unit. | Expiry job + `Reservation.expire()`. |
-| INV-08 | A `CONFIRMED` reservation cannot be cancelled once a dispatch exists. | `Reservation.cancel()` guard. |
-| INV-09 | Donation approval is legal only from `SCREENING_PASSED` and creates at least one unit. | `Donation.approve(...)` + factory. |
-| INV-10 | Rejection requires a nonblank reason. | `RejectionReason` + domain methods. |
-| INV-11 | Emergency approval is legal only from `PENDING_APPROVAL` and requires at least one item. | `EmergencyRequest.approve()`. |
-| INV-12 | A request with an active dispatch cannot be cancelled. | `EmergencyRequest.cancel()` guard. |
-| INV-13 | `FULFILLED` on a request requires every item's `fulfilledQuantity >= requiredQuantity` through delivered dispatches. | `EmergencyRequest.markFulfilledIfComplete()`. |
-| INV-14 | Audit entries are append-only; no update or delete path exists. | Repository interface exposes only `save`/queries. |
-| INV-15 | Only the notification owner can mark it read. | `Notification.markRead(UserId)` + query scope. |
-| INV-16 | Every read/write is scoped to `TenantContext.organizationId()` except explicit platform-admin operations. | Repository predicates + method security. |
-| INV-17 | Each unit mutation increments `version`; stale writes fail. | `@Version` + lock. |
-| INV-18 | `Idempotency-Key` replay returns the original result without new side effects. | `IdempotencyPort` unique key + stored response. |
-| INV-19 | Audit and outbox rows are written in the same transaction as the state change. | Application service transaction boundary. |
-| INV-20 | Storage-location changes append a `Movement`; history is never rewritten. | `BloodUnit.moveTo(...)`. |
-| INV-21 | Donor PII and credentials are never included in logs, errors, or notification payloads. | DTO mapping + logging policy. |
-| INV-22 | Collections returned by aggregates are immutable snapshots (`List.copyOf`). | Domain getters. |
-| INV-23 | Domain classes are `final` with no overridable lifecycle methods, closing the constructor-leak/override doorway. | Class declarations. |
+| INV-01 | State changes go through guarded entity methods; illegal transitions throw `InvalidStateTransitionException` or `BusinessRuleViolationException` and surface as `409` from endpoints. | Entity methods + `GlobalExceptionHandler`. |
+| INV-02 | `released == true` only after authorized release; `markExpired()` and `discard()` clear it. `deliver()` leaves it true. | `BloodUnit.release`, `markExpired`, `discard`, `deliver`. |
+| INV-03 | `expiresAt > collectedAt` for units; donation time is not in the future; appointment and reservation expiry must be in the future. | Entity constructors. |
+| INV-04 | At most one active reservation per unit. | V4 sparse unique index on `reservations.active_unit_id`, check constraints, `BloodUnit.reserve` guard, pessimistic unit lock. |
+| INV-05 | A reservation may only claim a released, `AVAILABLE`, unexpired unit. | `BloodUnit.reserve(reservationId, now)` and service checks. |
+| INV-06 | At most one dispatch per reservation; dispatch requires a `CONFIRMED` reservation. | Unique `reservation_id`, unique `idempotency_key`, `DispatchService`. |
+| INV-07 | Reservation activation/cancellation/expiry clears the unit hold through `BloodUnit.clearReservation()`. | `ReservationService`, `InventoryService`, lifecycle scheduler. |
+| INV-08 | Donation approval requires `SCREENED` status and a stored passing screening record. | `Donation.approve()` + `DonationService`. |
+| INV-09 | Rejection requires an allowed source status; donation rejection cannot move `APPROVED`/`REJECTED` back. | `Donation.reject()` and `EmergencyRequest.reject()`. |
+| INV-10 | Request verification (`PENDING_VERIFICATION → VERIFIED`) precedes approval (`VERIFIED → APPROVED`). | `EmergencyRequest.verify/approve`. |
+| INV-11 | `X-Organization-Id` is validated against memberships and never bypasses permissions. | `TenantAccessService` + method security. |
+| INV-12 | Audit `SUCCESS` rows are written in the state-change transaction; failures are recorded separately and do not fake success. | Service transactions + `AuditService`. |
+| INV-13 | Idempotency keys are unique per scope; identical replay returns the stored response, divergent payload returns `409`. | V4 `idempotency_records`, `ReservationService.Idempotency`. |
+| INV-14 | Every unit mutation increments `BaseEntity.version`; stale writes fail. | JPA `@Version` + pessimistic locks. |
+| INV-15 | Notification read is owner-only; outbox processing is fault-isolated per item. | `NotificationService.markRead/processOutbox`. |
+| INV-16 | Donor PII, credentials, tokens, and SQL are not exposed in errors or logs. | DTO mapping + `GlobalExceptionHandler` + logging policy. |
+| INV-17 | Collections returned from role/permission accessors are immutable snapshots (`Set.copyOf`). | `Role.permissions()`, `User.effectivePermissions()`, `User.getRoles()`. |
 
-## 6. State machines
+Legacy planned invariants such as "domain classes have no Spring/JPA imports", "domain classes are final", "no public setters anywhere", "typed ids only", and "ArchUnit reflection test" are **not** implemented and must not be cited as current facts.
 
-Legend: **API** = reachable through a documented endpoint; **internal** = domain/application method with no dedicated v1 endpoint. Illegal transitions throw `IllegalStateException` and surface as HTTP 409 when reached from an endpoint.
+---
 
-### 6.1 Donation
+## 5. State machines
+
+Legend: **API** = reachable from a documented v1 endpoint; **internal** = entity/service method with no dedicated endpoint. Illegal transitions produce `409` when reached through an endpoint.
+
+### 5.1 Donation
 
 ```text
-RECORDED --screen(passed=true)--> SCREENING_PASSED --approve()--> APPROVED
-RECORDED --screen(passed=false)--> SCREENING_FAILED --approve()--> [illegal 409]
-SCREENING_PASSED --reject(reason)--> REJECTED
-SCREENING_FAILED --reject(reason)--> REJECTED
-RECORDED --reject(reason)--> REJECTED
+RECORDED --screen(true)--> SCREENED --approve()--> APPROVED
+RECORDED --screen(false)--> REJECTED
+RECORDED/ SCREENED --reject()--> REJECTED
 ```
 
 | From | To | Trigger | Guard | Endpoint |
 | :--- | :--- | :--- | :--- | :--- |
-| `RECORDED` | `SCREENING_PASSED` | `screen(true, notes)` | `SCREENING_REVIEW` | `POST /donations/{id}/screen` |
-| `RECORDED` | `SCREENING_FAILED` | `screen(false, notes)` | notes present | `POST /donations/{id}/screen` |
-| `SCREENING_PASSED` | `APPROVED` | `approve()` | `DONATION_APPROVE`, screening passed | `POST /donations/{id}/approve` |
-| `SCREENING_PASSED`, `SCREENING_FAILED`, `RECORDED` | `REJECTED` | `reject(reason)` | `DONATION_APPROVE`, reason present | `POST /donations/{id}/reject` |
+| `RECORDED` | `SCREENED` | `screen(true)` | `SCREENING_REVIEW` | `POST /donations/{id}/screen` |
+| `RECORDED` | `REJECTED` | `screen(false)` or `reject()` | `SCREENING_REVIEW` / `DONATION_APPROVE` | `POST /donations/{id}/screen` or `/reject` |
+| `SCREENED` | `APPROVED` | `approve()` | stored passing `ScreeningRecord`, `DONATION_APPROVE` | `POST /donations/{id}/approve` |
+| `SCREENED` | `REJECTED` | `reject()` | `DONATION_APPROVE` | `POST /donations/{id}/reject` |
 
-Side effect of `APPROVED`: one or more `BloodUnit`s in `COLLECTED` with `released=false`, `donationId` set, and `organizationId` equal to the collecting bank.
+Approval creates `BloodUnit` rows in `QUARANTINED` with `released=false` and a `donationId` reference; `GET /donations/{id}/units` returns them.
 
-### 6.2 EmergencyRequest
+### 5.2 EmergencyRequest
 
 ```text
-PENDING_APPROVAL --approve()--> APPROVED --markFulfilledIfComplete()--> FULFILLED
-PENDING_APPROVAL --reject(reason)--> REJECTED
-PENDING_APPROVAL / APPROVED --cancel()--> CANCELLED
+PENDING_VERIFICATION --verify()--> VERIFIED --approve()--> APPROVED
+APPROVED --markAllocating()--> ALLOCATING --markReserved()--> RESERVED
+RESERVED --markInTransit()--> IN_TRANSIT --fulfil()--> FULFILLED
+RESERVED --fulfil()--> FULFILLED
+PENDING_VERIFICATION / VERIFIED / APPROVED --reject()--> REJECTED
+PENDING_VERIFICATION / VERIFIED / APPROVED / ALLOCATING / RESERVED --cancel()--> CANCELLED
 ```
 
 | From | To | Trigger | Guard | Endpoint |
 | :--- | :--- | :--- | :--- | :--- |
-| `PENDING_APPROVAL` | `APPROVED` | `approve()` | `REQUEST_APPROVE`, ≥1 item | `POST /emergency-requests/{id}/approve` |
-| `PENDING_APPROVAL` | `REJECTED` | `reject(reason)` | `REQUEST_APPROVE`, reason | `POST /emergency-requests/{id}/reject` |
-| `PENDING_APPROVAL` / `APPROVED` | `CANCELLED` | `cancel()` | owner/staff, no active dispatch | `POST /emergency-requests/{id}/cancel` |
-| `APPROVED` | `FULFILLED` | `markFulfilledIfComplete()` | all items delivered | internal, driven by dispatch delivery |
+| `PENDING_VERIFICATION` | `VERIFIED` | `verify(verifierId)` | `REQUEST_APPROVE` | `POST /emergency-requests/{id}/verify` |
+| `VERIFIED` | `APPROVED` | `approve(approverId)` | `REQUEST_APPROVE` | `POST /emergency-requests/{id}/approve` |
+| `PENDING_VERIFICATION`/`VERIFIED`/`APPROVED` | `REJECTED` | `reject()` | `REQUEST_APPROVE` | `POST /emergency-requests/{id}/reject` |
+| `APPROVED` | `ALLOCATING` | `markAllocating()` | allocation confirmation | internal, via `AllocationService` |
+| `ALLOCATING`/`RESERVED` | `RESERVED` | `markReserved()` | reservations created | internal |
+| `RESERVED` | `IN_TRANSIT` | `markInTransit()` | dispatch departed | internal |
+| `RESERVED`/`IN_TRANSIT` | `FULFILLED` | `fulfil()` | delivery | internal |
+| listed statuses | `CANCELLED` | `cancel()` | `REQUEST_CREATE` or `REQUEST_APPROVE` in scope | `POST /emergency-requests/{id}/cancel` |
+| any non-terminal | priority change | `changePriority(p, authorized)` | `REQUEST_APPROVE` | `PATCH /emergency-requests/{id}/priority` |
 
-### 6.3 BloodUnit
+`DRAFT` and `EXPIRED` are persisted enum literals; new requests start at `PENDING_VERIFICATION`. Dispatch incidents use `Dispatch.Status.INCIDENT`, not a request status.
+
+### 5.3 BloodUnit
 
 ```text
-COLLECTED / SCREENING / QUARANTINED --release()--> AVAILABLE
-SCREENING / QUARANTINED --discard()--> DISCARDED
-AVAILABLE --reserve(reservationId)--> RESERVED
-RESERVED --releaseReservation(...)--> AVAILABLE
-RESERVED --markDispatched(dispatchId)--> DISPATCHED
-DISPATCHED --markDelivered()--> DELIVERED
-any non-terminal --expire()--> EXPIRED
+QUARANTINED / SCREENING / COLLECTED --release(now)--> AVAILABLE
+COLLECTED / QUARANTINED --holdForScreening()--> SCREENING
+AVAILABLE / SCREENING / COLLECTED --quarantine()--> QUARANTINED
+AVAILABLE --reserve(reservationId, now)--> RESERVED
+RESERVED --clearReservation()--> AVAILABLE or QUARANTINED
+RESERVED --dispatch()--> DISPATCHED
+DISPATCHED --deliver()--> DELIVERED
+non-terminal --markExpired()--> EXPIRED
+non-DISPATCHED/DELIVERED --discard(reason)--> DISCARDED
 ```
 
 | From | To | Trigger | Guard | Endpoint |
 | :--- | :--- | :--- | :--- | :--- |
-| — | `COLLECTED` | created by donation approval | donation `APPROVED` | `POST /donations/{id}/approve` |
-| — | `COLLECTED`/`SCREENING`/`QUARANTINED` | manual creation | staff only | `POST /inventory` |
-| `COLLECTED`/`SCREENING`/`QUARANTINED` | `AVAILABLE` | `release()` | `INVENTORY_RELEASE`, bank verified/active, screening cleared, not expired | `POST /inventory/{id}/release` |
-| `SCREENING`/`QUARANTINED` | `DISCARDED` | `discard()` | failed screening, `INVENTORY_WRITE` | internal |
-| `AVAILABLE` | `RESERVED` | `reserve(reservationId)` | lock acquired, version current, org scope | `POST /reservations`, `POST /allocations/confirm` |
-| `RESERVED` | `AVAILABLE` | `releaseReservation(reservationId)` | same reservation id | `POST /reservations/{id}/cancel`, expiry job |
-| `RESERVED` | `DISPATCHED` | `markDispatched(dispatchId)` | reservation `CONFIRMED` | `POST /dispatches/{id}/depart` |
-| `DISPATCHED` | `DELIVERED` | `markDelivered()` | recipient present | `POST /dispatches/{id}/deliver` |
-| non-terminal | `EXPIRED` | `expire()` | `expiresAt` passed | `POST /inventory/{id}/expire`, expiry job |
+| `QUARANTINED`/`SCREENING`/`COLLECTED` | `AVAILABLE` | `release(now)` | `INVENTORY_RELEASE`, not expired | `POST /inventory/{id}/release` |
+| `COLLECTED`/`QUARANTINED` | `SCREENING` | `holdForScreening()` | internal | internal |
+| `AVAILABLE`/`SCREENING`/`COLLECTED` | `QUARANTINED` | `quarantine()` | internal, clears `released` | internal |
+| `AVAILABLE` | `RESERVED` | `reserve(reservationId, now)` | released, no active hold, not expired | `POST /reservations`, `POST /allocations/confirm` |
+| `RESERVED` | `AVAILABLE`/`QUARANTINED` | `clearReservation()` | owning reservation cancel/expiry | `POST /reservations/{id}/cancel`, scheduler |
+| `RESERVED` | `DISPATCHED` | `dispatch()` | reservation confirmed | `POST /dispatches/{id}/depart` |
+| `DISPATCHED` | `DELIVERED` | `deliver()` | delivery confirmed | `POST /dispatches/{id}/deliver` |
+| non-terminal | `EXPIRED` | `markExpired()` | expiry or staff action | `POST /inventory/{id}/expire`, scheduler |
+| non-`DISPATCHED`/`DELIVERED` | `DISCARDED` | `discard(reason)` | nonblank reason | internal |
 
-`SCREENING` and `QUARANTINED` are reachable through manual staff creation and internal screening/quarantine handling; v1 exposes `release` and `expire` but no dedicated screening-start or discard endpoint. `DELIVERED`, `EXPIRED`, and `DISCARDED` are terminal.
+`DELIVERED`, `EXPIRED`, and `DISCARDED` are terminal. `changeLocation(location)` appends an `InventoryMovement` through `InventoryService` and does not change status.
 
-### 6.4 Reservation
+### 5.4 Reservation
 
 ```text
-PENDING --confirm()--> CONFIRMED --markFulfilled()--> FULFILLED
-PENDING --cancel()/expire()--> CANCELLED / EXPIRED
-CONFIRMED --cancel()--> CANCELLED (only before dispatch)
+ACTIVE --confirm(now)--> CONFIRMED
+ACTIVE --cancel()--> CANCELLED
+CONFIRMED --cancel()--> CANCELLED
+ACTIVE --expire()--> EXPIRED
 ```
 
 | From | To | Trigger | Guard | Endpoint |
 | :--- | :--- | :--- | :--- | :--- |
-| — | `PENDING` | `Reservation.create(...)` | unit `AVAILABLE`, idempotency key | `POST /reservations`, `POST /allocations/confirm` |
-| `PENDING` | `CONFIRMED` | `confirm()` | not expired, unit still held by this reservation | `POST /reservations/{id}/confirm` |
-| `PENDING` | `CANCELLED` | `cancel()` | owner/staff | `POST /reservations/{id}/cancel` |
-| `PENDING` | `EXPIRED` | `expire()` | TTL elapsed | internal expiry job |
-| `CONFIRMED` | `CANCELLED` | `cancel()` | no dispatch exists | `POST /reservations/{id}/cancel` |
-| `CONFIRMED` | `FULFILLED` | `markFulfilled()` | dispatch delivered | internal |
+| — | `ACTIVE` | constructor via `ReservationService.create` | unit `AVAILABLE`, `idempotencyKey`, expiry in future | `POST /reservations`, `POST /allocations/confirm` |
+| `ACTIVE` | `CONFIRMED` | `confirm(now)` | not expired | `POST /reservations/{id}/confirm` |
+| `ACTIVE`/`CONFIRMED` | `CANCELLED` | `cancel()` | scoped `RESERVATION_CREATE` | `POST /reservations/{id}/cancel` |
+| `ACTIVE` | `EXPIRED` | `expire()` | TTL elapsed | internal scheduler |
 
-Leaving `PENDING`, `CANCELLED`, or `EXPIRED` calls `BloodUnit.releaseReservation(...)` so the unit becomes `AVAILABLE` again (unless it expired meanwhile).
+There is no `PENDING` or `FULFILLED` reservation status. Leaving `ACTIVE` clears the unit hold.
 
-### 6.5 Dispatch
+### 5.5 Dispatch
 
 ```text
-PREPARING --depart()--> IN_TRANSIT --deliver(recipient)--> DELIVERED
-PREPARING / IN_TRANSIT --recordIncident(description)--> INCIDENT
+PREPARING --depart()--> IN_TRANSIT
+IN_TRANSIT / INCIDENT --deliver(recipientName)--> DELIVERED
+PREPARING / IN_TRANSIT --reportIncident(description)--> INCIDENT
 ```
 
 | From | To | Trigger | Guard | Endpoint |
 | :--- | :--- | :--- | :--- | :--- |
-| — | `PREPARING` | `Dispatch.from(reservationId)` | reservation `CONFIRMED`, one dispatch only | `POST /dispatches` |
+| — | `PREPARING` | `DispatchService.create` | `CONFIRMED` reservation, blood-bank scope, idempotency key | `POST /dispatches` |
 | `PREPARING` | `IN_TRANSIT` | `depart()` | `DISPATCH_MANAGE` | `POST /dispatches/{id}/depart` |
-| `IN_TRANSIT` | `DELIVERED` | `deliver(recipientName)` | `DISPATCH_MANAGE`, recipient present | `POST /dispatches/{id}/deliver` |
-| `PREPARING`/`IN_TRANSIT` | `INCIDENT` | `recordIncident(description)` | description present | `POST /dispatches/{id}/incident` |
+| `IN_TRANSIT`/`INCIDENT` | `DELIVERED` | `deliver(recipientName)` | nonblank recipient, `DISPATCH_MANAGE` | `POST /dispatches/{id}/deliver` |
+| `PREPARING`/`IN_TRANSIT` | `INCIDENT` | `reportIncident(description)` | nonblank description | `POST /dispatches/{id}/incident` |
 
-`DELIVERED` and `INCIDENT` are terminal in v1. Departure moves the unit to `DISPATCHED`; delivery moves it to `DELIVERED`, fulfils the reservation, and may fulfil the request.
+A delivery after an incident is allowed (recovery delivery). Delivery moves the unit to `DELIVERED`, clears its active reservation pointer, and can fulfil the request.
 
-### 6.6 Appointment
+### 5.6 Appointment
 
-`REQUESTED → CONFIRMED → COMPLETED`; `REQUESTED → REJECTED`; `REQUESTED`/`CONFIRMED → CANCELLED`. All via `PATCH /donors/appointments/{id}`.
+`REQUESTED → CONFIRMED → COMPLETED`; `REQUESTED → REJECTED`; `REQUESTED`/`CONFIRMED → CANCELLED`, via `PATCH /donors/appointments/{id}`.
 
-## 7. Tenancy rules
+---
+
+## 6. Tenancy rules
 
 | ID | Rule |
 | :--- | :--- |
-| T-01 | Every organization-owned row carries `organizationId`; every query includes that predicate. |
-| T-02 | A user's token carries role and active membership; `TenantContext` resolves the active organization per request. |
-| T-03 | `PLATFORM_ADMIN` may read across organizations and verify organizations; it does not bypass state machines. |
+| T-01 | Organization-scoped rows carry an organization reference or id; services/repositories apply the predicate. |
+| T-02 | `X-Organization-Id` is optional and validated against `OrganizationMembership` by `TenantAccessService`; result is cached per request. |
+| T-03 | `PLATFORM_ADMIN` may select any organization and perform global user/audit reads; it does not bypass state machines. |
 | T-04 | A donor sees only their own profile, consents, and appointments; staff need `DONOR_READ` and tenant scope. |
-| T-05 | Blood units remain owned by the collecting bank even while reserved for a hospital. |
-| T-06 | A reservation records both `requestingOrganizationId` and `supplyingOrganizationId`; each side can read what it owns or was explicitly granted through the workflow. |
-| T-07 | Cross-organization allocation requires `ALLOCATION_REVIEW` for suggestions and `ALLOCATION_CONFIRM` for confirmation, plus an audit entry. |
-| T-08 | Notifications are per user; audit logs are per `organizationId` except platform-admin views. |
+| T-05 | Blood units remain owned by the collecting bank while reserved for a hospital. |
+| T-06 | A reservation references the requesting request and the supplying organization; dispatch is authorized in the supplying bank. |
+| T-07 | Cross-organization allocation requires `ALLOCATION_REVIEW` for suggestions and `ALLOCATION_CONFIRM` for confirmation. |
+| T-08 | Notifications are per user; audit queries require explicit organization id for non-platform users with multiple memberships. |
 | T-09 | Analytics aggregate only rows visible to the caller's role and organization. |
 | T-10 | UI role checks are cosmetic; server authorization is authoritative. |
 
-## 8. Traceability chain
+---
+
+## 7. Traceability chain
 
 ```mermaid
 flowchart LR
-    D[Donor\nDonorId] -->|has| DN[Donation\nDonationId\nstatus]
-    DN -->|approve creates| U[BloodUnit\nUnitId\nunitNumber\nversion]
-    U -->|reserve| R[Reservation\nReservationId\nrequestingOrg\nsupplyingOrg]
-    R -->|confirmed only| DP[Dispatch\nDispatchId\nstatus]
-    DP -->|deliver| U2[Unit DELIVERED\nReservation FULFILLED\nRequest FULFILLED]
-    ER[EmergencyRequest\nRequestId] -.items.-> R
+    D[DonorProfile] -->|has| DN[Donation status]
+    DN -->|approve creates| U[BloodUnit unitNumber version]
+    U -->|reserve| R[Reservation ACTIVE idempotencyKey]
+    R -->|confirmed only| DP[Dispatch status]
+    DP -->|deliver| U2[Unit DELIVERED, request FULFILLED]
+    ER[EmergencyRequest] -.quantity/priority.-> R
 ```
 
-Traceability guarantees:
-
-1. `Donation.approve()` records each generated `UnitId` on the donation; `GET /donations/{id}/units` returns them.
-2. Each `BloodUnit` stores `donationId?`, `unitNumber`, `publicId`, and `version`; every movement is appended.
-3. Each `Reservation` stores `unitId`, optional `requestId`, both organization ids, and the idempotency key used to create it.
-4. Each `Dispatch` stores `reservationId` and `unitId`; delivery closes the chain and produces audit/outbox events with one `correlationId`.
-5. No step may be skipped: reservation requires `AVAILABLE` unit, dispatch requires `CONFIRMED` reservation, fulfilment requires delivered dispatch.
-
-## 9. API consistency reference
-
-| Contract concept | Domain name used here |
-| :--- | :--- |
-| `BloodUnitView.id`, `publicId`, `unitNumber` | `UnitId` (typed wrapper of `id`), `publicId`, `unitNumber` |
-| `BloodUnitView.version` | `BloodUnit.version` (optimistic lock) |
-| `AuthResponse.user.roles/permissions` | `Role`, `Permission` claims from `User` |
-| `GET /inventory` filters | `BloodGroup`, `ComponentType`, `UnitStatus`, `expiringWithinDays`, `organizationId` |
-| `Idempotency-Key` | `IdempotencyKey` on reservation/allocation-confirm/dispatch creation |
-| `ApiResponse.correlationId` | `CorrelationId` in logs, audit, outbox |
+1. `Donation.approve()` creates units with `donationId`; `GET /donations/{id}/units` returns them.
+2. Each `BloodUnit` has `unitNumber`, `publicId`, `version`, `activeReservationId`, and a location string; movements are appended.
+3. Each `Reservation` stores its unit, request, organization, expiry, and idempotency key; V4 records the request fingerprint separately.
+4. Each `Dispatch` stores reservation, request, organization, staff, and idempotency key; delivery closes the chain and produces audit/outbox entries with one correlation id.
+5. No step may be skipped: reservation requires `AVAILABLE` unit, dispatch requires `CONFIRMED` reservation, fulfilment follows delivery.

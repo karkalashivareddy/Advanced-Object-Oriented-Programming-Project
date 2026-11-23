@@ -1,182 +1,104 @@
-# LifeLink User Guide (planned UI journeys)
+# LifeLink User Guide
 
-**Status:** Design-stage guide. It describes the intended React/TypeScript screens and the exact API calls they will make. It does not claim the application is running. All paths below are relative to `/api/v1` and follow [`../architecture/API_CONTRACTS.md`](../architecture/API_CONTRACTS.md).
+Date: 2026-11-23
+Status: describes the implemented local-development application and its documented API. It is not a claim of a production deployment. All REST paths below are relative to `/api/v1` and follow [`../architecture/API_CONTRACTS.md`](../architecture/API_CONTRACTS.md); state names follow [`../architecture/DOMAIN_MODEL.md`](../architecture/DOMAIN_MODEL.md).
+
+> **WARNING: The credentials below are local-only seeded development fixtures.** They are enabled by `lifelink.seed.enabled=true` / `SEED_DEMO_DATA=true` in `dev`, `default`, or `postgres` profiles. They must never be enabled in a production or publicly reachable environment. Production credentials come from environment configuration and are not documented here.
+
+Run the local stack with the commands in [`../deployment/DEPLOYMENT_GUIDE.md`](../deployment/DEPLOYMENT_GUIDE.md). The frontend dev server is `http://localhost:5173`; in the verified Compose stack the SPA is `http://localhost:15173` and the backend base URL is `http://localhost:18080/api/v1` (`8080` is occupied locally). `JWT_SECRET` is supplied in the shell at startup, never stored in the docs.
 
 ---
 
-## 1. Demo accounts — development only
+## 1. Seeded accounts
 
-> **WARNING: These are local-only seeded development credentials. They must never be used, copied, or seeded in any production or publicly reachable environment. Change passwords immediately if a local database is exposed. Production credentials are supplied by environment configuration and are not documented here.**
-
-| Account | Password | Role(s) | Active membership (seeded) |
+| Account | Password | Global role | Seeded organization membership |
 | :--- | :--- | :--- | :--- |
-| `admin@lifelink.local` | `Admin@123!` | `PLATFORM_ADMIN` | Platform (cross-organization read, organization verification) |
+| `admin@lifelink.local` | `Admin@123!` | `PLATFORM_ADMIN` | Cross-organization read; organization verification |
 | `bank@lifelink.local` | `Bank@123!` | `BLOOD_BANK_ADMIN` | Central Blood Bank |
 | `inventory@lifelink.local` | `Inventory@123!` | `INVENTORY_MANAGER` | Central Blood Bank |
-| `hospital@lifelink.local` | `Hospital@123!` | `HOSPITAL_ADMIN` | City General Hospital |
-| `donor@lifelink.local` | `Donor@123!` | `DONOR` | Donor self-service (own records only) |
+| `hospital@lifelink.local` | `Hospital@123!` | `HOSPITAL_ADMIN` | LifeCare General Hospital |
+| `medical@lifelink.local` | `Medical@123!` | `MEDICAL_STAFF` | LifeCare General Hospital |
+| `donor@lifelink.local` | `Donor@123!` | `DONOR` | LifeCare General Hospital (donor profile) |
 
-`MEDICAL_STAFF` is part of the permission model but has **no** seeded demo account in this local set; it is exercised through test fixtures.
+Seeded organizations: **Central Blood Bank** (`BLOOD_BANK`) and **LifeCare General Hospital** (`HOSPITAL`). All seeded users have `Status.ACTIVE`; no seeded account is `PENDING_VERIFICATION`.
 
-### 1.1 Planned local startup
-
-Once the implementation and Maven Wrapper are present, the intended loop is:
-
-1. Start the local PostgreSQL container (optional Docker Compose service) or rely on the H2 profile for tests.
-2. Run backend migrations and start the Spring Boot app under the `local` profile; demo accounts are seeded only in this profile.
-3. Start the Vite dev server; it proxies `/api/v1` to the backend.
-4. Open the SPA, choose an account from the local-only demo list, and sign in.
-
-No production endpoint, credential, or token is included in this guide.
+These credentials are used by the integration suite. The final Compose run verified login through the nginx proxy (HTTP 200) and recorded seed counts organizations=2, users=6, blood_units=9
+([`../evidence/COMPOSE_VERIFICATION.json`](../evidence/COMPOSE_VERIFICATION.json)). The seeder runs under `postgres` only when `SEED_DEMO_DATA=true`; standalone PostgreSQL defaults to no demo seed.
 
 ---
 
-## 2. Conventions shown in every screen
+## 2. Signing in and switching organization
 
-- **Authentication:** after `POST /auth/login`, the SPA stores the access token for the session and uses `Authorization: Bearer <accessToken>` on protected calls. Refresh uses `POST /auth/refresh` with the refresh token; rotation means the old refresh token cannot be reused.
-- **Responses:** single results arrive in `ApiResponse<T>` (`success`, `data`, optional `message`, `correlationId`, `timestamp`); lists arrive in `PageResponse<T>` (`content`, `page`, `size`, `totalElements`, `totalPages`).
-- **Errors:** `ApiError` shows `error.code`, `error.message`, and `error.correlationId`. Quote the correlation id when reporting a problem.
-- **Idempotency:** reservation creation, allocation confirmation, and dispatch creation require an `Idempotency-Key` header. The SPA generates one per user action and reuses it on retry, so a double click cannot create two reservations or dispatches.
-- **Status codes:** 400 bad input, 401 sign in again, 403 not permitted for this role/organization, 404 not found or out of scope, 409 illegal state/conflict, 429 too many attempts, 500 unexpected error.
-- **Permissions are server-side:** the SPA hides buttons the role cannot use, but the API rechecks every permission and organization scope. A hidden button is not a security control.
-- **Timestamps:** displayed in the user's local time; sent and stored as ISO-8601 UTC.
+1. Open the frontend and sign in with one of the accounts above. The client calls `POST /auth/login` with `{ "email", "password" }` and stores the returned access/refresh token pair.
+2. The identity menu shows the current organization. Use **Switch organization** to select another membership; the frontend sends `X-Organization-Id: <id>` on subsequent API requests and clears cached query results so no data from the previous organization remains visible.
+3. A malformed `X-Organization-Id` is rejected with `400 VALIDATION_ERROR`; an id outside the caller's memberships returns `403 TENANT_ACCESS_DENIED`. Permissions are never expanded by the header: a user with only `DONOR` still sees only their own data.
+4. `PLATFORM_ADMIN` may select any organization for reads but must still obey the domain state machines. The frontend's disabled controls are not an authorization mechanism; server method security is.
 
----
-
-## 3. Donor — `donor@lifelink.local`
-
-### 3.1 Register or sign in
-
-1. **Register:** `POST /auth/register` with `{email, password, fullName, phone?, organizationId?}` → `AuthResponse`.
-2. **Sign in:** `POST /auth/login` with `{email, password}` → `AuthResponse` containing `user.roles` and `user.permissions`.
-3. **View profile:** `GET /auth/me` → `UserView`.
-
-### 3.2 Manage profile, consent, appointments
-
-1. **Open “My profile”** → `GET /donors/{id}`; the SPA only shows records owned by this user.
-2. **Edit allowed fields** → `PATCH /donors/{id}`.
-3. **Give consent** → `POST /donors/{id}/consents`; **view** → `GET /donors/{id}/consents`.
-4. **Request an appointment** → `POST /donors/{id}/appointments` with the preferred date and bank. Status starts `REQUESTED`.
-5. **Track it** → `GET /donors/{id}/appointments`. Staff actions (`PATCH /donors/appointments/{id}`) can set `CONFIRMED`, `REJECTED`, `COMPLETED`, or `CANCELLED`.
-6. **Notifications** → `GET /notifications/unread-count`, `GET /notifications`, then `POST /notifications/{id}/read`.
-
-Expected conflict: changing an appointment that staff already completed returns 409; the screen refreshes and shows the current status.
+Token details: access tokens carry a unique `jti` and `token_version`. Password change and any status change (lock, disable, re-enable) increment the persistent `users.token_version` (Flyway `V5`), so older access tokens stay revoked permanently. `POST /auth/logout` revokes the presented refresh token and denies only the presented bearer `jti` **in the process that handled the request** (`F-04`); this denylist is process-local and a multi-instance deployment needs a shared store. Refresh tokens rotate, and reuse of an old token revokes the token family. Failed logins lock the account after 5 failures for 15 minutes. Login/register/refresh 401 responses also count toward a single-node in-memory limit of 10 attempts per 60 seconds per IP + account + path; the next attempt returns `429 RATE_LIMITED`.
 
 ---
 
-## 4. Blood Bank Administrator — `bank@lifelink.local`
+## 3. Role journeys that work end to end
 
-The bank admin works inside the verified Central Blood Bank organization. Cross-organization reads are not available to this role.
+The following sequences are implemented. The final local run recorded backend 93 tests with 0 failures/errors/skips, frontend 33 unit tests, and Playwright 6 passed on Chrome and Edge with retries 0
+([`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json)); detailed per-class results are maintained in the quality workstream's test documents. Steps marked *advisory* produce suggestions, not guaranteed stock.
 
-### 4.1 Record and approve a donation
+### 3.1 Donor
 
-1. **Donor list / search** → `GET /donors` (`DONOR_READ`).
-2. **Create donation record** → `POST /donations` with `donorId` and collection details. Status becomes `RECORDED`.
-3. **Screening review** → `POST /donations/{id}/screen` with `{passed: true|false, notes}`. Passing moves to `SCREENING_PASSED`; failing moves to `SCREENING_FAILED`.
-4. **Approve** → `POST /donations/{id}/approve` (`DONATION_APPROVE`). Legal only after a passed screening. The bank's new units appear with status `COLLECTED`, `released: false`.
-5. **Reject instead** → `POST /donations/{id}/reject` with `{reason}`; reason is mandatory.
-6. **Trace units** → `GET /donations/{id}/units`; each row shows `unitNumber`, `status`, and `version`.
+1. Sign in as `donor@lifelink.local`. The dashboard shows **My donations**, **My appointments**, **My consents**, and **Notifications** from real API data.
+2. `GET /donors` returns the donor profiles visible to the caller (a donor sees their own profile); use the returned numeric id as `{id}`. The SPA then reads `GET /donors/{id}`, `GET /donors/{id}/appointments`, `GET /donors/{id}/consents`, and `GET /donations?donorId={id}`. There is no `/donors/me` or `/donors/me/...` route.
+3. Request an appointment with `POST /donors/{id}/appointments` (`scheduledAt`, `organizationId`, optional notes). Default status is `REQUESTED`; staff can move it to `CONFIRMED`, `COMPLETED`, `REJECTED`, or `CANCELLED` via `PATCH /donors/appointments/{appointmentId}`.
+4. Record consent with `POST /donors/{id}/consents` and withdraw via `PATCH /donors/{id}/consents/{consentId}`.
+5. Read notifications with `GET /notifications` (the unread count is `{ "count": ... }`, not a bare number) and mark them read with `POST /notifications/{id}/read`. The SPA uses REST polling; the backend also supports authenticated STOMP (CONNECT requires a `Bearer`-prefixed JWT and SUBSCRIBE is limited to the caller's own `/user/...` destination), but the SPA has no live STOMP client. The live smoke used a standalone Node SockJS/STOMP client through the nginx proxy.
 
-Expected conflict: approving a `SCREENING_FAILED` or already `APPROVED` donation returns 409. The UI disables the button, but the API is the real guard.
+### 3.2 Inventory manager
 
-### 4.2 Release stock and monitor alerts
+1. Sign in as `inventory@lifelink.local` (Central Blood Bank).
+2. Create or view units under `/inventory`. A new or approved-donation unit starts `QUARANTINED` with `released=false`; use `POST /inventory/{id}/release` to make it `AVAILABLE`. The UI shows `publicId`, `unitNumber`, blood group, component, status, expiry, location, and `version`.
+3. Use `POST /inventory/adjustments` with `{unitId,delta?,reason,location?}` for stock corrections, `POST /inventory/{id}/expire` for expired stock, and `GET /inventory/{id}/movements` for that unit's audit trail. Each mutation appends an `InventoryMovement`.
+4. Storage location is a string field on the unit and on adjustments; no separate storage-location management endpoint is exposed.
+5. Expiry processing also runs in `LifecycleScheduler` every five minutes.
 
-1. **Inventory list** → `GET /inventory?organizationId=<bank>&page=0&size=20&sort=expiresAt,asc`.
-2. **Open a unit** → `GET /inventory/{id}`; verify `donationId`, `expiresAt`, `storageLocation`.
-3. **Release** → `POST /inventory/{id}/release` (`INVENTORY_RELEASE`). Requires a verified, active bank and a cleared screening; the unit becomes `AVAILABLE`, `released: true`, and a movement is appended.
-4. **Expire** → `POST /inventory/{id}/expire` if the unit has passed its expiry; status becomes `EXPIRED`.
-5. **Adjust** → `POST /inventory/adjustments` with `{unitId, delta?, reason, location?}`; a location change produces `GET /inventory/{id}/movements` history.
-6. **Alerts** → `GET /inventory/alerts` for low stock and expiring summaries.
+### 3.3 Hospital admin / medical staff — request and receive blood
 
----
+1. Sign in as `hospital@lifelink.local` or `medical@lifelink.local` (LifeCare General Hospital).
+2. Create a request with `POST /emergency-requests` (blood group, component, quantity, priority, `requiredBy`, patient reference). It starts `PENDING_VERIFICATION`.
+3. An authorized approver (bank admin, hospital admin, or platform admin with `REQUEST_APPROVE`) calls `POST /emergency-requests/{id}/verify` → `VERIFIED`, then `POST /emergency-requests/{id}/approve` → `APPROVED`. Rejection uses `/reject`; cancellation uses `/cancel`.
+4. Review suggestions with `POST /allocations/suggestions` (`ALLOCATION_REVIEW`). This returns ranked, rejection-labelled candidates; it never reserves stock.
+5. Bank staff confirm allocation with `POST /allocations/confirm` (`ALLOCATION_CONFIRM`, `requestId`, `unitIds`) and a fresh `Idempotency-Key`. The request moves `APPROVED → ALLOCATING → RESERVED`. The seeded bank admin can do this; `hospital@lifelink.local` has no allocation permission and will receive `403`.
+6. Hospital staff confirm the reservation with `POST /reservations/{id}/confirm`. This requires an `ACTIVE`, unexpired reservation.
+7. **Only the supplying bank** creates the dispatch with `POST /dispatches` (`reservationId`, `assignedStaff`) and a fresh `Idempotency-Key`. The seeded `bank@lifelink.local` succeeds; `hospital@lifelink.local` receives `403 UNAUTHORIZED_OPERATION`; an unaffiliated user receives `403 TENANT_ACCESS_DENIED`. This cross-organization split is covered by `bankStaffCanDispatchHospitalRequestButHospitalStaffCannot`.
+8. Bank staff move the dispatch `PREPARING → IN_TRANSIT` with `/depart`, may record `/incident`, and complete `/deliver` with a recipient name. Delivery marks the unit `DELIVERED`, releases the hold, and can fulfil the request (`FULFILLED`). A delivery after an incident is allowed and preserves the incident description.
+9. Reusing an idempotency key with the same request fingerprint replays the original response; reusing it with changed `unitIds`/`assignedStaff` returns `409 BUSINESS_RULE_VIOLATION`. Keys are limited to 120 characters: an overlong reservation body key or allocation/dispatch header returns `400 VALIDATION_ERROR` before transactional work; a missing dispatch `Idempotency-Key` returns `409 BUSINESS_RULE_VIOLATION`. A header key that differs from the body key is rejected `400`. Lock or integrity races return `409 CONCURRENCY_CONFLICT`; retry with a fresh key if the operation did not commit.
 
-## 5. Inventory Manager — `inventory@lifelink.local`
+### 3.4 Blood bank admin — donor screening and organizations
 
-1. **Daily stock board** → `GET /inventory` with filters `bloodGroup`, `componentType`, `status`, `expiringWithinDays`, `organizationId`. Results are paginated; the table shows `publicId`, `unitNumber`, `status`, `released`, `expiresAt`, `storageLocation`, `version`.
-2. **Expiry triage** → `GET /inventory?expiringWithinDays=7&status=AVAILABLE`, then `GET /inventory/alerts`. Prioritise units by `expiresAt`.
-3. **Manual unit entry** (staff only) → `POST /inventory` with blood group, component, collection/expiry times, and initial status. Manual units start unreleased.
-4. **Release after approval** → `POST /inventory/{id}/release`. A 409 means the state or approval guard failed; open the unit detail to see why.
-5. **Movement audit** → `GET /inventory/{id}/movements`. History is append-only; the UI never offers delete.
-6. **Analytics** → `GET /analytics/inventory` for grouped stock metrics scoped to the bank.
+1. Sign in as `bank@lifelink.local`. Use `/donors` (staff scope) and `/donations` to record a donation (`POST /donations`), record screening (`POST /donations/{id}/screen` with `{ "passed": true }`), then approve (`POST /donations/{id}/approve`). Approval requires a stored passing screening record and creates `QUARANTINED` units.
+2. Reject a donation with `POST /donations/{id}/reject`. `SCREENED → APPROVED` and `SCREENED → REJECTED` are the only exits from `SCREENED`.
+3. Manage organizations with `/organizations`; creating a pending organization requires verification by `PLATFORM_ADMIN`. Only verified, active organizations can supply stock.
+4. Use `/users` for user management and `/audit-logs` for the correlated audit trail (`AUDIT_READ`).
 
-If another user reserves the unit at the same time, the second release/reserve action returns 409 and the table refreshes with the new `version`.
+### 3.5 Platform admin
 
----
-
-## 6. Hospital Administrator — `hospital@lifelink.local`
-
-The hospital owns its emergency requests but not the bank's units. Suggestions are advisory; only confirmation creates holds.
-
-### 6.1 Raise and approve an emergency request
-
-1. **New request** → `POST /emergency-requests` with items (`bloodGroup`, `componentType`, required quantity, needed-by). Status starts `PENDING_APPROVAL`.
-2. **Review detail** → `GET /emergency-requests/{id}` shows items and request events.
-3. **Approve** → `POST /emergency-requests/{id}/approve` (`REQUEST_APPROVE`).
-4. **Alternative outcomes** → `POST /emergency-requests/{id}/reject` with `{reason}`, or `POST /emergency-requests/{id}/cancel` (owner/staff). Cancellation is blocked once an active dispatch exists (409).
-5. **List** → `GET /emergency-requests`.
-
-### 6.2 Review suggestions and confirm allocation
-
-1. **Ask for suggestions** → `POST /allocations/suggestions` with `{requestId}` (`ALLOCATION_REVIEW`). The screen shows candidate units and scores. Nothing is locked or changed.
-2. **Select units and confirm** → `POST /allocations/confirm` with `{requestId, unitIds[], idempotencyKey}` (`ALLOCATION_CONFIRM`), plus the same `Idempotency-Key` header. Reservations are created in `PENDING`.
-3. **Retry safely** → if the network fails, press Retry with the same key. The original response is replayed; no duplicate reservations appear.
-4. **Follow progress** → `GET /emergency-requests/{id}` and `GET /reservations` (`RESERVATION_READ`).
-
-Expected conflict: if a candidate was released or expired between suggestion and confirmation, confirmation returns 409 and the screen re-runs suggestions.
+1. Sign in as `admin@lifelink.local`. Verify organizations (`POST /organizations/{id}/verify`), read users across organizations (`GET /users`), and filter audit logs globally (`GET /audit-logs`).
+2. Read the only three analytics endpoints: `/analytics/overview`, `/analytics/inventory`, and `/analytics/requests`. The Analytics page includes an **Organization scope** select for platform admins; sending `X-Organization-Id` scopes metrics to one organization, while omitting it gives a cross-organization view. Non-platform users with one membership are scoped implicitly; multiple memberships require an explicit selection. A header outside the caller's memberships yields `403 TENANT_ACCESS_DENIED`.
+3. Platform admin can select any organization with `X-Organization-Id` but cannot skip verification, approval, reservation, or dispatch transitions.
 
 ---
 
-## 7. Medical Staff — test-fixture role (no seeded demo account)
+## 4. UI and interaction notes
 
-1. **Confirm a hold** → `POST /reservations/{id}/confirm` (`RESERVATION_CONFIRM`); reservation `PENDING → CONFIRMED`.
-2. **Cancel a hold** → `POST /reservations/{id}/cancel`; the unit returns to `AVAILABLE` unless a dispatch already exists (then 409).
-3. **Create dispatch** → `POST /dispatches` with `{reservationId}` and `Idempotency-Key`; only a `CONFIRMED` reservation is accepted. Dispatch starts `PREPARING`.
-4. **Mark in transit** → `POST /dispatches/{id}/depart`; unit `RESERVED → DISPATCHED`, dispatch `IN_TRANSIT`.
-5. **Deliver** → `POST /dispatches/{id}/deliver` with `{recipientName}`; unit `DISPATCHED → DELIVERED`, reservation `FULFILLED`; the request becomes `FULFILLED` when all items are covered.
-6. **Record an incident** → `POST /dispatches/{id}/incident` with `{description}`. The dispatch becomes `INCIDENT` and the event is audited; v1 has no automatic resume.
-7. **Track** → `GET /dispatches` (`DISPATCH_READ`).
+- The interface is a premium light-mode React/TypeScript SPA with a role-aware dashboard, donor landing page, task queues, filters, confirmation modals, pickers, freshness indicators, skeleton/empty/error states, responsive dialogs, reduced-motion support, and text alternatives for charts. Dashboard values come from real API responses; there is no hardcoded data.
+- Filter selections are kept in React Query keys, so different filter combinations cache independently. Analytics query keys also include the selected organization scope, so switching scope cannot reuse another organization's cached figures. Confirmation modals protect destructive actions such as cancellation, expiry, and status changes.
+- A visible "last updated" indicator reflects the API fetch time; it is not a live socket guarantee.
+- Audit and error responses include a correlation id (`X-Correlation-Id`). Quote it when reporting a problem.
 
 ---
 
-## 8. Platform Administrator — `admin@lifelink.local`
+## 5. Known limits
 
-1. **Organization queue** → `GET /organizations`; open a bank or hospital with `GET /organizations/{id}`.
-2. **Verify organization** → `POST /organizations/{id}/verify`. Unverified banks cannot release stock, so this unlocks the inventory workflow.
-3. **Manage members** → `GET /organizations/{id}/members`, `POST /organizations/{id}/members` with `{userId, role}`.
-4. **User administration** → `GET /users?page=0&size=20&search=<text>` (`USER_READ`); `PATCH /users/{id}/status` with `{status}` where status is `ACTIVE`, `PENDING_VERIFICATION`, `LOCKED`, or `DISABLED` (`USER_MANAGE`).
-5. **Audit trail** → `GET /audit-logs?actor=<id>&action=<name>&from=<utc>&to=<utc>&outcome=<value>` (`AUDIT_READ`). Entries are append-only; the UI has no edit action.
-6. **Analytics** → `GET /analytics/overview`, `GET /analytics/inventory`, `GET /analytics/requests` (`ANALYTICS_READ`). Platform view spans organizations; other roles see only their own.
-7. **Organisation management** → `POST /organizations`, `PATCH /organizations/{id}` for profile and service-area changes.
-
----
-
-## 9. Notifications for every role
-
-1. **Badge** → `GET /notifications/unread-count`.
-2. **Inbox** → `GET /notifications` (paginated). Entries come from durable outbox events such as `ReservationCreated`, `DispatchDelivered`, or `BloodUnitReleased`.
-3. **Mark read** → `POST /notifications/{id}/read`; only the owner can do this. A 403 means the entry belongs to another user.
-
-Delivery is eventually consistent, so a freshly completed action may take a moment to appear.
-
----
-
-## 10. Troubleshooting
-
-| Symptom | Likely cause | What to do |
-| :--- | :--- | :--- |
-| 401 after a while | Access token expired | Use refresh (`POST /auth/refresh`) or sign in again. |
-| 403 on an action | Role lacks the permission or the record belongs to another organization | Switch active organization or ask an administrator; hiding the button was not security. |
-| 404 on a unit you can see in another tenant | Tenant-scoped query | Confirm the correct organization membership. |
-| 409 on approve/release/confirm/deliver | Illegal state transition or stale `version` | Refresh the screen, read the current status, and retry with a fresh idempotency key only for non-idempotent actions. |
-| Duplicate-looking reservation after retry | Same idempotency key replay | Expected: the API returns the original response; check `GET /reservations` before retrying again. |
-| 429 on login | Rate limit | Wait and retry; do not script repeated logins. |
-| 500 with a correlation id | Unexpected server error | Report the `correlationId` from the error dialog; no stack trace is shown by design. |
-
-## 11. Accessibility expectations
-
-- Every form control has a visible label and an accessible error message tied to the field.
-- Keyboard-only navigation reaches all actions; focus is visible and moved to the first error after a failed submit.
-- Status colours are paired with text (`AVAILABLE`, `EXPIRED`, etc.), never communicated by colour alone.
-- Tables expose column headers and pagination state; refresh actions announce updates politely.
-
-These are acceptance criteria for the planned UI, implemented with real API calls only.
+- WebSocket delivery is implemented behind authenticated STOMP. A live SockJS/STOMP smoke passed through the Compose nginx proxy (`CONNECTED`, `MESSAGE`) using a **standalone Node script**, not an SPA STOMP client; the SPA inbox still uses REST polling. See [`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json).
+- Rate limiting and the logout `jti` denylist are in-memory (`F-04`); a multi-instance deployment would need shared stores. Persistent `token_version` revocation is database-backed.
+- No MFA, no breach-password check, no audit retention/tamper-evidence, and no production TLS/secrets configuration are provided in this local stack. CI is documented as a deployment step only and has not run.
+- Playwright E2E specs under `project/frontend/e2e` passed 6 tests on Chrome and Edge with retries 0
+  ([`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json)). See [`../quality/KNOWN_LIMITATIONS.md`](../quality/KNOWN_LIMITATIONS.md) for the full limitation list.

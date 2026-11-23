@@ -1,21 +1,125 @@
 # LifeLink Verified Test Results
 
-Date: 2026-11-23 (final review-fix verification)
+Date: 2026-11-23 — final Phase 2 verification and audit-fix reconciliation.
 
-Repository area: `project/` only. Root `README.md`, `LAB-WORK/`, and original
-history were not modified. No push was performed.
+Branch: `feature/lifelink-enterprise-platform`. Baseline HEAD:
+`195e88a81b105baea69018e44f4b57f3f806937a` (Phase 1). Phase 2 work was
+**uncommitted** at verification time; **nothing was pushed**. Scope: `project/`
+only — root `README.md`, `LAB-WORK/`, and Git history were not modified.
 
-## Summary
+**Status legend:** **V** Verified (command executed / probe recorded) ·
+**I** Implemented but not runtime-verified · **N** Not implemented ·
+**B** Blocked by environment or edit scope. These are local/demo results;
+**no production-readiness claim** is made.
 
-| Workstream | Command | Result |
-| --- | --- | --- |
-| Backend | `.\mvnw.cmd test -q` | **26 tests, 0 failures, 0 errors** |
-| Frontend | `npm ci` | **198 packages installed, 0 vulnerabilities** |
-| Frontend | `npm test` | **18 tests in 3 files passed** |
-| Frontend | `npm run build` | **TypeScript + Vite production build succeeded** |
-| Frontend | `npm audit` | **0 vulnerabilities** |
+## 1. Results at a glance
 
-## Environment
+| Area | Exact command / source | Status | Recorded result |
+| --- | --- | --- | --- |
+| Backend full suite (from `project/backend`) | `.\mvnw.cmd test -q` | V | **93 tests, 0 failures, 0 errors, 0 skipped** across **17 Surefire XML reports** (one per test class). Includes Testcontainers PostgreSQL 16 concurrency tests and Flyway `V1`–`V5` with Hibernate `ddl-auto=validate`. |
+| Focused backend regressions | Focused Maven runs of `AuthServiceSecurityTest`, `UserServiceScopingTest`, `AnalyticsServiceTenantScopeTest`, `ControllerValidationTest` (`-Dtest=<Class>`) | V | All four classes pass. |
+| Frontend typecheck (from `project/frontend`) | `npm run typecheck` | V | Passed; no TypeScript errors. |
+| Frontend unit tests | `npm test -- --run` | V | **33 tests in 6 files**, all pass. |
+| Frontend production build | `npm run build` | V | Vite 7.3.8 production build succeeded from the final tree. |
+| Dependency audit | `npm audit --audit-level=low` | V | **0 vulnerabilities**. |
+| Browser E2E | `VITE_API_PROXY_TARGET=http://127.0.0.1:18080 npm run test:e2e` | V | **6 passed in 14.4 s**, Chrome and Edge (3 specs × 2 projects), retries 0, flaky 0. [PLAYWRIGHT_RESULTS.json](../evidence/PLAYWRIGHT_RESULTS.json) |
+| Live STOMP smoke | `npm run test:stomp` against the Compose frontend proxy (`http://127.0.0.1:15173`) | V | Login ok, SockJS info ok, websocket transport ok, authenticated `CONNECTED`, personal queue `SUBSCRIBE` accepted, notification `MESSAGE` delivered. [STOMP_SMOKE_RESULT.json](../evidence/STOMP_SMOKE_RESULT.json) |
+| Docker Compose stack | `docker compose -f project/docker/docker-compose.yml up -d --build` | V | Services healthy; probes in §2. [COMPOSE_VERIFICATION.json](../evidence/COMPOSE_VERIFICATION.json) |
+| GitHub Actions execution | — | B | Root `.github/workflows` is outside the permitted edit scope; `project/deployment/github-actions.yml` is a template, not installed or run. |
+
+## 2. Compose / live-stack detail (V)
+
+| Probe | Observed result |
+| --- | --- |
+| Backend health | `GET /actuator/health` → HTTP 200 `{"status":"UP","groups":["liveness","readiness"]}` |
+| Frontend health | `GET /healthz` → HTTP 200 |
+| SPA root | HTTP 200 |
+| Login through nginx proxy | HTTP 200 |
+| Flyway (queried with `docker compose exec`) | V1 core schema, V2 operational schema, V3 dispatch idempotency, V4 integrity and idempotency, V5 persistent token version — all `success=t` |
+| Seed counts | `organizations=2`, `users=6`, `blood_units=9` |
+
+Standalone `psql` and `make` are absent on the host; PostgreSQL was queried via
+`docker compose exec`. Raw observations:
+[COMPOSE_VERIFICATION.json](../evidence/COMPOSE_VERIFICATION.json).
+
+## 3. Backend detail (V)
+
+17 test classes produced 17 Surefire XML reports:
+
+| Package | Test classes |
+| --- | --- |
+| `domain` | `BloodUnitTest`, `EmergencyRequestTest` |
+| `identity` | `AuthControllerLogoutTest`, `AuthRateLimitFilterTest`, `AuthServiceSecurityTest`, `ControllerValidationTest`, `JwtAuthenticationFilterTest`, `JwtServiceTest`, `PasswordValidationTest`, `TenantAccessServiceTest`, `UserServiceScopingTest` |
+| `concurrency` | `ConcurrencyExceptionMappingTest`, `PostgresIdempotencyConcurrencyTest` (Testcontainers PostgreSQL 16, 4 tests) |
+| `analytics` | `AnalyticsServiceTenantScopeTest` |
+| `notification` | `StompAuthenticationInterceptorTest` |
+| `security` | `TenantBoundaryRegressionTest` |
+| `integration` | `SchemaAndApiIntegrationTest` (18 ordered cases) |
+
+What the full run verifies:
+
+- Full Spring context starts; `/actuator/health` is `UP`; unauthenticated
+  protected requests return `401 AUTHENTICATION_REQUIRED`; malformed bearer
+  tokens return `401 TOKEN_INVALID` with a correlation ID.
+- Seed login succeeds; bad credentials return `401 AUTHENTICATION_FAILED`.
+- Refresh tokens rotate; replay revokes the token family; disabled accounts
+  cannot use existing access or refresh tokens.
+- Authorization failures map to `UNAUTHORIZED_OPERATION` /
+  `TENANT_ACCESS_DENIED`; donor PII, consents, appointments, and donation lists
+  are not exposed across organizations; global roles are not mutated by
+  membership changes.
+- Allocation confirms exactly `quantity` compatible units from authorized
+  supplier organizations; cross-tenant allocation and mismatched component /
+  blood-group / unit-count inputs are rejected.
+- Workflow reaches `FULFILLED` / `DELIVERED`; allocation, reservation, and
+  dispatch idempotency replays return the original resources, while divergent
+  payloads and missing keys are rejected; dispatch is assigned to the supplying
+  organization; active reservation slots are ordered deterministically.
+- Two simultaneous confirmations with one key create one reservation; PostgreSQL
+  16 contention is exercised by Testcontainers; lock/integrity races map to
+  `409 CONCURRENCY_CONFLICT`.
+- Tenant headers are validated; idempotency keys are capped at 120 characters;
+  JWT `iss`/`aud` are checked and `JWT_SECRET` fails fast outside test profiles.
+- Analytics reads use the validated `X-Organization-Id`; platform admins may omit
+  it for the global view.
+- STOMP bearer authentication, own-queue `SUBSCRIBE` restriction, and rejection
+  of `SEND` frames (no `@MessageMapping` handlers) are covered at interceptor
+  level; the live broker path is covered by the STOMP smoke probe in §1.
+
+### Phase F audit-fix closure
+
+| ID | Severity | Finding | Fix / evidence | Status |
+| --- | --- | --- | --- | --- |
+| F-01 | High | Token revocation reversible after lock/disable then re-enable | V5 adds persistent monotonic `users.token_version`; per-request principal rejects stale versions; status/credential transitions bump it permanently. `AuthServiceSecurityTest`, V5 migration, full suite | V |
+| F-02 | Medium | Analytics ignored tenant scope | `AnalyticsService` uses validated `TenantAccessService` organization; platform admins may omit header for global view. `AnalyticsServiceTenantScopeTest` | V |
+| F-03 | Medium | Stale docs / evidence | These four owned files reconciled to the final Phase 2 evidence | V (docs) |
+| F-04 | Medium | Process-local logout revocation undocumented | `AuthService.revokeAccessToken` documents its in-memory scope; caveat recorded in [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) | V (docs) |
+| F-05 | Low | Unbounded idempotency-key length | `@Size(max = 120)` on controllers/DTOs plus `IdempotencyKeys.MAX_LENGTH`; `ControllerValidationTest` | V |
+| F-06 | Medium | E2E / STOMP evidence gaps | Persisted JSON reports linked in §1 | V |
+
+A second independent review returned **`PASS WITH RESIDUALS`** with no new
+critical, high, or medium finding; all six Phase F findings are resolved. It
+approves this tree only as a local-development / supervised-demo release, not
+as production-ready. See
+[`../reviews/PHASE_2_SECOND_REVIEW.md`](../reviews/PHASE_2_SECOND_REVIEW.md).
+The earlier review record is
+[`../reviews/FINAL_INDEPENDENT_REVIEW.md`](../reviews/FINAL_INDEPENDENT_REVIEW.md)
+and the Phase 2 baseline is
+[`../reviews/PHASE_2_GAP_ANALYSIS.md`](../reviews/PHASE_2_GAP_ANALYSIS.md).
+
+## 4. Frontend detail (V)
+
+Six Vitest files (33 tests): `src/lib/api.test.ts`,
+`src/lib/routeGuard.test.ts`, `src/lib/organization.test.ts`,
+`src/lib/queryCache.test.ts`, `src/components/ui/components.test.tsx`, and
+`src/components/layout/layout-keyboard.test.tsx`. Coverage includes typed API
+errors, idempotency headers, refreshed-401 single-flight, route guards,
+organization switching, query-cache invalidation, UI states, and keyboard
+accessibility. Playwright specs in `e2e/app.spec.ts` cover unauthenticated
+redirect, live dashboard data with status-filter refetch, and mobile dialog
+focus/Escape behaviour on both browsers.
+
+## 5. Environment
 
 | Component | Version observed |
 | --- | --- |
@@ -23,112 +127,36 @@ history were not modified. No push was performed.
 | Bytecode / container target | Java 21 |
 | Spring Boot | 3.5.16 |
 | Maven Wrapper | 3.9.11 |
-| Hibernate ORM | 6.6.53.Final |
-| H2 (test/dev) | 2.3.232 in PostgreSQL compatibility mode |
 | Node.js | v24.19.0 |
 | npm | 11.17.0 |
-| Vite | 7.3.8 |
-| Vitest | 5.1.1 |
+| Docker CLI / Compose | 29.7.2 / v5.4.0 |
+| Browsers | Chrome and Edge installed (Playwright 1.65.1) |
+| GitHub CLI | 2.97.0 present (no Actions run) |
+| Host gaps | standalone `psql` and `make` absent |
 
-## Backend detail
+## 6. Historical context (superseded, kept for provenance)
 
-Final Surefire breakdown:
+The Phase 1 baseline recorded 26 backend tests in 4 classes, 18 frontend tests
+in 3 files, V1–V3 migrations, a successful production build, and `npm audit`
+with 0 vulnerabilities. Those figures predate V4/V5 and the current suite; they
+are superseded by §1 and are **not** the current status. Earlier defect batches
+(JPA `public_id`, `PasswordEncoder` circular dependency, Redis health indicator,
+lazy proxy dereference, non-committing replay revocation, idempotency race,
+`APPROVED` replay) and the Phase 1 independent-review fixes (cross-tenant
+scoping, compatibility checks, disabled-token handling, STOMP interception,
+donor IDOR, membership/global-role separation, dispatch idempotency, JWT
+issuer/audience, stale `PROCESSING` outbox retry, role fallback, API contract,
+Makefile targets) remain fixed and are exercised by the current 93-test run.
 
-| Class | Tests | Result |
-| --- | --- | --- |
-| `com.lifelink.domain.BloodUnitTest` | 6 | passed |
-| `com.lifelink.domain.EmergencyRequestTest` | 3 | passed |
-| `com.lifelink.integration.SchemaAndApiIntegrationTest` | 13 | passed |
-| `com.lifelink.notification.StompAuthenticationInterceptorTest` | 4 | passed |
+## 7. Not claimed in this record
 
-The Spring integration run applied Flyway migrations `V1`, `V2`, and the new
-`V3__dispatch_idempotency.sql`, then passed Hibernate `ddl-auto=validate`.
+| Status | Items |
+| --- | --- |
+| I | Cross-tab refresh coordination; multi-instance session revocation; production-scale runtime behaviour |
+| N | MFA, breach-password screening, audit retention/tamper evidence, shared rate-limit and jti denylist store, external email/SMS delivery, load/soak/penetration/backup-restore testing, production secrets/TLS/image pinning |
+| B | GitHub Actions execution (root `.github/workflows` outside edit scope) |
 
-### Verified by the integration suite
-
-- Full Spring context starts with `test` + `dev` profiles and embedded Tomcat.
-- `/actuator/health` returns `200 UP`; unauthenticated protected requests return
-  `401 AUTHENTICATION_REQUIRED`; malformed bearer tokens return
-  `401 TOKEN_INVALID` with a correlation ID.
-- Seed login succeeds; bad credentials return `401 AUTHENTICATION_FAILED`.
-- Refresh tokens rotate, replay revokes the whole token family, and disabled
-  accounts cannot use existing access or refresh tokens.
-- Authorization failures return `UNAUTHORIZED_OPERATION` or
-  `TENANT_ACCESS_DENIED`; a donor is denied analytics, and a hospital user is
-  denied access to a blood-bank organization.
-- Cross-tenant allocation confirmation is denied even when the caller has the
-  required permission in their own organization; allocation suggestions do not
-  expose blood-bank units to a hospital-only caller.
-- Donor profile, consent, appointment, and donation-list lookups do not expose
-  another organization's donor PII; the donor can read their own profile.
-- Global roles are not mutated by organization membership, while the
-  organization-scoped permission is still granted.
-- The allocation → reservation → dispatch → depart → deliver workflow reaches
-  `FULFILLED` and `DELIVERED`; allocation and dispatch idempotency replays return
-  the original resources; a missing dispatch `Idempotency-Key` is rejected.
-- Two simultaneous confirmations with the same key create one reservation.
-- Allocation confirmation rejects incompatible component types and a unit count
-  that differs from the requested quantity.
-- The STOMP interceptor unit tests cover missing JWT, valid JWT principal
-  resolution, rejection of another user's queue, and acceptance of the caller's
-  generic queue.
-
-### Independent review findings resolved in this batch
-
-| Severity | Finding | Verification |
-| --- | --- | --- |
-| High | Cross-tenant allocation and supplier scoping | Negative integration test |
-| High | Unit count and component/blood-group compatibility | Negative integration test |
-| High | Disabled-user access/refresh tokens accepted | Negative integration test |
-| High | Refresh-token race under concurrent rotation | Row lock + frontend single-flight test |
-| High | STOMP CONNECT/SUBSCRIBE unauthenticated | 4 interceptor unit tests |
-| High | Donor PII/IDOR and donation-list leakage | Negative integration test |
-| High | Organization membership mutated global roles | Negative integration test |
-| Medium | Dispatch creation was not idempotent | `V3` migration + replay/missing-header tests |
-| Medium | JWT issuer/audience and dev-secret fail-fast | Context startup + invalid-token test |
-| Medium | Stale `PROCESSING` outbox events were never retried | Repository query includes `PROCESSING` |
-| Medium | Frontend role fallback diverged from backend `Role.java` | Aligned with backend enum; typecheck/build |
-| Medium | API contract drift | Contract rewritten against controllers/DTOs |
-| Low | Makefile `dev`/`lint` targets were broken | `dev` now starts Vite; `lint` replaced by `typecheck` |
-
-No independent re-review was performed after these fixes. The verdict in
-[`../reviews/FINAL_INDEPENDENT_REVIEW.md`](../reviews/FINAL_INDEPENDENT_REVIEW.md)
-describes what is and is not claimed.
-
-## Frontend detail
-
-- `npm ci` was run from the committed `package-lock.json`. npm emitted an
-  `allow-scripts` warning for esbuild's optional postinstall binary but all
-  commands succeeded and `npm audit` reported zero vulnerabilities.
-- Test files: `src/lib/api.test.ts` (including the new concurrent-401
-  single-flight regression), `src/lib/routeGuard.test.ts`, and
-  `src/components/ui/components.test.tsx`.
-- `npm run build` produced `dist/` with a 366.37 kB main chunk (112.90 kB gzip)
-  and a 476.63 kB analytics chunk (135.38 kB gzip).
-
-## Previously fixed defects (original implementation batch)
-
-1. `outbox_events` lacked the `public_id` column required by `BaseEntity`.
-2. `SecurityConfig` defined `PasswordEncoder` while constructor-injecting the
-   JWT filter, creating a circular dependency.
-3. An unused Spring Data Redis dependency produced a failing health indicator.
-4. `AuthService.principal()` dereferenced a lazy `Organization` proxy outside a
-   transaction.
-5. Refresh-token reuse revocation was rolled back with the thrown exception.
-6. Concurrent allocation confirmations could race past the idempotency check.
-7. A repeated allocation after the request left `APPROVED` incorrectly failed.
-
-## Not verified in this environment
-
-- Docker image builds or `docker compose up`: the Docker daemon was unavailable
-  (`npipe:////./pipe/dockerDesktopLinuxEngine`).
-- The PostgreSQL `postgres` profile: local runs used H2 in PostgreSQL mode.
-- GitHub Actions execution: the workflow remains in `project/deployment/` and
-  must be copied to repository-root `.github/workflows/` before GitHub runs it.
-- Real-browser/E2E interaction and a live STOMP handshake: frontend tests use
-  jsdom/mocked messaging, and the WebSocket coverage is interceptor-level.
-- External email/SMS delivery: no provider is configured; the adapter reports
-  failure rather than fabricating delivery.
-- Load/soak testing, backup/restore, and production secret management.
-
-These limitations are tracked in [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md).
+Historical review records preserve their original counts and verdicts with
+dated supersession notes. For current status, treat this file,
+[`../reviews/PHASE_2_FINAL_REVIEW.md`](../reviews/PHASE_2_FINAL_REVIEW.md),
+and the linked JSON evidence as authoritative.

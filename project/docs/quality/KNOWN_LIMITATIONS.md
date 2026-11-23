@@ -1,82 +1,121 @@
-# LifeLink Known Limitations
+# Known Limitations
 
-This document records constraints that are true at the time of verification. It
-intentionally avoids claiming behavior that was not exercised.
+Date: 2026-11-23. Status: current for the implemented Phase 2 local/demo system.
+This is the authoritative limitation list. Supporting runs are in
+[`TEST_RESULTS.md`](TEST_RESULTS.md) and raw probe results in
+[`../evidence/`](../evidence/). **No production-readiness claim is made.**
 
-## Runtime and deployment
+Status labels: **V** verified by an executed probe · **I** implemented but not
+runtime-verified · **N** not implemented · **B** blocked by environment/scope.
+Items describe residual limitations even where the related feature is Verified.
 
-1. **No deployment was performed.** There is no Kubernetes, Terraform, or cloud
-   provider configuration in `project/`.
-2. **Docker was not runtime-verified.** The authoring environment could not reach
-   the Docker daemon (`npipe:////./pipe/dockerDesktopLinuxEngine`), so image
-   builds and the Compose stack were not executed. Compose files, Dockerfiles,
-   and scripts were reviewed structurally only.
-3. **PostgreSQL was not executed locally.** Backend tests and local startup use
-   H2 2.3 in PostgreSQL compatibility mode. The `postgres` profile and Flyway
-   PostgreSQL DDL are present but not runtime-verified here.
-4. **The CI workflow is not active.** `project/deployment/github-actions.yml`
-   must be copied to the repository-root `.github/workflows/` directory before
-   GitHub will run it. The workflow itself was not executed.
-5. **Windows Make is unavailable** in this environment. The Makefile was checked
-   structurally: `dev` starts the Vite frontend (the backend must be started
-   separately), `typecheck` runs TypeScript, and `build`/`test` require POSIX
-   shells. `scripts/dev.sh` additionally requires Docker and bash.
-6. **TLS, reverse-proxy hardening, and secret management are not configured.**
-   The JWT secret and database credentials use development defaults. Outside
-   `dev`/`test` profiles the JWT service fails fast unless `JWT_SECRET` is set,
-   but no production secret store is included.
-7. **No independent re-review after the final fix batch.** Two independent
-   reviews marked the earlier state `NOT_READY`. Their findings were fixed and
-   verified by automated tests, but no third reviewer re-audited the final
-   tree; see `docs/reviews/FINAL_INDEPENDENT_REVIEW.md`.
+## Runtime and security
 
-## Security and data
+1. **No MFA.** (N) Login accepts email + password only; no second factor.
+2. **No breach-password check.** (N) Basic password validation only; no screening
+   against known-compromised password lists.
+3. **Logout revocation is process-local.** (I/N) `AuthService.revokeAccessToken`
+   stores each logout `jti` in an in-memory map: it is lost on restart and is not
+   shared across replicas. The persistent `token_version` in V5 covers password
+   changes, lock/disable and re-enable irreversibly, but does **not** make
+   per-token logout revocation cluster-wide. Multi-instance deployments need a
+   shared denylist or very short access-token TTL.
+4. **Rate limiting is single-node.** (I) Auth paths are limited in memory to
+   10 attempts / 60 s per IP + account + path (login, register, refresh),
+   returning `429 RATE_LIMITED`. No shared store exists, so a multi-instance
+   deployment would not share counters.
+5. **Lockout is database-local.** (I) Failed-login lockout persists in
+   `login_attempts`, but there is no cross-service coordination or
+   admin-configurable policy endpoint.
+6. **No TLS in the local stack.** (N) Compose binds HTTP ports to `127.0.0.1`;
+   production TLS termination, certificates, and secret management are not
+   configured.
+7. **No production secrets management.** (N) `JWT_SECRET` must be supplied
+   externally and fails fast when absent in non-test profiles; no vault/KMS
+   integration, rotation schedule, or committed fallback exists.
+8. **No image pinning.** (N) Compose builds `:dev` images from source rather than
+   pinning immutable digests; no SBOM or supply-chain signing is present.
+9. **UI enforcement is cosmetic.** (I) React permission checks hide controls;
+   the backend is authoritative. This is intentional, not client-side security.
 
-8. **Development seed accounts use well-known weak passwords.** They are
-   enabled by default for local use and must be disabled or replaced outside a
-   throwaway environment.
-9. **No external email/SMS provider is configured.** `UnconfiguredProviderChannel`
-   returns failure; the outbox records notification intents in the database and
-   the in-app channel uses the local WebSocket broker. No delivery is
-   fabricated.
-10. **Frontend permission checks are UX-only.** Navigation and controls are
-    hidden by role/permission, but the backend remains the authorization
-    authority and enforces every endpoint and organization scope.
-11. **Refresh tokens are stored in `sessionStorage`; access tokens are in memory
-    only.** Concurrent 401s within one tab share a single rotation, but the
-    single-flight promise is tab-local: separate tabs can still rotate the same
-    refresh token independently. No token is written to `localStorage`.
-12. **Concurrency guarantees assume one relational database.** Pessimistic
-    locks and persisted idempotency keys are correct for the current
-    single-database design. A multi-primary or sharded deployment needs a fresh
-    concurrency review.
-13. **Outbox recovery is single-node.** `PROCESSING` events whose next attempt
-    is due are reclaimed by retries, but there is no distributed lease or leader
-    election; multiple application instances need a coordinated dispatcher or a
-    fresh design review.
-14. **WebSocket coverage is interceptor-level.** STOMP CONNECT authentication
-    and subscription restrictions are unit-tested; a live browser/SockJS
-    handshake against a deployed broker was not exercised.
+## Tenancy and audit
 
-## Test coverage
+10. **Organization header is per-request.** (I) `X-Organization-Id` is validated
+    against memberships by `TenantAccessService`; it is not a token claim.
+    Analytics now uses that validated header (platform admins may omit it for a
+    global view), but callers must still send it when switching scope.
+11. **No audit retention or tamper evidence.** (N) `audit_events` is append-only
+    in practice (save/query only): no archival, deletion schedule, hashing, or
+    tamper-evidence chain.
+12. **Correlation ids are request-scoped.** (I) They link responses, errors,
+    logs, audit rows, and outbox events but are not distributed trace ids.
 
-15. **No real-browser E2E suite.** Frontend tests use Vitest + jsdom; API flows
-    are covered by backend HTTP integration tests instead.
-16. **No load or soak testing.** The concurrency test verifies idempotency under
-    two simultaneous requests, not throughput or long-running stability.
-17. **No backup/restore drill.** PostgreSQL backups and retention are listed in
-    the deployment checklist but were not implemented or tested.
-18. **No external security audit or penetration test** was performed. The
-    negative integration tests cover the review findings, not the full attack
-    surface.
+## Notifications and WebSocket
 
-## Tooling notes
+13. **Live broker path is verified, SPA integration is not.** (V + I) The
+    authenticated SockJS/websocket handshake, own-queue `SUBSCRIBE`, and delivered
+    notification are recorded in
+    [STOMP_SMOKE_RESULT.json](../evidence/STOMP_SMOKE_RESULT.json). The SPA itself
+    uses REST polling and has no live STOMP client, so browser-side integration
+    is not verified.
+14. **No client→server STOMP messaging.** (N) `SEND` frames are rejected because
+    there are no `@MessageMapping` handlers; notifications are one-way
+    (server→client) and the REST inbox remains the reliable fallback.
+15. **Outbox is narrow.** (I/N) `outbox_events` carries `notification.created`
+    intents only — no generic domain-event bus, no `SKIP LOCKED` claim, no
+    `(userId,eventId)` deduplication constraint, no per-aggregate ordering, and
+    no exported lag metrics. There is no distributed lease for stranded
+    `PROCESSING` rows.
+16. **Cross-tab refresh coordination not runtime-verified.** (I) The frontend
+    uses a single-flight refresh promise in one tab; multiple tabs sharing
+    `sessionStorage` are not covered by a recorded test.
 
-19. **npm prints an `allow-scripts` warning for esbuild's postinstall hook.**
-    The platform-specific esbuild binary is installed as an optional dependency;
-    `npm ci`, `npm test`, `npm run typecheck`, and `npm run build` all succeed,
-    and `npm audit` reports zero vulnerabilities.
-20. **Redis is intentionally absent.** Earlier deployment documentation included
-    it, but no application code used it. Inventory consistency is enforced with
-    database locks, allocation idempotency is persisted, and dispatch
-    idempotency is persisted via `V3__dispatch_idempotency.sql`.
+## Data, concurrency, and operations
+
+17. **H2 is the fast-test database.** (V + I) Flyway `V1`–`V5` are validated by
+    Hibernate in the H2 integration run, Testcontainers PostgreSQL 16 covers
+    contention, and the Compose `postgres` profile was probed live
+    ([COMPOSE_VERIFICATION.json](../evidence/COMPOSE_VERIFICATION.json)). None of
+    this is a substitute for production-scale PostgreSQL tuning.
+18. **No automatic optimistic-retry loop.** (I) Stale writes and lock races
+    surface as `409 CONCURRENCY_CONFLICT`; clients must retry, and callers that
+    ignore 409 will lose the operation.
+19. **Idempotency records are not garbage-collected.** (N) `idempotency_records`
+    and completed outbox rows grow without a retention job. Keys are capped at
+    120 characters, but there is no expiry policy.
+20. **Storage location on a unit is free text.** (I) `BloodUnit.storageLocation`
+    is a string; `storage_locations` is reference data, not a foreign key.
+21. **No load, soak, penetration, or backup/restore tests.** (N) Performance,
+    failure-recovery, and security-resilience characteristics are unknown.
+22. **No CI execution.** (B) Root `.github/workflows` is outside the permitted
+    edit scope; `project/deployment/github-actions.yml` is a template and has not
+    run. GitHub CLI 2.97.0 is installed but no Actions workflow was executed.
+23. **E2E coverage is narrow.** (V + I) 3 scenarios passed on Chrome and Edge
+    ([PLAYWRIGHT_RESULTS.json](../evidence/PLAYWRIGHT_RESULTS.json)); there are no
+    visual snapshot baselines, full-workflow browser journeys, or a wider
+    browser/device matrix.
+24. **Historical review records are intentionally dated.** (I)
+    [`FINAL_INDEPENDENT_REVIEW.md`](../reviews/FINAL_INDEPENDENT_REVIEW.md) and
+    [`PHASE_2_GAP_ANALYSIS.md`](../reviews/PHASE_2_GAP_ANALYSIS.md) preserve
+    pre-fix counts and verdicts with dated supersession notes. They are not
+    current status; this file, [`TEST_RESULTS.md`](TEST_RESULTS.md),
+    [`PHASE_2_FINAL_REVIEW.md`](../reviews/PHASE_2_FINAL_REVIEW.md), and the
+    linked JSON evidence are authoritative.
+
+## Design deviations from the original academic plan
+
+25. **Flat packages.** (I) Modules are flat `com.lifelink.<module>` packages, not
+    `api`/`application`/`domain`/`infrastructure` sub-packages.
+26. **No typed identifiers.** (I) Entity ids are `Long` with a separate public
+    `publicId` string; no typed-id wrapper classes exist.
+27. **Framework-coupled domain.** (I) Entities carry JPA annotations; there is no
+    framework-free domain layer, ArchUnit suite, or reflection test asserting
+    `final` classes / no setters.
+28. **Narrow design patterns.** (I) Real `AllocationStrategy`, `FeefoStrategy`,
+    and specification classes exist, but there is no `BloodUnitFactory`, no
+    Template Method hierarchy, and no generic observer bus beyond the outbox.
+29. **Historical docs superseded.** (I) The proposal and initial audit are
+    preserved as dated baselines; their "planned/no implementation" statements
+    are not current. See
+    [`../proposal/PROJECT_PROPOSAL.md`](../proposal/PROJECT_PROPOSAL.md) and
+    [`../audit/INITIAL_REPOSITORY_AUDIT.md`](../audit/INITIAL_REPOSITORY_AUDIT.md).

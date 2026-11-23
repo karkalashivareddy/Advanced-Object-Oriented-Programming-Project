@@ -1,5 +1,14 @@
 # Final Independent Review Record
 
+> **Dated supersession note (2026-11-23):** This is a **historical baseline** — the
+> Phase 1-era independent review record. The findings, verdicts (`NOT_READY`), and
+> test counts below are preserved exactly as recorded at that time; they are **not**
+> the current status. The current authoritative status is
+> [`PHASE_2_FINAL_REVIEW.md`](PHASE_2_FINAL_REVIEW.md) (Phase F findings F-01…F-06
+> resolved), [`../quality/TEST_RESULTS.md`](../quality/TEST_RESULTS.md), and the durable
+> evidence under [`../evidence/`](../evidence/). Live STOMP and full-stack login are
+> now **verified**, not pending. This is not a production-readiness claim.
+
 Date: 2026-11-23
 
 ## Review protocol and provenance

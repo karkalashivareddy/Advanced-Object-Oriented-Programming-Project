@@ -1,0 +1,10 @@
+﻿{
+    "verifiedAt":  "2026-11-23T15:41:53.5755732Z",
+    "composeCommand":  "docker compose -f project/docker/docker-compose.yml up -d --build",
+    "backendHealth":  "HTTP 200 {\"status\":\"UP\",\"groups\":[\"liveness\",\"readiness\"]}",
+    "frontendHealth":  "HTTP 200 ok",
+    "spaRoot":  "HTTP 200",
+    "loginThroughNginxProxy":  "HTTP 200",
+    "flyway":  "1\\tcore schema\\tt\n2\\toperational schema\\tt\n3\\tdispatch idempotency\\tt\n4\\tintegrity and idempotency\\tt\n5\\tpersistent token version\\tt",
+    "seedCounts":  "organizations=2\nusers=6\nblood_units=9"
+}

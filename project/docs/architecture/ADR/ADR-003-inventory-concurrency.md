@@ -1,7 +1,7 @@
 # ADR-003: Inventory Concurrency
 
-**Status:** Accepted (design decision; implementation planned, not yet present).  
-**Date:** 2026-11-23  
+**Status:** Accepted; implemented in Phase 2 (2026-11-23) with the deviations noted below.
+**Date:** 2026-11-23
 **Related:** [`../DOMAIN_MODEL.md`](../DOMAIN_MODEL.md), [`../SYSTEM_ARCHITECTURE.md`](../SYSTEM_ARCHITECTURE.md)
 
 ## Context
@@ -12,12 +12,19 @@ A blood unit is a single physical object. Two staff members may try to reserve o
 
 Use a **database-centred, pessimistic-first strategy** on `BloodUnit`:
 
-1. `BloodUnitRepository.lockByIdForUpdate(UnitId)` obtains `SELECT ... FOR UPDATE` before any status check in release, reserve, cancel, and dispatch transitions.
-2. `BloodUnit.version` is an optimistic backstop (`@Version`). A stale update fails fast; the application retries once for transient version/lock failures and otherwise returns 409.
-3. Database constraints provide the final guard: a partial unique index allows only one `PENDING`/`CONFIRMED` reservation per unit, and a unique index allows only one dispatch per reservation. Check constraints reject impossible statuses and dates.
-4. Allocation confirmation locks all selected rows **in ascending unit id order** to avoid deadlocks, then creates all reservations in one transaction.
+1. `BloodUnitRepository.findByIdForUpdate(Long)` (`@Lock(PESSIMISTIC_WRITE)`) obtains a row lock before status checks in release, reserve, cancel, and dispatch transitions.
+2. `BaseEntity.version` is an optimistic backstop (`@Version`). Stale writes fail fast; lock/version conflicts map centrally to `409 CONCURRENCY_CONFLICT`. There is no automatic application-level retry loop — clients are told to retry the request.
+3. Database constraints provide the final guard: V4 adds a sparse unique index on `reservations.active_unit_id` plus CHECK constraints (portable to H2) so only `ACTIVE` reservations occupy a unit slot; `dispatches.reservation_id` is unique.
+4. Allocation confirmation locks all selected rows **in ascending unit id order** to reduce deadlocks, then creates all reservations in one transaction.
 5. `POST /allocations/suggestions` is read-only and takes no locks; it never promises stock.
-6. Every idempotency-protected endpoint records `(scope, key)` with a unique constraint and replays the stored response.
+6. `POST /allocations/confirm`, `POST /reservations`, and `POST /dispatches` record `(scope, key)` in `idempotency_records` with a SHA-256 request fingerprint and replay the stored response.
+
+## Implementation status (2026-11-23)
+
+- Implemented: pessimistic unit locks, sorted allocation locks, V4 idempotency records and sparse one-active-reservation constraint, status CHECK constraints, and central `409 CONCURRENCY_CONFLICT` mapping.
+- Implemented: dispatch creation locks the unit before claiming idempotency so replay and competing reservation paths serialize on the same row.
+- Deviated from the original design: the repository method is named `findByIdForUpdate`, the lock is on `BaseEntity.version`, the active-reservation constraint is a nullable-column + CHECK rather than a PostgreSQL partial index, and there is no automatic retry.
+- Backend coverage includes `concurrency/PostgresIdempotencyConcurrencyTest` and `concurrency/ConcurrencyExceptionMappingTest`. The final full run passed: **93 tests, 0 failures/errors/skips across 17 Surefire reports**, including Testcontainers PostgreSQL 16 concurrency and Flyway `V1`–`V5` with Hibernate `ddl-auto=validate`. See [`../../quality/TEST_RESULTS.md`](../../quality/TEST_RESULTS.md), [`../../reviews/PHASE_2_FINAL_REVIEW.md`](../../reviews/PHASE_2_FINAL_REVIEW.md), and durable evidence under [`../../evidence/`](../../evidence/). No load or penetration test was performed; no production-readiness claim is made.
 
 ## Consequences
 
@@ -31,8 +38,8 @@ Use a **database-centred, pessimistic-first strategy** on `BloodUnit`:
 **Negative**
 
 - A reserved row blocks other writers for the duration of a short transaction; long transactions would hurt throughput.
-- Pessimistic locking is PostgreSQL- and H2-specific SQL; the repository method must be tested in the PostgreSQL-mode H2 profile.
-- One retry is a policy choice; unpredictable contention may still surface as 409 to the user.
+- Pessimistic locking is PostgreSQL- and H2-specific SQL; row locks are exercised in the PostgreSQL-mode H2 profile and under Testcontainers PostgreSQL 16.
+- No automatic retry is a policy choice; unpredictable contention surfaces as `409 CONCURRENCY_CONFLICT` and the client must retry.
 - The unique indexes require careful migration design so historical rows do not block Flyway upgrades.
 
 ## Alternatives

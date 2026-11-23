@@ -5,6 +5,8 @@
 **Branch at audit time:** `main` (4 commits; HEAD `5d52463`)
 **Auditor:** Engineering Lead (OpenCode)
 
+> **Superseded note (2026-11-23):** This is a faithful record of the `main`-branch baseline (HEAD `5d52463`) and must not be read as the current state. Phase 2 work now lives on `feature/lifelink-enterprise-platform` (baseline Phase 1 HEAD `195e88a81b105baea69018e44f4b57f3f806937a`) with an uncommitted implementation: Spring Boot 3.5.16 backend, React frontend, Flyway `V1`–`V4`, tests, Docker Compose, and documentation. The "no implementation" statements below are historically accurate but obsolete. Current facts: [`../architecture/SYSTEM_ARCHITECTURE.md`](../architecture/SYSTEM_ARCHITECTURE.md), [`../architecture/API_CONTRACTS.md`](../architecture/API_CONTRACTS.md), [`../quality/TEST_RESULTS.md`](../quality/TEST_RESULTS.md), [`../../CHANGELOG.md`](../../CHANGELOG.md), and [`../quality/KNOWN_LIMITATIONS.md`](../quality/KNOWN_LIMITATIONS.md). CI is still not installed and no production deployment is claimed.
+
 ## 1. Method
 
 The audit used direct filesystem inspection, `git status`, `git branch -a`, `git log --oneline`, a recursive file listing, a full read of `README.md`, and text extraction from all three PDFs in `LAB-WORK/`. No claim below is inferred from the README alone.

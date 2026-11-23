@@ -1,7 +1,7 @@
 # ADR-001: Modular Monolith
 
-**Status:** Accepted (design decision; implementation planned, not yet present).  
-**Date:** 2026-11-23  
+**Status:** Accepted; implemented in Phase 2 (2026-11-23) with the deviations noted below.
+**Date:** 2026-11-23
 **Related:** [`../SYSTEM_ARCHITECTURE.md`](../SYSTEM_ARCHITECTURE.md), [`../DOMAIN_MODEL.md`](../DOMAIN_MODEL.md)
 
 ## Context
@@ -10,7 +10,16 @@ LifeLink is a greenfield academic project with one developer, a course timeline,
 
 ## Decision
 
-Build **one Spring Boot deployable** containing twelve modules, each with `api`, `application`, `domain`, and `infrastructure` packages under `com.lifelink.<module>`. All modules share one PostgreSQL database and one Flyway migration set. Modules interact through published application interfaces, typed identifiers, and domain events; they never call each other over HTTP and never reach into another module's repositories or entities. The React/TypeScript SPA is a separately built static client using only `/api/v1`.
+Build **one Spring Boot deployable** containing twelve business packages under `com.lifelink.<module>`, sharing one PostgreSQL database and one Flyway migration set. Modules call each other through Spring service beans, never over HTTP. The React/TypeScript SPA is a separately built static client using only `/api/v1` (plus STOMP over `/ws`).
+
+The original design text proposed `api`/`application`/`domain`/`infrastructure` sub-packages, typed identifiers, and domain events for every module. The shipped code uses flat packages with JPA entities, `Long` identifiers, and a narrower notification-only outbox; see Implementation status.
+
+## Implementation status (2026-11-23)
+
+- Implemented: one Spring Boot 3.5.16 backend, one PostgreSQL database with Flyway `V1`–`V4`, and a separately built nginx-served SPA. Modules exchanged state through service beans and shared entities.
+- Deviated from the original design: no `api`/`application`/`domain`/`infrastructure` sub-packages, no typed id wrappers, no published per-module application interfaces, and no domain event bus for all aggregates.
+- Architecture tests (for example ArchUnit) were not added; boundary conformance is reviewed from source and covered indirectly by service/security tests.
+- Local Docker Compose and Maven Wrapper builds were exercised; a GitHub Actions workflow is not installed (the file in `deployment/` is a template). No production deployment is claimed.
 
 ## Consequences
 

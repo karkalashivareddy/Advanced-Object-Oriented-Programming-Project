@@ -1,7 +1,7 @@
 # ADR-005: Local Development and Test Database
 
-**Status:** Accepted (design decision; implementation planned, not yet present).  
-**Date:** 2026-11-23  
+**Status:** Accepted; implemented in Phase 2 (2026-11-23) with the deviations noted below.
+**Date:** 2026-11-23
 **Related:** [`../SYSTEM_ARCHITECTURE.md`](../SYSTEM_ARCHITECTURE.md), [`ADR-001-modular-monolith.md`](ADR-001-modular-monolith.md), [`ADR-003-inventory-concurrency.md`](ADR-003-inventory-concurrency.md)
 
 ## Context
@@ -13,8 +13,15 @@ The audit recorded Java 25 available on the machine with a plan to target Java 2
 - Use **Flyway migrations** as the single schema definition for every profile.
 - Unit and slice tests use **H2 in PostgreSQL compatibility mode**, in-memory, no Docker required. Only portable SQL is allowed in migrations; PostgreSQL-only syntax is isolated to explicitly documented migrations and covered by integration tests.
 - Local development and deployment use **PostgreSQL 16** (Docker Compose locally, managed or containerised in deployed profiles).
-- Seed data, including the five development-only demo accounts, is applied only under the `local` profile via versioned seed migrations or a profile-scoped data loader. Test profiles seed their own fixtures.
-- Maven Wrapper pins the Maven version; environment variables supply datasource URL, credentials, JWT key, and allowed CORS origins. No secrets are committed.
+- Seed data, including the six development/demo accounts, is applied by `DevelopmentDataSeeder` under `@Profile({"dev", "default", "postgres"})`, gated by `lifelink.seed.enabled` / `SEED_DEMO_DATA`. Test profiles seed their own fixtures.
+- Maven Wrapper pins Maven `3.9.11`; environment variables supply datasource URL, credentials, JWT key, and allowed CORS origins. No signing secret is committed. `JWT_SECRET` is required in every non-test profile.
+
+## Implementation status (2026-11-23)
+
+- Implemented: Flyway `V1`–`V5` as the single schema set (V5 adds persistent monotonic `users.token_version`); H2 in PostgreSQL compatibility mode for tests; PostgreSQL 16 in Docker Compose with Testcontainers for concurrency tests; Maven Wrapper; environment-driven configuration; profile-gated seeder.
+- Implemented: Compose binds db/backend/frontend to `127.0.0.1` with overridable `POSTGRES_PORT`, `BACKEND_PORT`, and `FRONTEND_PORT`; images `lifelink/backend:dev` and `lifelink/frontend:dev` built successfully.
+- Deviated from the original design: there is no `local` profile name (the active defaults are `default`/`dev`/`postgres`), seeding is a Java loader rather than versioned seed migrations, and `application.yml` defaults `SEED_DEMO_DATA` to `true` while `application-postgres.yml` defaults it to `false`.
+- Verified: health probes on override ports `18080/15173/15432` returned HTTP 200 for backend and frontend; the full-stack login through the frontend nginx proxy after the seeder fix returned HTTP 200. Flyway `V1`–`V5` all reported `success = t` and seed data was confirmed (`organizations=2`, `users=6`, `blood_units=9`). See [`../../evidence/COMPOSE_VERIFICATION.json`](../../evidence/COMPOSE_VERIFICATION.json), [`../../quality/TEST_RESULTS.md`](../../quality/TEST_RESULTS.md), and [`../../reviews/PHASE_2_FINAL_REVIEW.md`](../../reviews/PHASE_2_FINAL_REVIEW.md). Live STOMP through the same proxy is also verified ([`../../evidence/STOMP_SMOKE_RESULT.json`](../../evidence/STOMP_SMOKE_RESULT.json)); the SPA has no live STOMP client. GitHub Actions was not installed or run.
 
 ## Consequences
 

@@ -1,183 +1,320 @@
 # LifeLink System Architecture
 
-**Status:** Planned design (no implementation claimed).  
-**Source of truth for external behaviour:** [`API_CONTRACTS.md`](API_CONTRACTS.md). Companion documents: [`DOMAIN_MODEL.md`](DOMAIN_MODEL.md), [`UML.md`](UML.md), `../academic/AOOP_CONCEPT_MAPPING.md`.  
-**Baseline:** The initial audit recorded a documentation-only repository; everything described here is greenfield.
+Date: 2026-11-23
+Status: implementation-aligned working document for Phase 2 (`feature/lifelink-enterprise-platform`; baseline HEAD `195e88a81b105baea69018e44f4b57f3f806937a`, Phase 2 uncommitted at time of writing, nothing pushed).
+**Source of truth for external behaviour:** [`API_CONTRACTS.md`](API_CONTRACTS.md). Companion documents: [`DOMAIN_MODEL.md`](DOMAIN_MODEL.md), [`UML.md`](UML.md), [`../academic/AOOP_CONCEPT_MAPPING.md`](../academic/AOOP_CONCEPT_MAPPING.md).
+
+This document replaces the earlier "planned design / no implementation claimed" version.
+It describes the code and configuration now in `project/`, specifically Spring Boot
+`3.5.16` with Java 21 bytecode target, Maven Wrapper `3.9.11`, Flyway `V1`–`V5`, and the
+React/TypeScript SPA. `V5` adds `users.token_version` for persistent, monotonic access-token
+revocation. Nothing here is a production-readiness claim; this is a local-development /
+supervised-demo architecture.
 
 ---
 
 ## 1. Architectural style and context
 
-LifeLink is a **modular monolith**: one Spring Boot deployable, one PostgreSQL database, twelve business modules with explicit package boundaries. Modules communicate through application interfaces and domain events, not through network calls. This keeps transaction boundaries simple and makes the object-oriented boundaries visible for assessment.
+LifeLink is a **modular monolith**: one Spring Boot deployable, one PostgreSQL database
+(H2 in PostgreSQL compatibility mode for fast tests), and business modules separated by
+Java package. Modules call each other through Spring service beans, not network calls.
+The SPA is served by an nginx-based container that reverse-proxies `/api/`, `/ws/`, and
+`/sockjs/` to the backend.
 
 ```mermaid
 flowchart LR
-    UI[React + TypeScript SPA] -->|HTTPS /api/v1| API[Spring Boot modular monolith]
-    API --> PG[(PostgreSQL + Flyway)]
-    API --> OUT[(Outbox table in same DB)]
-    OUT --> W[Outbox poller / notification worker]
-    W --> PG
-    OBS[Logs, metrics, health, audit] -.-> API
-    DEV[Developer / CI] --> API
+    UI[React + TypeScript SPA] -->|same-origin /api/v1 proxy| API[Spring Boot modular monolith]
+    UI -->|/ws, /sockjs STOMP| API
+    API --> PG[(PostgreSQL 16 + Flyway V1-V5)]
+    API --> AUDIT[(audit_logs in same DB)]
+    API --> OUT[(outbox_events in same DB)]
+    S[LifecycleScheduler every 5 min] --> OUT
+    S --> API
+    OBS[Logs, audit query API, actuator health] -.-> API
 ```
 
-The API is the only integration surface. All list responses use `PageResponse<T>`, all single responses use `ApiResponse<T>`, and errors use `ApiError` with `correlationId`.
+The API is the integration surface. Successful single responses use `ApiResponse<T>`,
+paged lists use `PageResponse<T>`, and errors use the structured `ErrorResponse` with
+`correlationId`. Some list endpoints return plain arrays inside `ApiResponse`; the exact
+set is listed in `API_CONTRACTS.md`.
+
+---
 
 ## 2. Module map
 
-| Module | Responsibility | Depends on | Contract surface |
+Packages are flat under `com.lifelink.<module>`: controller, service, repository, entity,
+DTO, and configuration classes live together rather than in `api`/`application`/`domain`/
+`infrastructure` sub-layers. Persistence annotations are on the entities themselves.
+
+| Package | Responsibility | Key classes | Contract surface |
 | :--- | :--- | :--- | :--- |
-| identity | Authentication, token rotation, users, roles/permissions, tenant context | shared, organization (membership lookup) | `/auth/*`, `/users*` |
-| organization | Organization profiles, verification, memberships | shared | `/organizations*` |
-| donor | Donor profiles, consents, appointments | shared, organization | `/donors*` |
-| donation | Donation records, screening, approval/rejection, unit creation trigger | shared, donor, inventory (unit factory port) | `/donations*` |
-| inventory | Blood unit lifecycle, movements, alerts, stock queries | shared, organization | `/inventory*` |
-| emergency | Emergency requests, items, approval/rejection/cancellation | shared, organization | `/emergency-requests*` |
-| allocation | Advisory candidate evaluation and confirmation orchestration | shared, inventory, emergency, reservation | `/allocations/*` |
-| reservation | Reservation lifecycle and unit hold/release | shared, inventory | `/reservations*` |
-| dispatch | Dispatch lifecycle from confirmed reservation | shared, reservation, inventory | `/dispatches*` |
-| notification | User inbox, unread count, mark read, event-to-notification mapping | shared | `/notifications*` |
-| audit | Append-only actor/action/outcome log and queries | shared | `/audit-logs` |
-| analytics | Read-only role/organization-scoped metrics | shared, read models over inventory/emergency | `/analytics/*` |
+| `common` | Envelopes, correlation, exceptions, seeding, lifecycle jobs, shared enums | `ApiResponse`, `PageResponse`, `CorrelationIdFilter`, `GlobalExceptionHandler`, `DevelopmentDataSeeder`, `LifecycleScheduler`, `BloodGroup`, `ComponentType`, `BaseEntity` | cross-cutting |
+| `identity` | Auth, JWT, users, roles/permissions, memberships, tenant selection, rate limiting | `AuthService`, `JwtService`, `SecurityConfig`, `TenantAccessService`, `UserService`, `LoginAttempt` | `/auth/*`, `/users*` |
+| `organization` | Organization profiles, verification, memberships | `OrganizationService`, `Organization`, `OrganizationController` | `/organizations*` |
+| `donor` | Donor profiles, consents, appointments, donations and screening | `DonorService`, `DonationService`, `ScreeningRecord`, `Appointment` | `/donors*`, `/donations*` |
+| `inventory` | Blood unit lifecycle, movements, alerts, stock queries | `InventoryService`, `BloodUnit`, `InventoryMovement`, `StorageLocation` | `/inventory*` |
+| `emergency` | Emergency requests and request events | `EmergencyRequestService`, `EmergencyRequest`, `RequestEvent` | `/emergency-requests*` |
+| `allocation` | Advisory candidate scoring and confirmation orchestration | `AllocationService`, `FeefoStrategy`, `StrictSameGroupSpecification`, `CompatibilitySpecification`, `AllocationCandidate` | `/allocations/*` |
+| `reservation` | Reservation lifecycle, unit holds, idempotency claims | `ReservationService`, `Reservation`, `ReservationService.Idempotency` | `/reservations*` |
+| `dispatch` | Dispatch lifecycle from confirmed reservation | `DispatchService`, `Dispatch` | `/dispatches*` |
+| `notification` | Inbox, STOMP config, outbox processing, channels | `NotificationService`, `OutboxEvent`, `StompAuthenticationInterceptor`, `WebSocketConfig` | `/notifications*`, `/ws` |
+| `audit` | Actor/action/outcome log and queries | `AuditService`, `AuditEvent` | `/audit-logs` |
+| `analytics` | Read-only scoped metrics | `AnalyticsService`, `AnalyticsController` | `/analytics/*` |
 
-`shared` is a small kernel: envelope types, correlation handling, exception types, `TenantContext`, ports (`OutboxPort`, `AuditPort`, `IdempotencyPort`), and cross-cutting configuration. It contains no business rules.
+Cross-aggregate references use numeric `Long` identifiers and JPA associations; there are
+no typed identifier wrapper classes (for example no `UnitId` or `OrganizationId` type).
+Where a `BloodUnit` belongs to an organization, the entity holds a `ManyToOne` to
+`Organization` and the service checks organization scope.
 
-## 3. Layer boundaries
+---
 
-Each module has the same four-layer shape under `com.lifelink.<module>`:
+## 3. Layer boundaries (as implemented)
 
 ```mermaid
 flowchart TD
-    C[api: controllers, DTOs, validators] --> A[application: use-case services, orchestration, transactions]
-    A --> D[domain: entities, value objects, enums, domain events, ports]
-    I[infrastructure: JPA adapters, mappers, outbox publisher, clients] -.implements ports.-> D
-    C -.->|DTO mapping only| I
-    A -.->|constructor injection of ports| I
+    C[Controllers: DTO validation, one service call, ApiResponse mapping]
+    S[Services: @Transactional use cases, permission and tenant checks]
+    E[Entities: JPA @Entity + guarded transition methods on BaseEntity subclasses]
+    R[Spring Data JPA repositories, including pessimistic-lock queries]
+    X[common: envelopes, exceptions, correlation, security filters]
+    C --> S
+    S --> E
+    S --> R
+    S --> X
+    C --> X
 ```
 
-### 3.1 Allowed dependencies
+Implemented conventions:
 
-| From | May depend on | Must not depend on |
-| :--- | :--- | :--- |
-| api | application of its own module, shared envelope/DTO types | domain entities directly, JPA, repositories |
-| application | domain of its own module, published application interfaces of other modules, shared ports | controllers, JPA annotations, HTTP types |
-| domain | only JDK types and shared kernel value types | Spring, JPA, Jackson, controllers, infrastructure |
-| infrastructure | domain ports and entities, Spring Data JPA, database drivers | controllers, other modules' private implementation classes |
+1. Controllers validate `@Valid` DTOs and call one application service method. They do not
+   mutate entities directly.
+2. Services are the `@Transactional` boundary and the authorization boundary; they call
+   `TenantAccessService` for organization-scoped resources.
+3. Entities extend `BaseEntity` (`id`, `publicId`, `createdAt`, `updatedAt`, `@Version`) and
+   expose guarded methods such as `reserve()`, `markDispatched()`, `verify()`, `approve()`.
+   They do carry JPA annotations; the planned "domain with no Spring/JPA imports" rule was
+   not adopted.
+4. Cross-module calls go through the owning module's service bean (for example
+   `AllocationService` calls `ReservationService.Idempotency`). There is no separate
+   published interface per module beyond the concrete services and the strategy/specification
+   interfaces in `allocation` and `notification`.
+5. The SPA may hide controls by role, but every endpoint rechecks permission and
+   organization scope server-side.
 
-### 3.2 Boundary rules
+A Future conformance checklist remains aspirational rather than a claim: uniform
+module-level architecture tests (ArchUnit) are not present, and the checks in
+`quality/TEST_STRATEGY.md` are source-review and runtime tests, not package-boundary tests.
 
-1. Controllers validate the DTO, call one application service method, and map the result. They never mutate domain state.
-2. Domain entities expose intention-revealing methods (`release()`, `reserve(...)`, `cancel(...)`) and no public setters. Continuous state is held in enums and value objects.
-3. Cross-module calls go through an application interface published by the owning module (for example `ReservationCommands` used by allocation). Direct repository access across modules is forbidden.
-4. Cross-module data is referenced by typed identifier (`OrganizationId`, `DonationId`, `UnitId`), not by a foreign JPA entity graph.
-5. The frontend may hide buttons based on roles; the server rechecks permissions and organization scope on every request.
-6. A module's package is allowed to import `com.lifelink.shared.*` but not another module's `api` or `infrastructure` packages.
+---
 
 ## 4. Transaction strategy
 
 | Use case | Boundary | Lock / protection | Notes |
 | :--- | :--- | :--- | :--- |
-| Donation approval | Single transaction in `DonationService.approve` | Version on `Donation`; unit inserts | Creates units, writes audit and outbox rows in the same transaction. |
-| Unit release | Single transaction in `InventoryService.release` | `PESSIMISTIC_WRITE` on the unit row | Rechecks status and expiry under lock; writes movement + outbox. |
-| Allocation confirmation | Single transaction in `AllocationService.confirm` | Pessimistic lock per selected unit, ordered by unit id | Idempotency record inserted first; all-or-nothing reservations. |
-| Reservation create/confirm/cancel | Single transaction in `ReservationService` | Lock on unit; optimistic `@Version` as backstop | Cancel returns unit to `AVAILABLE` only for the owning reservation. |
-| Dispatch create/depart/deliver | Single transaction in `DispatchService` | Unique dispatch per reservation; version on unit | Delivery cascades to reservation/request completion through application events handled after commit or in the same orchestration transaction. |
-| Suggestions | Read-only transaction | None | Never writes; advisory only. |
-| Analytics / audit reads | Read-only transaction | None | Read models scoped by tenant before aggregation. |
+| Donation approval | `DonationService.approve` | Version on `Donation` | Creates quarantined units and writes audit in the same transaction. |
+| Unit release | `InventoryService.release` | `BloodUnitRepository.findByIdForUpdate` (`PESSIMISTIC_WRITE`) | Rechecks status/expiry under lock; appends movement. |
+| Allocation confirmation | `AllocationService.confirm` | Idempotency claim + pessimistic locks sorted by unit id | All-or-nothing reservations; request moves `APPROVED`/`ALLOCATING` → `RESERVED`. |
+| Reservation create/confirm/cancel | `ReservationService` | Pessimistic lock on `BloodUnit`, `@Version` backstop | Cancel releases the unit only for the owning reservation. |
+| Dispatch create/depart/deliver | `DispatchService` | Pessimistic lock on unit, unique dispatch per reservation, `@Version` backstop | Dispatch creation is blood-bank-only in the supplying organization. |
+| Suggestions | `AllocationService.suggest` | Snapshot read | Advisory only; no writes or locks. |
+| Audit/analytics reads | service read transactions | Tenant predicates | Analytics aggregates only caller-visible data. |
 
 Rules:
 
-- Application service methods are the `@Transactional` boundary; domain objects are not transaction-aware.
-- Outbox, audit, and idempotency writes participate in the same transaction as the state change (see §6).
-- Idempotency keys are stored with a unique constraint on `(scope, idempotencyKey)`. A replay returns the stored response; it does not repeat domain mutations.
-- Business conflicts map to 409; validation failures to 400; unexpected failures to 500 through one `GlobalExceptionHandler`.
-- Transactions stay short: no network calls, template rendering, or notification dispatch inside them.
+- Service methods own the transaction; domain objects are not transaction-aware.
+- Audit `SUCCESS` rows are written inside the business transaction. Failed business work
+  does not leave a misleading success audit row.
+- Lock-acquisition failures, query timeouts, optimistic-lock failures, and
+  `DataIntegrityViolationException` map centrally to `409 CONCURRENCY_CONFLICT`.
+- Business rule/state violations map to `409` with their own codes; validation failures
+  map to `400`; unexpected failures to `500`. `GlobalExceptionHandler` is the single
+  mapper and never exposes stack traces, SQL, tokens, or credentials.
+- No notification email/SMS is sent on the request thread. In-app notifications and
+  outbox rows are written in the same transaction as the triggering state change.
+
+---
 
 ## 5. Concurrency strategy
 
-1. **Contended writes:** `BloodUnit` is the concurrency hotspot. `BloodUnitRepository.lockByIdForUpdate(UnitId)` issues `SELECT ... FOR UPDATE` before checking status. The second caller waits, then sees `RESERVED` and receives 409.
-2. **Optimistic backstop:** `BloodUnit.version` is incremented on every mutation with `@Version`; a stale write fails fast and is retried once for transient lock/version failures at the application boundary.
-3. **Database constraints:** a partial unique index allows only one active (`PENDING`/`CONFIRMED`) reservation per unit, and a unique index allows only one dispatch per reservation. Check constraints reject impossible dates and statuses.
-4. **Deterministic lock order:** allocation confirmation locks units sorted by id to avoid deadlocks between concurrent confirmations.
-5. **No distributed locks:** a single database and one deployable mean no Redis lock is needed for correctness.
-6. **Advisory path:** `POST /allocations/suggestions` uses a snapshot query and never claims units, so no lock is taken.
+1. **Contended writes:** `BloodUnit` is the hotspot. `BloodUnitRepository.findByIdForUpdate`
+   issues a pessimistic write lock before status checks in reservation, allocation,
+   dispatch, and release paths.
+2. **Optimistic backstop:** `BaseEntity.version` is a JPA `@Version` column incremented on
+   mutation.
+3. **Database constraints (V4) and token version (V5):** `idempotency_records(scope, key)`
+   is unique; a sparse unique index plus check constraints allow only one `ACTIVE` reservation
+   per unit; unit and reservation status CHECK constraints reject impossible states. `V5`
+   adds `users.token_version`, incremented on every credential/status transition so old
+   access tokens stay revoked after lock, disable, and re-enable.
+4. **Deterministic lock order:** allocation confirmation locks selected units in ascending
+   id order to reduce deadlock risk.
+5. **Advisory path:** `POST /allocations/suggestions` takes no lock and changes no state.
+6. **No distributed lock:** correctness is local to one database. The auth rate limiter and
+   the logout `jti` denylist (`F-04`) are in-memory and therefore only correct for a single
+   backend instance; a multi-instance deployment needs shared stores for both. Persistent
+   `token_version` revocation is database-backed and does not have that limitation.
 
 See [`ADR/ADR-003-inventory-concurrency.md`](ADR/ADR-003-inventory-concurrency.md).
 
-## 6. Event and outbox strategy
+---
 
-Domain methods append events to the aggregate (`DonationApproved`, `BloodUnitReleased`, `ReservationCreated`, `ReservationConfirmed`, `ReservationCancelled`, `DispatchDeparted`, `DispatchDelivered`, `EmergencyRequestApproved`). The application service drains them and writes `outbox_event` rows in the **same** transaction as the state change.
+## 6. Event and outbox strategy (as implemented)
+
+The planned generic outbox-for-all-domain-events design was narrowed: the implemented
+`outbox_events` table carries `notification.created` events written by
+`NotificationService.notifyUser` alongside the `Notification` row. `OutboxEvent` has
+`PENDING`, `PROCESSING`, `PROCESSED`, `FAILED`, an `eventId`, attempts, `nextAttemptAt`, and
+`lastError`. `InAppNotificationChannel` publishes in-app delivery;
+`UnconfiguredProviderChannel` represents unconfigured external channels.
 
 ```mermaid
 sequenceDiagram
     participant S as Application service
     participant DB as Database (same transaction)
-    participant P as Outbox poller
-    participant W as Notification worker
+    participant L as LifecycleScheduler (5 min)
+    participant N as NotificationService.processOutbox
     S->>DB: update aggregate + version
-    S->>DB: insert audit_log
-    S->>DB: insert outbox_event(eventId, payload, correlationId)
+    S->>DB: insert audit_log (SUCCESS)
+    S->>DB: insert notification + outbox_event(notification.created)
     DB-->>S: commit
-    P->>DB: SELECT ... FOR UPDATE SKIP LOCKED (unpublished batch)
-    P->>W: dispatch event by id
-    W->>DB: upsert notification (unique eventId)
-    W->>DB: mark outbox_event published
+    L->>N: processOutbox()
+    N->>DB: findDue(now)
+    N->>N: dispatch to channel; per-item try/catch
+    N->>DB: markProcessed() or markFailed(error, retryAt)
 ```
 
-- Delivery is **at-least-once**; consumers are idempotent on `eventId` (unique constraint on notification).
-- Ordering is guaranteed per aggregate id, not globally; the UI does not rely on global ordering.
-- A failed consumer leaves the row unpublished with a retry count; repeated failure is visible in metrics and logs.
-- No notification email/SMS is sent from the request thread; out-of-scope external channels would be adapters behind the same worker.
+- Delivery is at-least-once; notification rows are keyed by `publicId` and outbox events
+  by `eventId`. Processing is fault-isolated per item: one bad event cannot stop the batch.
+- Failed events retry with backoff and end in `FAILED` after 5 attempts; `lastError` is
+  truncated before storage.
+- Live WebSocket push from the STOMP broker is configured and unit-tested at the
+  interceptor level. A live SockJS/STOMP smoke test through the Compose nginx proxy passed
+  on 2026-11-23 (`CONNECTED`, `MESSAGE`;
+  [`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json)), driven by a
+  standalone Node script (`npm run test:stomp`) rather than an SPA STOMP client. The SPA
+  continues to poll the REST inbox.
+- No email/SMS provider is configured or claimed.
 
 See [`ADR/ADR-004-outbox-notifications.md`](ADR/ADR-004-outbox-notifications.md).
 
+---
+
 ## 7. Observability
 
-- **Correlation:** `CorrelationIdFilter` accepts an inbound correlation id or generates one, stores it in MDC, and includes it in `ApiResponse`/`ApiError`, audit rows, outbox rows, and log lines.
-- **Logging:** structured JSON in deployed profiles, readable console locally. INFO for state transitions, WARN for rejected idempotent replays and retryable conflicts, ERROR for unexpected failures. Passwords, tokens, phone numbers, and full donor details are never logged.
-- **Metrics:** HTTP request count/latency/status by endpoint and role, outbox lag and retry count, reservation conflicts, expiring-unit scan duration.
-- **Health:** liveness and readiness probes; readiness includes database connectivity, not external notification providers.
-- **Audit separation:** business audit is a queryable, append-only table (`/audit-logs`); it is not a replacement for technical logs.
-- **Error clarity:** `GlobalExceptionHandler` maps domain exceptions to the documented codes without exposing stack traces, SQL, or credentials.
+- **Correlation:** `CorrelationIdFilter` accepts an inbound `X-Correlation-Id` or generates
+  one, stores it in MDC, and includes it in `ApiResponse`, error bodies, and audit rows.
+- **Logging:** lifecycle jobs log counts; unexpected failures are logged centrally. Do not
+  assume structured JSON logging in deployed profiles — that was a design intent, not a
+  verified configuration in this phase.
+- **Health:** `application.yml` exposes actuator `health,info,metrics,prometheus`. The final
+  Compose probe on `18080/15173/15432` recorded healthy services, backend
+  `/actuator/health` HTTP 200 with `liveness`/`readiness` groups, frontend `/healthz` HTTP
+  200 `ok`, SPA root HTTP 200, and login through the nginx proxy HTTP 200; Flyway V1–V5 all
+  succeeded and seeding produced organizations=2, users=6, blood_units=9
+  ([`../evidence/COMPOSE_VERIFICATION.json`](../evidence/COMPOSE_VERIFICATION.json)).
+- **Audit:** queryable through `/api/v1/audit-logs` with organization, actor, action,
+  time-range, and outcome filters. It is not a replacement for technical logs and has no
+  retention or tamper-evidence mechanism.
+- **Metrics:** actuator endpoints are configured; no dashboard, SLO, or alerting is claimed.
+
+---
 
 ## 8. Security architecture
 
-1. **Authentication:** `POST /auth/login` validates a BCrypt hash and issues a short-lived JWT access token plus a rotating refresh token. `POST /auth/refresh` rotates the refresh token; reuse of an old token is rejected. `POST /auth/logout` revokes the presented refresh token.
-2. **Authorization:** permissions named exactly as in the contract (for example `USER_READ`, `INVENTORY_RELEASE`, `REQUEST_APPROVE`, `ALLOCATION_CONFIRM`, `AUDIT_READ`, `ANALYTICS_READ`) are enforced by method security in application services and rechecked where needed in domain commands. Roles are coarse groups of permissions.
-3. **Tenancy:** `TenantContext` is populated from the validated token's active membership. Repository queries add the organization predicate; service methods compare resource `organizationId` with the caller's scope. A caller with several memberships must select the active organization. `PLATFORM_ADMIN` is the only role allowed explicit cross-organization reads.
-4. **Cross-organization workflow:** a hospital request may target blood units owned by a verified bank organization. This is the single sanctioned exception: it requires `ALLOCATION_REVIEW`/`ALLOCATION_CONFIRM`, records both `requestingOrganizationId` and `supplyingOrganizationId` on the reservation, and is audited.
-5. **Transport and input:** HTTPS in deployed profiles, strict CORS allowlist, request size limits, validation on all DTOs, parameterized queries, rate limiting on auth endpoints (429).
-6. **Data protection:** passwords hashed with BCrypt; tokens only in the intended auth responses; no secrets in source control; demo accounts enabled exclusively by the local development profile.
-7. **UI security posture:** SPA role checks only shape the interface. Every action is authorized again by the API.
+1. **Authentication:** `POST /auth/login` checks a BCrypt hash and issues a short-lived
+   JWT access token plus a rotating refresh token. Refresh-token reuse revokes the family.
+   Access tokens carry `jti` and `token_version`. Password change and any status transition
+   increment the persistent `V5` token version, permanently revoking older access tokens.
+   `POST /auth/logout` revokes the presented refresh token and denies only the presented
+   bearer `jti` in the process that handled it (`F-04`, process-local in-memory denylist).
+2. **JWT secret:** `JWT_SECRET` is required in every non-test profile; there is no committed
+   fallback. Missing, short (<32 byte), or test-only secrets fail fast at startup. The test
+   profile has a dedicated test-only key.
+3. **Authorization:** `Role` and `Permission` enums drive method security. Notable rule:
+   dispatch creation requires `DISPATCH_CREATE` in the **supplying** blood-bank organization;
+   hospital membership alone never grants it.
+4. **Tenancy:** `X-Organization-Id` is optional and validated by `TenantAccessService`
+   against memberships (platform admins may select any id). It narrows scope and never
+   bypasses permissions. Invalid ids are `400` (malformed) or `403` (non-member). The SPA
+   sends the header and clears React Query caches on organization switch. All three
+   `/api/v1/analytics/*` endpoints use the same validated scope (`F-02`): platform admins
+   may omit the header for a global view or send it to scope one organization; non-admins
+   with one membership are implicitly scoped, while multiple memberships require an explicit
+   selection. `AnalyticsPage` exposes an Organization scope select and includes the scope in
+   query keys.
+5. **Rate limiting and lockout:** login/register/refresh 401 responses are limited to
+   10/60s per IP+account+path in memory; the next attempt returns `429 RATE_LIMITED`. Failed
+   logins also persist 5-failure/15-minute account lockout in `login_attempts`. The limiter
+   and the logout `jti` denylist do not persist or coordinate across multiple backend
+   instances. No MFA or breach-password check is implemented.
+6. **Transport:** CORS allows origins from `CORS_ALLOWED_ORIGINS` (default
+   `http://localhost:5173`), methods `GET,POST,PATCH,PUT,DELETE,OPTIONS`, headers
+   `Authorization,Content-Type,X-Correlation-Id,Idempotency-Key,X-Organization-Id`,
+   exposes `X-Correlation-Id`, and disallows credentials. TLS/HTTPS termination is not
+   configured in the local Compose stack.
+7. **WebSocket:** STOMP CONNECT requires a `Bearer`-prefixed JWT (native `Authorization`
+   preferred, STOMP header/passcode/login fallback; no raw token); SUBSCRIBE is restricted
+   to the caller's own queue and requires `NOTIFICATION_READ`; SEND is denied because no
+   `@MessageMapping` handlers exist. Broker errors are generic. The live smoke was driven by
+   a standalone Node SockJS/STOMP client through the nginx proxy, not by the SPA.
+8. **UI security posture:** SPA role checks only shape the interface; server authorization
+   is authoritative.
 
 See [`ADR/ADR-002-auth-and-tenancy.md`](ADR/ADR-002-auth-and-tenancy.md).
+
+---
 
 ## 9. Deployment view
 
 ```mermaid
 flowchart LR
-    Browser[Browser] --> CDN[Static SPA host / Nginx]
-    CDN -->|/api/v1 reverse proxy| BE[Spring Boot jar :8080]
-    BE --> DB[(PostgreSQL 16)]
-    BE --> ACT[/actuator/health, /actuator/metrics/]
-    CI[CI: mvnw verify + npm test] --> BE
-    CI --> CDN
+    Browser[Browser on host] --> NG[Nginx in frontend container :8080]
+    NG -->|/api/v1 reverse proxy| BE[Spring Boot backend container :8080]
+    NG -->|/ws and /sockjs| BE
+    BE --> DB[(PostgreSQL 16 container)]
+    BE --> ACT[/actuator/health]
+    DEV[Developer shell: docker compose with JWT_SECRET] --> NG
 ```
 
-- **Local development:** Maven Wrapper (Java 21 bytecode target), Node/Vite dev server proxying `/api/v1`, optional Docker Compose PostgreSQL. Fast tests use H2 in PostgreSQL mode and require no Docker. Redis is not used; inventory consistency relies on database locks and persisted idempotency keys.
-- **Build:** one executable jar; frontend produces static assets; Flyway migrations run at startup before application traffic.
-- **Configuration:** environment variables for datasource, JWT signing key, CORS origins, and profile selection; no secrets committed.
-- **Deployed profiles:** `local`, `test`, `prod` (prod is a target, not a claimed deployment). Health probes gate traffic; logs and metrics are collected by the hosting environment.
-- **Scaling model:** scale vertically first; the design does not require session affinity because authentication is stateless.
+- **Local development:** backend via `./mvnw spring-boot:run` with H2 (PostgreSQL mode)
+  and `SEED_DEMO_DATA=true`; frontend via `npm run dev` with Vite proxying `/api`.
+- **Docker Compose:** images `lifelink/backend:dev` and `lifelink/frontend:dev` were built
+  successfully. Compose binds db/backend/frontend to `127.0.0.1` with overridable
+  `POSTGRES_PORT`, `BACKEND_PORT`, and `FRONTEND_PORT`; the verified environment uses
+  `15432`, `18080`, and `15173` because port `8080` is occupied locally. Startup requires
+  `JWT_SECRET` supplied externally in the shell (never persisted or printed);
+  `CORS_ALLOWED_ORIGINS` derives from `FRONTEND_PORT`. The Compose demo sets
+  `SEED_DEMO_DATA=true`; standalone PostgreSQL defaults to no demo seed. See
+  [`../deployment/DEPLOYMENT_GUIDE.md`](../deployment/DEPLOYMENT_GUIDE.md).
+- **Flyway migrations:** `V1__core_schema.sql`, `V2__operational_schema.sql`,
+  `V3__dispatch_idempotency.sql`, `V4__integrity_and_idempotency.sql`, and
+  `V5__persistent_token_version.sql` run at startup; all five succeeded in the final
+  Compose verification.
+- **Profiles:** `default`/`dev`/`postgres` seed according to `lifelink.seed.enabled`;
+  `application-postgres.yml` defaults `SEED_DEMO_DATA` to `false`, `application.yml` to
+  `true`. No `prod` deployment is claimed.
+- **CI:** root `.github/workflows` is intentionally not installed in this repository;
+  `project/deployment/github-actions.yml` is a template only. CI execution is not claimed.
 
-See [`ADR/ADR-001-modular-monolith.md`](ADR/ADR-001-modular-monolith.md) and [`ADR/ADR-005-local-dev-database.md`](ADR/ADR-005-local-dev-database.md).
+See [`ADR/ADR-001-modular-monolith.md`](ADR/ADR-001-modular-monolith.md) and
+[`ADR/ADR-005-local-dev-database.md`](ADR/ADR-005-local-dev-database.md).
+
+---
 
 ## 10. Conformance checklist for implementers
 
-- [ ] No controller mutates a domain object directly.
-- [ ] No domain class imports Spring or JPA.
-- [ ] Every protected endpoint has a permission check and a tenant predicate.
-- [ ] Every state change goes through a guarded domain method and increments `version` where applicable.
-- [ ] Every state-changing endpoint writes audit and outbox rows in its own transaction.
-- [ ] All three idempotency-protected endpoints honour `Idempotency-Key`.
-- [ ] Every document in `project/docs` uses the same enum literals and paths as `API_CONTRACTS.md`.
+- [x] Controller methods validate DTOs and delegate to one service method.
+- [x] State changes use guarded entity methods and `BaseEntity.version`.
+- [x] Protected endpoints check permissions; organization-scoped ones validate
+      `X-Organization-Id` through `TenantAccessService`.
+- [x] Audit `SUCCESS` rows and notification/outbox rows are written in the state-change transaction.
+- [x] Allocation confirmation, reservation creation, and dispatch creation honour idempotency,
+      including the 120-character key limit (`F-05`).
+- [x] All analytics endpoints validate organization scope (`F-02`).
+- [x] Documents use the enum literals and paths from `API_CONTRACTS.md`.
+- [ ] Automated ArchUnit-style package-boundary tests (not present; source review only).
+- [ ] CI pipeline execution (not installed in this repository; documented as a deployment step
+      only — no GitHub Actions run is claimed).
+- [x] Full-stack login / health evidence and live SockJS/STOMP smoke evidence recorded
+      (standalone Node STOMP client, not the SPA).
+- [ ] Shared revocation/rate-limit store for multi-instance deployment (process-local today).
