@@ -9,6 +9,7 @@ import com.lifelink.donor.dto.DonationDtos.RejectRequest;
 import com.lifelink.donor.dto.DonationDtos.ScreeningRequest;
 import com.lifelink.donor.dto.DonationDtos.View;
 import com.lifelink.identity.AuthenticatedUser;
+import com.lifelink.identity.OrganizationMembershipRepository;
 import com.lifelink.identity.Permission;
 import com.lifelink.identity.TenantAccessService;
 import com.lifelink.identity.User;
@@ -31,6 +32,7 @@ public class DonationService {
     private final ScreeningRepository screeningRepository;
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
+    private final OrganizationMembershipRepository membershipRepository;
     private final InventoryService inventoryService;
     private final TenantAccessService tenantAccess;
     private final AuditService auditService;
@@ -38,14 +40,15 @@ public class DonationService {
     public DonationService(DonationRepository repository, DonorProfileRepository donorRepository,
                            AppointmentRepository appointmentRepository, ScreeningRepository screeningRepository,
                            OrganizationRepository organizationRepository, UserRepository userRepository,
-                           InventoryService inventoryService, TenantAccessService tenantAccess,
-                           AuditService auditService) {
+                           OrganizationMembershipRepository membershipRepository, InventoryService inventoryService,
+                           TenantAccessService tenantAccess, AuditService auditService) {
         this.repository = repository;
         this.donorRepository = donorRepository;
         this.appointmentRepository = appointmentRepository;
         this.screeningRepository = screeningRepository;
         this.organizationRepository = organizationRepository;
         this.userRepository = userRepository;
+        this.membershipRepository = membershipRepository;
         this.inventoryService = inventoryService;
         this.tenantAccess = tenantAccess;
         this.auditService = auditService;
@@ -90,9 +93,21 @@ public class DonationService {
                 .orElseThrow(() -> new ResourceNotFoundException("DonorProfile", request.donorId()));
         Organization organization = organizationRepository.findById(request.organizationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Organization", request.organizationId()));
+        requireDonorOrganizationLink(donor, organization.getId());
         Appointment appointment = request.appointmentId() == null ? null
                 : appointmentRepository.findById(request.appointmentId())
                         .orElseThrow(() -> new ResourceNotFoundException("Appointment", request.appointmentId()));
+        if (appointment != null) {
+            if (!appointment.getDonor().getId().equals(donor.getId())
+                    || !appointment.getOrganization().getId().equals(organization.getId())) {
+                throw new BusinessRuleViolationException(
+                        "Appointment must belong to the same donor and organization as the donation");
+            }
+            if (appointment.getStatus() == Appointment.Status.CANCELLED
+                    || appointment.getStatus() == Appointment.Status.REJECTED) {
+                throw new BusinessRuleViolationException("A cancelled or rejected appointment cannot be donated against");
+            }
+        }
         Instant donatedAt = request.donatedAt() == null ? Instant.now() : request.donatedAt();
         Donation donation = new Donation(donor, organization, appointment, donatedAt, request.notes());
         repository.save(donation);
@@ -149,6 +164,21 @@ public class DonationService {
         tenantAccess.requireOrganizationAndPermission(donation.getOrganization().getId(),
                 Permission.DONATION_READ);
         return inventoryService.unitsForDonation(id);
+    }
+
+    /**
+     * Donation provenance must stay inside one tenant. A donor is linkable to an
+     * organization through a membership or an existing appointment/donation in
+     * that organization; an arbitrary donor ID in another tenant is rejected.
+     */
+    private void requireDonorOrganizationLink(DonorProfile donor, Long organizationId) {
+        Long donorUserId = donor.getUser().getId();
+        if (membershipRepository.existsByUserIdAndOrganizationId(donorUserId, organizationId)
+                || repository.existsByDonorIdAndOrganizationId(donor.getId(), organizationId)
+                || appointmentRepository.existsByDonorIdAndOrganizationId(donor.getId(), organizationId)) {
+            return;
+        }
+        throw new BusinessRuleViolationException("Donor is not associated with the recording organization");
     }
 
     private Donation find(Long id) {

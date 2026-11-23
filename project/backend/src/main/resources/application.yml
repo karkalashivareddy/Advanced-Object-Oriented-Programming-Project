@@ -41,7 +41,7 @@ server:
 
 security:
   jwt:
-    secret: ${JWT_SECRET:local-development-only-secret-change-me-lifelink-2026}
+    secret: ${JWT_SECRET}
     access-token-minutes: ${JWT_ACCESS_MINUTES:15}
     refresh-token-days: ${JWT_REFRESH_DAYS:7}
   cors:
@@ -55,8 +55,8 @@ lifelink:
     compatibility-mode: STRICT_SAME_GROUP
     clinical-approval-required: true
   rate-limit:
-    auth-max-attempts: 10
-    auth-window-seconds: 60
+    auth-max-attempts: ${AUTH_RATE_LIMIT_MAX_ATTEMPTS:10}
+    auth-window-seconds: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:60}
 
 management:
   endpoints:

@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,4 +17,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByRequestId(Long requestId);
     long countByStatus(Reservation.Status status);
     long countByOrganizationIdAndStatus(Long organizationId, Reservation.Status status);
+
+    /** Maintains the sparse unique index created in V4 for ACTIVE reservations. */
+    @Modifying
+    @Query(value = "UPDATE reservations SET active_unit_id = blood_unit_id WHERE id = :id", nativeQuery = true)
+    void markActiveUnit(@Param("id") Long id);
+
+    @Modifying
+    @Query(value = "UPDATE reservations SET active_unit_id = NULL WHERE id = :id", nativeQuery = true)
+    void clearActiveUnit(@Param("id") Long id);
 }

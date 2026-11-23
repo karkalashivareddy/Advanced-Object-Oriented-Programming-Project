@@ -3,6 +3,7 @@ package com.lifelink.reservation.dto;
 import com.lifelink.reservation.Reservation;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.Instant;
 
 public final class ReservationDtos {
@@ -10,7 +11,7 @@ public final class ReservationDtos {
     }
 
     public record CreateRequest(@NotNull Long unitId, @NotNull Long requestId,
-                                @NotBlank String idempotencyKey) {
+                                @NotBlank @Size(max = 120) String idempotencyKey) {
     }
 
     public record View(Long id, String publicId, Long unitId, String unitNumber, Long requestId,

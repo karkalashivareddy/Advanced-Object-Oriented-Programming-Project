@@ -6,3 +6,9 @@ spring:
     driver-class-name: org.postgresql.Driver
   flyway:
     locations: classpath:db/migration
+
+# Production-shaped PostgreSQL deployments must opt in to demo data explicitly.
+# The local Compose stack sets SEED_DEMO_DATA=true for its reproducible demo.
+lifelink:
+  seed:
+    enabled: ${SEED_DEMO_DATA:false}

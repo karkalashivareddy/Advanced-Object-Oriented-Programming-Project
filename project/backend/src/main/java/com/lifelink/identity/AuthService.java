@@ -22,10 +22,15 @@ import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -38,10 +43,12 @@ public class AuthService {
     private final OrganizationMembershipRepository membershipRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final LoginAttemptRepository loginAttemptRepository;
+    private final LoginAttemptRecorder loginAttemptRecorder;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuditService auditService;
     private final long refreshTokenDays;
+    private final ConcurrentHashMap<String, Instant> revokedAccessTokens = new ConcurrentHashMap<>();
 
     public AuthService(UserRepository userRepository,
                        OrganizationMembershipRepository membershipRepository,
@@ -51,10 +58,26 @@ public class AuthService {
                        JwtService jwtService,
                        AuditService auditService,
                        @Value("${security.jwt.refresh-token-days}") long refreshTokenDays) {
+        this(userRepository, membershipRepository, refreshTokenRepository, loginAttemptRepository,
+                new LoginAttemptRecorder(loginAttemptRepository), passwordEncoder, jwtService,
+                auditService, refreshTokenDays);
+    }
+
+    @Autowired
+    public AuthService(UserRepository userRepository,
+                       OrganizationMembershipRepository membershipRepository,
+                       RefreshTokenRepository refreshTokenRepository,
+                       LoginAttemptRepository loginAttemptRepository,
+                       LoginAttemptRecorder loginAttemptRecorder,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService,
+                       AuditService auditService,
+                       @Value("${security.jwt.refresh-token-days}") long refreshTokenDays) {
         this.userRepository = userRepository;
         this.membershipRepository = membershipRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.loginAttemptRepository = loginAttemptRepository;
+        this.loginAttemptRecorder = loginAttemptRecorder;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.auditService = auditService;
@@ -77,22 +100,19 @@ public class AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
         String email = request.email().trim().toLowerCase();
-        LoginAttempt attempt = loginAttemptRepository.findByEmail(email).orElseGet(() -> new LoginAttempt(email));
         Instant now = Instant.now();
-        if (attempt.isLocked(now)) {
+        if (loginAttemptRecorder.isLocked(email, now)) {
             auditService.record("LOGIN", "USER", email, null, "FAILURE", Map.of("reason", "LOCKED"));
             throw new AuthenticationFailedException("Account temporarily locked due to failed login attempts");
         }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> {
-                    attempt.registerFailure(now, LOCK_THRESHOLD, LOCK_DURATION);
-                    loginAttemptRepository.save(attempt);
+                    loginAttemptRecorder.recordFailure(email, now, LOCK_THRESHOLD, LOCK_DURATION);
                     auditService.record("LOGIN", "USER", email, null, "FAILURE", Map.of("reason", "UNKNOWN_USER"));
                     return new AuthenticationFailedException("Invalid email or password");
                 });
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            attempt.registerFailure(now, LOCK_THRESHOLD, LOCK_DURATION);
-            loginAttemptRepository.save(attempt);
+            loginAttemptRecorder.recordFailure(email, now, LOCK_THRESHOLD, LOCK_DURATION);
             auditService.record("LOGIN", "USER", user.getPublicId(), null, "FAILURE", Map.of("reason", "BAD_PASSWORD"));
             throw new AuthenticationFailedException("Invalid email or password");
         }
@@ -100,8 +120,7 @@ public class AuthService {
             auditService.record("LOGIN", "USER", user.getPublicId(), null, "FAILURE", Map.of("reason", user.getStatus().name()));
             throw new AuthenticationFailedException("Account is not active");
         }
-        attempt.clear();
-        loginAttemptRepository.save(attempt);
+        loginAttemptRecorder.clear(email);
         auditService.record("LOGIN", "USER", user.getPublicId(), null, "SUCCESS", Map.of());
         return issueTokens(user);
     }
@@ -142,6 +161,34 @@ public class AuthService {
         auditService.record("LOGOUT", "USER", target, null, "SUCCESS", Map.of());
     }
 
+    /**
+     * Denylists one access-token jti until it would have expired. This is process-local, so
+     * multi-instance deployments should pair it with shared session revocation or a short TTL.
+     */
+    public void revokeAccessToken(String jti, Instant expiresAt) {
+        if (jti == null || jti.isBlank() || expiresAt == null) {
+            return;
+        }
+        Instant now = Instant.now();
+        revokedAccessTokens.entrySet().removeIf(entry -> !entry.getValue().isAfter(now));
+        revokedAccessTokens.put(jti, expiresAt);
+    }
+
+    public boolean isAccessTokenRevoked(String jti) {
+        if (jti == null || jti.isBlank()) {
+            return true;
+        }
+        Instant expiresAt = revokedAccessTokens.get(jti);
+        if (expiresAt == null) {
+            return false;
+        }
+        if (!expiresAt.isAfter(Instant.now())) {
+            revokedAccessTokens.remove(jti, expiresAt);
+            return false;
+        }
+        return true;
+    }
+
     @Transactional
     public void changePassword(Long userId, ChangePasswordRequest request) {
         User user = userRepository.findById(userId)
@@ -171,10 +218,25 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthenticatedUser principal(Long userId) {
+        return principal(userId, null);
+    }
+
+    /**
+     * Reloads the principal on every request. When a token version is supplied it must match the
+     * user's current persistent version, so credential and status changes revoke access tokens
+     * immediately and irreversibly without a shared denylist.
+     */
+    @Transactional(readOnly = true)
+    public AuthenticatedUser principal(Long userId, String tokenVersion) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         if (user.getStatus() != User.Status.ACTIVE) {
             throw new AuthenticationFailedException("Account is not active");
+        }
+        if (tokenVersion != null && !MessageDigest.isEqual(
+                tokenVersion.getBytes(StandardCharsets.UTF_8),
+                tokenVersion(user).getBytes(StandardCharsets.UTF_8))) {
+            throw new AuthenticationFailedException("Access token has been revoked");
         }
         Set<OrganizationMembershipView> memberships = membershipViews(user);
         return new AuthenticatedUser(user.getId(), user.getEmail(), user.getFullName(), user.getRoles(),
@@ -183,6 +245,11 @@ public class AuthService {
                 memberships.stream()
                         .map(m -> new AuthenticatedUser.OrganizationRole(m.organizationId(), m.organizationName(), m.role()))
                         .collect(Collectors.toSet()));
+    }
+
+    /** Opaque, user-level revocation marker persisted in the database. */
+    String tokenVersion(User user) {
+        return Long.toString(user.getTokenVersion());
     }
 
     /** Public so account-status changes can revoke every active refresh session. */
@@ -207,7 +274,7 @@ public class AuthService {
 
     private AuthResponse issueTokens(User user) {
         AuthenticatedUser principal = principal(user.getId());
-        String access = jwtService.generateAccessToken(principal);
+        String access = jwtService.generateAccessToken(principal, tokenVersion(user));
         String rawRefresh = Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(randomBytes(32));
         RefreshToken token = new RefreshToken(user, hash(rawRefresh),
@@ -234,5 +301,47 @@ public class AuthService {
         } catch (Exception ex) {
             throw new IllegalStateException("Unable to hash token", ex);
         }
+    }
+}
+
+/**
+ * Failure accounting runs in its own transaction so the counter and lock survive the
+ * AuthenticationFailedException that rolls back the login transaction. The row is locked for
+ * update to serialize concurrent attempts for the same email.
+ */
+@Component
+class LoginAttemptRecorder {
+    private final LoginAttemptRepository repository;
+
+    LoginAttemptRecorder(LoginAttemptRepository repository) {
+        this.repository = repository;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    boolean isLocked(String email, Instant now) {
+        return repository.findByEmail(email).map(attempt -> attempt.isLocked(now)).orElse(false);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    void recordFailure(String email, Instant now, int threshold, Duration lockDuration) {
+        LoginAttempt attempt = repository.findByEmailForUpdate(email)
+                .orElseGet(() -> new LoginAttempt(email));
+        attempt.registerFailure(now, threshold, lockDuration);
+        try {
+            repository.saveAndFlush(attempt);
+        } catch (DataIntegrityViolationException ex) {
+            // A concurrent first attempt inserted the row; retry under its lock.
+            LoginAttempt existing = repository.findByEmailForUpdate(email).orElseThrow(() -> ex);
+            existing.registerFailure(now, threshold, lockDuration);
+            repository.saveAndFlush(existing);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    void clear(String email) {
+        repository.findByEmailForUpdate(email).ifPresent(attempt -> {
+            attempt.clear();
+            repository.save(attempt);
+        });
     }
 }

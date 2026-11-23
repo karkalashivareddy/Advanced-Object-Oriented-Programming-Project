@@ -35,6 +35,10 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 32)
     private Status status = Status.ACTIVE;
 
+    /** Monotonic revocation marker embedded in access tokens; never derived from mutable state. */
+    @Column(name = "token_version", nullable = false)
+    private long tokenVersion = 0L;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
@@ -62,12 +66,26 @@ public class User extends BaseEntity {
 
     public void changePassword(String newHash) {
         setPasswordHash(newHash);
+        invalidateTokens();
     }
 
-    public void lock() { this.status = Status.LOCKED; }
-    public void activate() { this.status = Status.ACTIVE; }
-    public void disable() { this.status = Status.DISABLED; }
-    public void markPendingVerification() { this.status = Status.PENDING_VERIFICATION; }
+    public void lock() { setStatus(Status.LOCKED); }
+    public void activate() { setStatus(Status.ACTIVE); }
+    public void disable() { setStatus(Status.DISABLED); }
+    public void markPendingVerification() { setStatus(Status.PENDING_VERIFICATION); }
+
+    private void setStatus(Status next) {
+        Status target = next == null ? Status.ACTIVE : next;
+        if (this.status != target) {
+            this.status = target;
+            invalidateTokens();
+        }
+    }
+
+    /** Called once for every credential or status transition so old JWTs stay rejected. */
+    public void invalidateTokens() {
+        this.tokenVersion++;
+    }
 
     public Set<Permission> effectivePermissions() {
         Set<Permission> result = EnumSet.noneOf(Permission.class);
@@ -101,5 +119,6 @@ public class User extends BaseEntity {
     public String getFullName() { return fullName; }
     public String getPhone() { return phone; }
     public Status getStatus() { return status; }
+    public long getTokenVersion() { return tokenVersion; }
     public Set<Role> getRoles() { return Set.copyOf(roles); }
 }

@@ -8,7 +8,6 @@ import java.util.Map;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -19,7 +18,15 @@ public class AuditService {
         this.repository = repository;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    /**
+     * Participates in the caller's transaction. A SUCCESS audit row for a business
+     * event must not outlive a rollback of that event; REQUIRES_NEW previously
+     * committed the audit independently and could leave a false success trail.
+     * An after-commit hook was rejected: it adds async delivery/ordering concerns
+     * without improving the consistency of SUCCESS records. If no caller
+     * transaction exists, Spring still starts one for this method.
+     */
+    @Transactional
     public void record(String action, String targetType, String targetId, Long organizationId,
                        String outcome, Map<String, String> metadata) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

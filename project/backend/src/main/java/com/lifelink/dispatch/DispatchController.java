@@ -1,6 +1,7 @@
 package com.lifelink.dispatch;
 
 import com.lifelink.common.ApiResponse;
+import com.lifelink.common.IdempotencyKeys;
 import com.lifelink.dispatch.dto.DispatchDtos.CreateRequest;
 import com.lifelink.dispatch.dto.DispatchDtos.DeliveryRequest;
 import com.lifelink.dispatch.dto.DispatchDtos.IncidentRequest;
@@ -37,6 +38,7 @@ public class DispatchController {
     @PostMapping
     public ApiResponse<View> create(@Valid @RequestBody CreateRequest request,
                                     @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+        IdempotencyKeys.validateHeader(key);
         return ApiResponse.ok(service.create(request, key), "Dispatch created");
     }
 

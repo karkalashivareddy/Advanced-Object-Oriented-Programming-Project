@@ -1,7 +1,6 @@
 package com.lifelink.analytics;
 
 import com.lifelink.common.BloodGroup;
-import com.lifelink.common.exception.UnauthorizedOperationException;
 import com.lifelink.dispatch.DispatchRepository;
 import com.lifelink.dispatch.Dispatch;
 import com.lifelink.emergency.EmergencyRequest;
@@ -48,8 +47,7 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public Overview overview() {
         tenantAccess.requirePermission(Permission.ANALYTICS_READ);
-        AuthenticatedUser user = tenantAccess.currentUser();
-        Long organizationId = user.isPlatformAdmin() ? null : singleOrganization(user);
+        Long organizationId = selectedOrganizationId();
         long available = countUnits(organizationId, BloodUnit.Status.AVAILABLE);
         long reserved = countUnits(organizationId, BloodUnit.Status.RESERVED);
         long quarantined = countUnits(organizationId, BloodUnit.Status.QUARANTINED);
@@ -75,8 +73,7 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public Map<String, Long> inventoryByGroup() {
         tenantAccess.requirePermission(Permission.ANALYTICS_READ);
-        AuthenticatedUser user = tenantAccess.currentUser();
-        Long organizationId = user.isPlatformAdmin() ? null : singleOrganization(user);
+        Long organizationId = selectedOrganizationId();
         Map<String, Long> result = new LinkedHashMap<>();
         for (BloodGroup group : BloodGroup.values()) {
             result.put(group.name(), 0L);
@@ -91,8 +88,7 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public Map<String, Long> requestsByStatus() {
         tenantAccess.requirePermission(Permission.ANALYTICS_READ);
-        AuthenticatedUser user = tenantAccess.currentUser();
-        Long organizationId = user.isPlatformAdmin() ? null : singleOrganization(user);
+        Long organizationId = selectedOrganizationId();
         Map<String, Long> result = new LinkedHashMap<>();
         requestRepository.findAll().stream()
                 .filter(r -> organizationId == null || r.getRequestingOrganization().getId().equals(organizationId))
@@ -106,11 +102,14 @@ public class AnalyticsService {
                 : unitRepository.countByOrganizationIdAndStatus(organizationId, status);
     }
 
-    private Long singleOrganization(AuthenticatedUser user) {
-        if (user.organizationIds().size() != 1) {
-            throw new UnauthorizedOperationException("Select an organization to view analytics");
-        }
-        return user.organizationIds().iterator().next();
+    /**
+     * Uses the same validated request scope as every other tenant-aware endpoint.
+     * Platform admins may omit the header for an explicit global view; all other users
+     * must have one membership or select one with X-Organization-Id.
+     */
+    private Long selectedOrganizationId() {
+        AuthenticatedUser user = tenantAccess.currentUser();
+        return user.isPlatformAdmin() ? tenantAccess.currentOrganizationId() : tenantAccess.requireCurrentOrganization();
     }
 
     public record Overview(long availableUnits, long reservedUnits, long quarantinedUnits,

@@ -63,6 +63,18 @@ class SchemaAndApiIntegrationTest {
     }
 
     @Test
+    @Order(99)
+    void sockJsInfoIsPublicWhileStompFramesRemainAuthenticated() {
+        ResponseEntity<String> info = rest.getForEntity("/ws/info", String.class);
+        assertEquals(200, info.getStatusCode().value());
+        assertNotNull(info.getBody());
+        assertTrue(info.getBody().contains("websocket"));
+
+        // The HTTP handshake is public by design; the STOMP interceptor tests cover
+        // rejection of CONNECT frames without a bearer token.
+    }
+
+    @Test
     @Order(3)
     void loginSucceedsAndBadCredentialsAreRejected() {
         JsonNode success = login("admin@lifelink.local", "Admin@123!");
@@ -353,11 +365,12 @@ class SchemaAndApiIntegrationTest {
 
         HttpHeaders confirmHeaders = authHeaders(login(allocationUserEmail, "Test@12345!")
                 .get("data").get("accessToken").asText());
-        confirmHeaders.set("Idempotency-Key", "cross-tenant-" + UUID.randomUUID());
+        String allocationKey = "cross-tenant-" + UUID.randomUUID();
+        confirmHeaders.set("Idempotency-Key", allocationKey);
         ResponseEntity<JsonNode> crossTenant = exchange("/api/v1/allocations/confirm", Map.of(
                 "requestId", requestId,
                 "unitIds", List.of(bankUnitId),
-                "idempotencyKey", "cross-tenant-" + UUID.randomUUID()), confirmHeaders);
+                "idempotencyKey", allocationKey), confirmHeaders);
         assertEquals(403, crossTenant.getStatusCode().value());
         assertEquals("TENANT_ACCESS_DENIED", crossTenant.getBody().get("error").get("code").asText());
         assertTrue(bankId > 0);
@@ -498,6 +511,185 @@ class SchemaAndApiIntegrationTest {
         assertEquals("BUSINESS_RULE_VIOLATION", wrongCount.getBody().get("error").get("code").asText());
     }
 
+    @Test
+    @Order(14)
+    void allocationKeyReuseWithDifferentUnitSetIsRejected() {
+        String admin = adminToken();
+        HttpHeaders adminHeaders = authHeaders(admin);
+        JsonNode organizations = get("/api/v1/organizations?page=0&size=20", adminHeaders);
+        long bankId = organizationId(organizations, "BLOOD_BANK");
+        long hospitalId = organizationId(organizations, "HOSPITAL");
+        long firstUnit = createAvailableWholeBloodUnit(admin, bankId);
+        long secondUnit = createAvailableWholeBloodUnit(admin, bankId);
+        long requestId = createApprovedRequest(admin, hospitalId, "FP-MISMATCH");
+
+        String key = "fingerprint-" + UUID.randomUUID();
+        HttpHeaders firstHeaders = authHeaders(admin);
+        firstHeaders.set("Idempotency-Key", key);
+        ResponseEntity<JsonNode> first = exchange("/api/v1/allocations/confirm", Map.of(
+                "requestId", requestId, "unitIds", List.of(firstUnit), "idempotencyKey", key), firstHeaders);
+        assertEquals(200, first.getStatusCode().value());
+
+        HttpHeaders replayHeaders = authHeaders(admin);
+        replayHeaders.set("Idempotency-Key", key);
+        ResponseEntity<JsonNode> replay = exchange("/api/v1/allocations/confirm", Map.of(
+                "requestId", requestId, "unitIds", List.of(secondUnit), "idempotencyKey", key), replayHeaders);
+        assertEquals(409, replay.getStatusCode().value());
+        assertEquals("BUSINESS_RULE_VIOLATION", replay.getBody().get("error").get("code").asText());
+    }
+
+    @Test
+    @Order(15)
+    void bankStaffCanDispatchHospitalRequestButHospitalStaffCannot() {
+        String admin = adminToken();
+        HttpHeaders adminHeaders = authHeaders(admin);
+        JsonNode organizations = get("/api/v1/organizations?page=0&size=20", adminHeaders);
+        long bankId = organizationId(organizations, "BLOOD_BANK");
+        long hospitalId = organizationId(organizations, "HOSPITAL");
+
+        String bankToken = login("bank@lifelink.local", "Bank@123!").get("data").get("accessToken").asText();
+        String hospitalToken = login("hospital@lifelink.local", "Hospital@123!")
+                .get("data").get("accessToken").asText();
+
+        long unitId = createAvailableWholeBloodUnit(admin, bankId);
+        long requestId = createApprovedRequest(admin, hospitalId, "BANK-DISPATCH");
+        long reservationId = confirmAsBank(bankToken, requestId, unitId);
+        exchange("/api/v1/reservations/" + reservationId + "/confirm", Map.of(), authHeaders(hospitalToken));
+
+        HttpHeaders bankDispatchHeaders = authHeaders(bankToken);
+        bankDispatchHeaders.set("Idempotency-Key", "bank-dispatch-" + UUID.randomUUID());
+        ResponseEntity<JsonNode> bankDispatch = exchange("/api/v1/dispatches",
+                Map.of("reservationId", reservationId, "assignedStaff", "Bank Dispatcher"), bankDispatchHeaders);
+        assertEquals(200, bankDispatch.getStatusCode().value(), bankDispatch.getBody().toString());
+        assertEquals(bankId, bankDispatch.getBody().get("data").get("organizationId").asLong());
+
+        long secondUnit = createAvailableWholeBloodUnit(admin, bankId);
+        long secondRequest = createApprovedRequest(admin, hospitalId, "HOSPITAL-DISPATCH-DENIED");
+        long secondReservation = confirmAsBank(bankToken, secondRequest, secondUnit);
+        exchange("/api/v1/reservations/" + secondReservation + "/confirm", Map.of(), authHeaders(hospitalToken));
+
+        HttpHeaders hospitalDispatchHeaders = authHeaders(hospitalToken);
+        hospitalDispatchHeaders.set("Idempotency-Key", "hospital-dispatch-" + UUID.randomUUID());
+        ResponseEntity<JsonNode> hospitalDispatch = exchange("/api/v1/dispatches",
+                Map.of("reservationId", secondReservation, "assignedStaff", "Hospital Staff"), hospitalDispatchHeaders);
+        assertEquals(403, hospitalDispatch.getStatusCode().value());
+        assertEquals("UNAUTHORIZED_OPERATION", hospitalDispatch.getBody().get("error").get("code").asText());
+
+        String outsiderEmail = "outsider-" + UUID.randomUUID() + "@example.test";
+        exchange("/api/v1/auth/register", Map.of(
+                "email", outsiderEmail, "password", "Test@12345!", "fullName", "Outside Tester"), jsonHeaders());
+        String outsiderToken = login(outsiderEmail, "Test@12345!").get("data").get("accessToken").asText();
+        HttpHeaders outsiderHeaders = authHeaders(outsiderToken);
+        outsiderHeaders.set("Idempotency-Key", "outsider-dispatch-" + UUID.randomUUID());
+        ResponseEntity<JsonNode> outsiderDispatch = exchange("/api/v1/dispatches",
+                Map.of("reservationId", secondReservation, "assignedStaff", "Outside User"), outsiderHeaders);
+        assertEquals(403, outsiderDispatch.getStatusCode().value());
+        assertEquals("TENANT_ACCESS_DENIED", outsiderDispatch.getBody().get("error").get("code").asText());
+    }
+
+    @Test
+    @Order(16)
+    void deliveryAfterIncidentIsAllowedAndKeepsIncidentHistory() {
+        String admin = adminToken();
+        HttpHeaders adminHeaders = authHeaders(admin);
+        JsonNode organizations = get("/api/v1/organizations?page=0&size=20", adminHeaders);
+        long bankId = organizationId(organizations, "BLOOD_BANK");
+        long hospitalId = organizationId(organizations, "HOSPITAL");
+        String bankToken = login("bank@lifelink.local", "Bank@123!").get("data").get("accessToken").asText();
+        String hospitalToken = login("hospital@lifelink.local", "Hospital@123!")
+                .get("data").get("accessToken").asText();
+
+        long unitId = createAvailableWholeBloodUnit(admin, bankId);
+        long requestId = createApprovedRequest(admin, hospitalId, "INCIDENT-DELIVERY");
+        long reservationId = confirmAsBank(bankToken, requestId, unitId);
+        exchange("/api/v1/reservations/" + reservationId + "/confirm", Map.of(), authHeaders(hospitalToken));
+
+        String key = "incident-dispatch-" + UUID.randomUUID();
+        HttpHeaders dispatchHeaders = authHeaders(bankToken);
+        dispatchHeaders.set("Idempotency-Key", key);
+        ResponseEntity<JsonNode> created = exchange("/api/v1/dispatches",
+                Map.of("reservationId", reservationId, "assignedStaff", "Incident Responder"), dispatchHeaders);
+        assertEquals(200, created.getStatusCode().value(), created.getBody().toString());
+        long dispatchId = created.getBody().get("data").get("id").asLong();
+
+        assertEquals(200, exchange("/api/v1/dispatches/" + dispatchId + "/depart", Map.of(),
+                authHeaders(bankToken)).getStatusCode().value());
+        JsonNode incident = exchange("/api/v1/dispatches/" + dispatchId + "/incident",
+                Map.of("description", "Vehicle breakdown"), authHeaders(bankToken)).getBody();
+        assertEquals("INCIDENT", incident.get("data").get("status").asText());
+
+        ResponseEntity<JsonNode> delivered = exchange("/api/v1/dispatches/" + dispatchId + "/deliver",
+                Map.of("recipientName", "Emergency Ward"), authHeaders(bankToken));
+        assertEquals(200, delivered.getStatusCode().value(), delivered.getBody().toString());
+        assertEquals("DELIVERED", delivered.getBody().get("data").get("status").asText());
+        assertEquals("Vehicle breakdown", delivered.getBody().get("data").get("incidentDescription").asText());
+    }
+
+    @Test
+    @Order(17)
+    void dispatchKeyReuseWithDifferentAssignedStaffIsRejected() {
+        String admin = adminToken();
+        HttpHeaders adminHeaders = authHeaders(admin);
+        JsonNode organizations = get("/api/v1/organizations?page=0&size=20", adminHeaders);
+        long bankId = organizationId(organizations, "BLOOD_BANK");
+        long hospitalId = organizationId(organizations, "HOSPITAL");
+        String bankToken = login("bank@lifelink.local", "Bank@123!").get("data").get("accessToken").asText();
+        String hospitalToken = login("hospital@lifelink.local", "Hospital@123!")
+                .get("data").get("accessToken").asText();
+
+        long firstUnit = createAvailableWholeBloodUnit(admin, bankId);
+        long firstRequest = createApprovedRequest(admin, hospitalId, "STAFF-FP-1");
+        long firstReservation = confirmAsBank(bankToken, firstRequest, firstUnit);
+        exchange("/api/v1/reservations/" + firstReservation + "/confirm", Map.of(), authHeaders(hospitalToken));
+
+        String key = "dispatch-staff-fp-" + UUID.randomUUID();
+        HttpHeaders firstHeaders = authHeaders(bankToken);
+        firstHeaders.set("Idempotency-Key", key);
+        ResponseEntity<JsonNode> first = exchange("/api/v1/dispatches",
+                Map.of("reservationId", firstReservation, "assignedStaff", "Staff A"), firstHeaders);
+        assertEquals(200, first.getStatusCode().value());
+
+        long secondUnit = createAvailableWholeBloodUnit(admin, bankId);
+        long secondRequest = createApprovedRequest(admin, hospitalId, "STAFF-FP-2");
+        long secondReservation = confirmAsBank(bankToken, secondRequest, secondUnit);
+        exchange("/api/v1/reservations/" + secondReservation + "/confirm", Map.of(), authHeaders(hospitalToken));
+
+        HttpHeaders replayHeaders = authHeaders(bankToken);
+        replayHeaders.set("Idempotency-Key", key);
+        ResponseEntity<JsonNode> mismatch = exchange("/api/v1/dispatches",
+                Map.of("reservationId", secondReservation, "assignedStaff", "Staff B"), replayHeaders);
+        assertEquals(409, mismatch.getStatusCode().value());
+        assertEquals("BUSINESS_RULE_VIOLATION", mismatch.getBody().get("error").get("code").asText());
+    }
+
+    private long createApprovedRequest(String admin, long hospitalId, String reference) {
+        JsonNode created = exchange("/api/v1/emergency-requests", Map.of(
+                "organizationId", hospitalId,
+                "patientRef", reference,
+                "bloodGroup", "O_POSITIVE",
+                "componentType", "WHOLE_BLOOD",
+                "quantity", 1,
+                "priority", "URGENT",
+                "requiredBy", Instant.now().plus(Duration.ofHours(2)).toString(),
+                "reason", "Backend regression verification"), authHeaders(admin)).getBody();
+        assertTrue(created.get("success").asBoolean());
+        long requestId = created.get("data").get("id").asLong();
+        exchange("/api/v1/emergency-requests/" + requestId + "/verify", Map.of(), authHeaders(admin));
+        exchange("/api/v1/emergency-requests/" + requestId + "/approve", Map.of(), authHeaders(admin));
+        return requestId;
+    }
+
+    private long confirmAsBank(String bankToken, long requestId, long unitId) {
+        String key = "alloc-" + UUID.randomUUID();
+        HttpHeaders headers = authHeaders(bankToken);
+        headers.set("Idempotency-Key", key);
+        JsonNode confirmation = exchange("/api/v1/allocations/confirm", Map.of(
+                "requestId", requestId, "unitIds", List.of(unitId), "idempotencyKey", key), headers).getBody();
+        assertNotNull(confirmation);
+        assertEquals(1, confirmation.get("data").get("reservations").size());
+        return confirmation.get("data").get("reservations").get(0).get("id").asLong();
+    }
+
     private long createAvailableWholeBloodUnit(String token, long organizationId) {
         String unitNumber = "LL-TEST-WB-" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
         JsonNode created = exchange("/api/v1/inventory", Map.of(
@@ -515,11 +707,12 @@ class SchemaAndApiIntegrationTest {
 
     private ResponseEntity<JsonNode> confirmAllocation(String token, long requestId, List<Long> unitIds) {
         HttpHeaders headers = authHeaders(token);
-        headers.set("Idempotency-Key", "compat-" + UUID.randomUUID());
+        String key = "compat-" + UUID.randomUUID();
+        headers.set("Idempotency-Key", key);
         return exchange("/api/v1/allocations/confirm", Map.of(
                 "requestId", requestId,
                 "unitIds", unitIds,
-                "idempotencyKey", "compat-" + UUID.randomUUID()), headers);
+                "idempotencyKey", key), headers);
     }
 
     private long organizationId(JsonNode organizations, String type) {

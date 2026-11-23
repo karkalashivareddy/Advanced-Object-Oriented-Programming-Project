@@ -37,7 +37,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-@Profile({"dev", "default"})
+@Profile({"dev", "default", "postgres", "postgres-it"})
 @ConditionalOnProperty(prefix = "lifelink.seed", name = "enabled", havingValue = "true")
 public class DevelopmentDataSeeder implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(DevelopmentDataSeeder.class);

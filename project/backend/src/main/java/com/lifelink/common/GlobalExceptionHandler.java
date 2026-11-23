@@ -7,7 +7,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -59,6 +63,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OptimisticLockingFailureException.class)
     public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException ex) {
         return build(HttpStatus.CONFLICT, ErrorCode.CONCURRENCY_CONFLICT.code(), "The resource changed concurrently; retry the operation", Map.of());
+    }
+
+    /** Lock waits and timeouts are transient; clients must be able to retry safely. */
+    @ExceptionHandler({CannotAcquireLockException.class, PessimisticLockingFailureException.class,
+            QueryTimeoutException.class})
+    public ResponseEntity<ErrorResponse> handleLockContention(Exception ex) {
+        log.warn("Lock contention: {}", ex.getMessage());
+        return build(HttpStatus.CONFLICT, ErrorCode.CONCURRENCY_CONFLICT.code(),
+                "The resource is locked or timed out; retry the operation", Map.of());
+    }
+
+    /** Unique/FK races are conflicts, not unexpected server failures. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Data integrity conflict: {}", ex.getMessage());
+        return build(HttpStatus.CONFLICT, ErrorCode.CONCURRENCY_CONFLICT.code(),
+                "The request conflicts with existing data; retry with a new key", Map.of());
     }
 
     @ExceptionHandler(Exception.class)

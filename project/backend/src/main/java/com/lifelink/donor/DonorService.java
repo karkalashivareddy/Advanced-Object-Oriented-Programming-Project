@@ -13,6 +13,7 @@ import com.lifelink.donor.dto.DonorDtos.CreateProfileRequest;
 import com.lifelink.donor.dto.DonorDtos.ProfileView;
 import com.lifelink.donor.dto.DonorDtos.UpdateProfileRequest;
 import com.lifelink.identity.AuthenticatedUser;
+import com.lifelink.identity.OrganizationMembershipRepository;
 import com.lifelink.identity.Permission;
 import com.lifelink.identity.TenantAccessService;
 import com.lifelink.identity.User;
@@ -36,12 +37,14 @@ public class DonorService {
     private final DonationRepository donationRepository;
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
+    private final OrganizationMembershipRepository membershipRepository;
     private final TenantAccessService tenantAccess;
     private final AuditService auditService;
 
     public DonorService(DonorProfileRepository donorRepository, ConsentRepository consentRepository,
                         AppointmentRepository appointmentRepository, DonationRepository donationRepository,
                         UserRepository userRepository, OrganizationRepository organizationRepository,
+                        OrganizationMembershipRepository membershipRepository,
                         TenantAccessService tenantAccess, AuditService auditService) {
         this.donorRepository = donorRepository;
         this.consentRepository = consentRepository;
@@ -49,6 +52,7 @@ public class DonorService {
         this.donationRepository = donationRepository;
         this.userRepository = userRepository;
         this.organizationRepository = organizationRepository;
+        this.membershipRepository = membershipRepository;
         this.tenantAccess = tenantAccess;
         this.auditService = auditService;
     }
@@ -154,6 +158,11 @@ public class DonorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Organization", organizationId));
         if (donorSelfBooking && (organization.getType() != Organization.Type.BLOOD_BANK || !organization.isVerified())) {
             throw new BusinessRuleViolationException("Appointments require a verified blood bank");
+        }
+        if (donorSelfBooking && !membershipRepository.existsByUserIdAndOrganizationId(
+                profile.getUser().getId(), organizationId)
+                && !donationRepository.existsByDonorIdAndOrganizationId(profile.getId(), organizationId)) {
+            throw new TenantAccessDeniedException(organizationId);
         }
         if (!donorSelfBooking) {
             tenantAccess.requireOrganizationAndPermission(organizationId, Permission.APPOINTMENT_MANAGE);

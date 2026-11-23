@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -15,7 +16,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
-    private static final String DEVELOPMENT_SECRET = "local-development-only-secret-change-me-lifelink-2026";
+    public static final String TOKEN_VERSION_CLAIM = "token_version";
+    private static final String TEST_SECRET = "test-only-jwt-secret-not-for-production-0123456789";
 
     private final SecretKey key;
     private final long accessTokenMinutes;
@@ -31,10 +33,10 @@ public class JwtService {
         if (bytes.length < 32) {
             throw new IllegalStateException("JWT secret must be at least 32 bytes");
         }
-        boolean nonDevelopment = Arrays.stream(environment.getActiveProfiles())
-                .noneMatch(profile -> profile.equals("dev") || profile.equals("test"));
-        if (nonDevelopment && DEVELOPMENT_SECRET.equals(secret)) {
-            throw new IllegalStateException("JWT_SECRET must be set outside local development and test profiles");
+        boolean testProfile = Arrays.stream(environment.getActiveProfiles())
+                .anyMatch(profile -> profile.equals("test"));
+        if (!testProfile && TEST_SECRET.equals(secret)) {
+            throw new IllegalStateException("JWT_SECRET must be a strong application-specific secret");
         }
         this.key = Keys.hmacShaKeyFor(bytes);
         this.accessTokenMinutes = accessTokenMinutes;
@@ -42,14 +44,17 @@ public class JwtService {
         this.audience = audience;
     }
 
-    public String generateAccessToken(AuthenticatedUser user) {
+    /** jti gives each access token a unique id; token_version binds it to a persistent revocation counter. */
+    public String generateAccessToken(AuthenticatedUser user, String tokenVersion) {
         Instant now = Instant.now();
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(user.email())
                 .issuer(issuer)
                 .audience().add(audience).and()
                 .claim("uid", user.userId())
                 .claim("roles", user.roles().stream().map(Role::name).toList())
+                .claim(TOKEN_VERSION_CLAIM, tokenVersion)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(accessTokenMinutes * 60)))
                 .signWith(key)

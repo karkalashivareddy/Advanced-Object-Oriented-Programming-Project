@@ -8,3 +8,6 @@ spring:
 lifelink:
   seed:
     enabled: false
+security:
+  jwt:
+    secret: test-only-jwt-secret-not-for-production-0123456789

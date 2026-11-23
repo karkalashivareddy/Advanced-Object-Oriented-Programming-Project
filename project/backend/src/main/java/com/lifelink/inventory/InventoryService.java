@@ -4,7 +4,6 @@ import com.lifelink.audit.AuditService;
 import com.lifelink.common.BloodGroup;
 import com.lifelink.common.ComponentType;
 import com.lifelink.common.PageResponse;
-import com.lifelink.common.exception.BusinessRuleViolationException;
 import com.lifelink.common.exception.ResourceNotFoundException;
 import com.lifelink.donor.Donation;
 import com.lifelink.identity.AuthenticatedUser;
@@ -14,6 +13,8 @@ import com.lifelink.identity.User;
 import com.lifelink.identity.UserRepository;
 import com.lifelink.organization.Organization;
 import com.lifelink.organization.OrganizationRepository;
+import com.lifelink.reservation.Reservation;
+import com.lifelink.reservation.ReservationRepository;
 import com.lifelink.inventory.dto.InventoryDtos.Alerts;
 import com.lifelink.inventory.dto.InventoryDtos.CreateRequest;
 import com.lifelink.inventory.dto.InventoryDtos.MovementView;
@@ -26,15 +27,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class InventoryService {
     private static final List<BloodUnit.Status> ACTIVE_STATUSES = List.of(
             BloodUnit.Status.AVAILABLE, BloodUnit.Status.RESERVED, BloodUnit.Status.QUARANTINED);
+    private static final Logger log = LoggerFactory.getLogger(InventoryService.class);
 
     private final BloodUnitRepository unitRepository;
     private final InventoryMovementRepository movementRepository;
@@ -42,19 +49,22 @@ public class InventoryService {
     private final UserRepository userRepository;
     private final TenantAccessService tenantAccess;
     private final AuditService auditService;
+    private final LifecycleBatches lifecycleBatches;
 
     public InventoryService(BloodUnitRepository unitRepository,
                             InventoryMovementRepository movementRepository,
                             OrganizationRepository organizationRepository,
                             UserRepository userRepository,
                             TenantAccessService tenantAccess,
-                            AuditService auditService) {
+                            AuditService auditService,
+                            LifecycleBatches lifecycleBatches) {
         this.unitRepository = unitRepository;
         this.movementRepository = movementRepository;
         this.organizationRepository = organizationRepository;
         this.userRepository = userRepository;
         this.tenantAccess = tenantAccess;
         this.auditService = auditService;
+        this.lifecycleBatches = lifecycleBatches;
     }
 
     @Transactional(readOnly = true)
@@ -198,27 +208,35 @@ public class InventoryService {
                 && user.hasPermissionForOrganization(Permission.INVENTORY_READ, organizationId);
     }
 
-    @Transactional
+    /** Each item runs in its own transaction; one bad row cannot abort the whole batch. */
     public int processExpiry() {
-        List<BloodUnit> expiring = unitRepository.findExpiring(Instant.now(),
-                List.of(BloodUnit.Status.AVAILABLE, BloodUnit.Status.RESERVED, BloodUnit.Status.QUARANTINED));
-        expiring.forEach(unit -> {
-            String before = unit.getStatus().name();
-            unit.markExpired();
-            recordMovement(unit, before, unit.getStatus().name(), "Automatic expiry");
-            auditService.record("INVENTORY_UNIT_EXPIRED", "BLOOD_UNIT", unit.getPublicId(),
-                    unit.getOrganization().getId(), "SUCCESS", Map.of());
-        });
-        return expiring.size();
+        List<Long> expiringIds = unitRepository.findExpiring(Instant.now(), ACTIVE_STATUSES).stream()
+                .map(BloodUnit::getId).toList();
+        int processed = 0;
+        for (Long id : expiringIds) {
+            try {
+                if (lifecycleBatches.expireUnit(id)) {
+                    processed++;
+                }
+            } catch (RuntimeException ex) {
+                log.warn("Lifecycle unit expiry failed for id={}: {}", id, ex.getMessage());
+            }
+        }
+        return processed;
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * FOR UPDATE is a write lock; a read-only transaction is unsafe here because
+     * the driver/Hibernate may open a read-only snapshot or skip write intent.
+     */
+    @Transactional
     public BloodUnit findForUpdate(Long id) {
         return lockedUnit(id);
     }
 
     private void recordMovement(BloodUnit unit, String from, String to, String reason) {
-        User actor = userRepository.findById(tenantAccess.currentUser().userId()).orElse(null);
+        Long actorId = LifecycleBatches.currentActorId();
+        User actor = actorId == null ? null : userRepository.findById(actorId).orElse(null);
         movementRepository.save(new InventoryMovement(unit, from, to, reason, actor));
     }
 
@@ -229,5 +247,82 @@ public class InventoryService {
 
     private BloodUnit find(Long id) {
         return unitRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("BloodUnit", id));
+    }
+
+    /**
+     * Per-item lifecycle transactions. Kept as a nested component to stay inside the
+     * backend files owned by this workstream; both InventoryService and
+     * ReservationService delegate scheduler work here.
+     */
+    @Service
+    public static class LifecycleBatches {
+        private final BloodUnitRepository unitRepository;
+        private final InventoryMovementRepository movementRepository;
+        private final ReservationRepository reservationRepository;
+        private final AuditService auditService;
+
+        public LifecycleBatches(BloodUnitRepository unitRepository,
+                                InventoryMovementRepository movementRepository,
+                                ReservationRepository reservationRepository,
+                                AuditService auditService) {
+            this.unitRepository = unitRepository;
+            this.movementRepository = movementRepository;
+            this.reservationRepository = reservationRepository;
+            this.auditService = auditService;
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        public boolean expireUnit(Long unitId) {
+            BloodUnit unit = unitRepository.findByIdForUpdate(unitId).orElse(null);
+            if (unit == null || List.of(BloodUnit.Status.DELIVERED, BloodUnit.Status.EXPIRED,
+                    BloodUnit.Status.DISCARDED).contains(unit.getStatus())) {
+                return false;
+            }
+            // A reserved unit carries both a unit pointer and a sparse reservation
+            // slot. Expire the ACTIVE reservation first so neither V4 invariant is
+            // left pointing at a terminal unit.
+            if (unit.getStatus() == BloodUnit.Status.RESERVED && unit.getActiveReservationId() != null) {
+                Reservation reservation = reservationRepository.findById(unit.getActiveReservationId()).orElse(null);
+                if (reservation != null && reservation.getStatus() == Reservation.Status.ACTIVE) {
+                    reservationRepository.clearActiveUnit(reservation.getId());
+                    reservation.expire();
+                    auditService.record("RESERVATION_EXPIRE", "RESERVATION", reservation.getPublicId(),
+                            reservation.getOrganization().getId(), "SUCCESS", Map.of());
+                }
+            }
+            String before = unit.getStatus().name();
+            unit.markExpired();
+            movementRepository.save(new InventoryMovement(unit, before, unit.getStatus().name(),
+                    "Automatic expiry", null));
+            auditService.record("INVENTORY_UNIT_EXPIRED", "BLOOD_UNIT", unit.getPublicId(),
+                    unit.getOrganization().getId(), "SUCCESS", Map.of());
+            return true;
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        public boolean expireReservation(Long reservationId) {
+            Reservation reservation = reservationRepository.findById(reservationId).orElse(null);
+            if (reservation == null || reservation.getStatus() != Reservation.Status.ACTIVE) {
+                return false;
+            }
+            BloodUnit unit = unitRepository.findByIdForUpdate(reservation.getBloodUnit().getId()).orElse(null);
+            reservationRepository.clearActiveUnit(reservationId);
+            reservation.expire();
+            if (unit != null) {
+                unit.clearReservation();
+                movementRepository.save(new InventoryMovement(unit, BloodUnit.Status.RESERVED.name(),
+                        unit.getStatus().name(), "Reservation expired", null));
+            }
+            auditService.record("RESERVATION_EXPIRE", "RESERVATION", reservation.getPublicId(),
+                    reservation.getOrganization().getId(), "SUCCESS", Map.of());
+            return true;
+        }
+
+        /** Scheduler invocations have no authentication; movements then have no actor. */
+        static Long currentActorId() {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            return authentication != null && authentication.getPrincipal() instanceof AuthenticatedUser user
+                    ? user.userId() : null;
+        }
     }
 }

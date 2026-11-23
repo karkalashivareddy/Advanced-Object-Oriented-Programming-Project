@@ -16,6 +16,7 @@ import com.lifelink.inventory.BloodUnitRepository;
 import com.lifelink.reservation.Reservation;
 import com.lifelink.reservation.ReservationRepository;
 import com.lifelink.reservation.ReservationService;
+import com.lifelink.reservation.ReservationService.Idempotency;
 import com.lifelink.reservation.dto.ReservationDtos.CreateRequest;
 import com.lifelink.reservation.dto.ReservationDtos.View;
 import java.time.Instant;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +40,7 @@ public class AllocationService {
     private final CompatibilitySpecification specification;
     private final TenantAccessService tenantAccess;
     private final AuditService auditService;
+    private final Idempotency idempotency;
     private final String ruleVersion;
 
     public AllocationService(EmergencyRequestRepository requestRepository,
@@ -49,6 +52,7 @@ public class AllocationService {
                              CompatibilitySpecification specification,
                              TenantAccessService tenantAccess,
                              AuditService auditService,
+                             Idempotency idempotency,
                              @Value("${lifelink.allocation.rule-version}") String ruleVersion) {
         this.requestRepository = requestRepository;
         this.requestService = requestService;
@@ -59,10 +63,12 @@ public class AllocationService {
         this.specification = specification;
         this.tenantAccess = tenantAccess;
         this.auditService = auditService;
+        this.idempotency = idempotency;
         this.ruleVersion = ruleVersion;
     }
 
-    @Transactional(readOnly = true)
+    /** Writable because the SUCCESS audit event now shares this transaction. */
+    @Transactional
     public Suggestion suggest(Long requestId) {
         EmergencyRequest request = findRequest(requestId);
         Set<Long> supplierOrgIds = authorizedSupplierOrganizations();
@@ -98,43 +104,37 @@ public class AllocationService {
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
             throw new BusinessRuleViolationException("Idempotency key is required");
         }
-        List<View> prior = new ArrayList<>();
-        for (int index = 0; index < unitIds.size(); index++) {
-            String key = idempotencyKey + ":" + index;
-            var existing = reservationRepository.findByIdempotencyKey(key);
-            if (existing.isPresent()) {
-                prior.add(View.of(existing.get()));
+        List<Long> lockOrder = unitIds.stream().distinct().sorted().toList();
+        String hash = Idempotency.fingerprint(String.valueOf(requestId),
+                lockOrder.stream().map(String::valueOf).collect(Collectors.joining(",")));
+        return idempotency.execute(Idempotency.ALLOCATION_CONFIRM, idempotencyKey, hash, Confirmation.class, () -> {
+            if (request.getStatus() != EmergencyRequest.Status.APPROVED
+                    && request.getStatus() != EmergencyRequest.Status.ALLOCATING) {
+                throw new BusinessRuleViolationException("Request is not approved for allocation");
             }
-        }
-        if (!prior.isEmpty()) {
-            if (prior.size() == unitIds.size()) {
-                return new Confirmation(requestId, prior);
+            requestService.markState(requestId, EmergencyRequest.Status.ALLOCATING, "ALLOCATION_STARTED");
+            // Acquire unit locks in ascending id order to avoid deadlocks between
+            // overlapping allocations, while returning reservations in caller order.
+            for (Long unitId : lockOrder) {
+                BloodUnit unit = unitRepository.findByIdForUpdate(unitId)
+                        .orElseThrow(() -> new ResourceNotFoundException("BloodUnit", unitId));
+                requireUnitAccess(unit, supplierOrgIds);
+                if (unit.getComponentType() != request.getComponentType()
+                        || !specification.isSatisfiedBy(request.getBloodGroup(), unit.getBloodGroup())) {
+                    throw new BusinessRuleViolationException("Selected unit is not compatible with this request");
+                }
             }
-            throw new BusinessRuleViolationException("Idempotency key was used for a different allocation");
-        }
-        if (request.getStatus() != EmergencyRequest.Status.APPROVED
-                && request.getStatus() != EmergencyRequest.Status.ALLOCATING) {
-            throw new BusinessRuleViolationException("Request is not approved for allocation");
-        }
-        requestService.markState(requestId, EmergencyRequest.Status.ALLOCATING, "ALLOCATION_STARTED");
-        List<View> reservations = new ArrayList<>();
-        for (int index = 0; index < unitIds.size(); index++) {
-            long unitId = unitIds.get(index);
-            BloodUnit unit = unitRepository.findByIdForUpdate(unitId)
-                    .orElseThrow(() -> new ResourceNotFoundException("BloodUnit", unitId));
-            requireUnitAccess(unit, supplierOrgIds);
-            if (unit.getComponentType() != request.getComponentType()
-                    || !specification.isSatisfiedBy(request.getBloodGroup(), unit.getBloodGroup())) {
-                throw new BusinessRuleViolationException("Selected unit is not compatible with this request");
+            List<View> reservations = new ArrayList<>();
+            for (Long unitId : unitIds) {
+                reservations.add(reservationService.create(
+                        new CreateRequest(unitId, requestId, idempotencyKey + ":allocation:" + unitId)));
             }
-            reservations.add(reservationService.create(
-                    new CreateRequest(unit.getId(), requestId, idempotencyKey + ":" + index)));
-        }
-        requestService.markState(requestId, EmergencyRequest.Status.RESERVED, "RESERVATIONS_CREATED");
-        auditService.record("ALLOCATION_CONFIRM", "EMERGENCY_REQUEST", request.getPublicId(),
-                request.getRequestingOrganization().getId(), "SUCCESS",
-                Map.of("unitCount", String.valueOf(unitIds.size())));
-        return new Confirmation(requestId, reservations);
+            requestService.markState(requestId, EmergencyRequest.Status.RESERVED, "RESERVATIONS_CREATED");
+            auditService.record("ALLOCATION_CONFIRM", "EMERGENCY_REQUEST", request.getPublicId(),
+                    request.getRequestingOrganization().getId(), "SUCCESS",
+                    Map.of("unitCount", String.valueOf(unitIds.size())));
+            return new Confirmation(requestId, reservations);
+        });
     }
 
     private List<BloodUnit> candidateUnits(Set<Long> supplierOrgIds, EmergencyRequest request) {

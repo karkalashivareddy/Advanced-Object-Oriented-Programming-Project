@@ -1,8 +1,15 @@
 package com.lifelink.allocation;
 
 import com.lifelink.common.ApiResponse;
+import com.lifelink.common.IdempotencyKeys;
+import com.lifelink.common.exception.ErrorCode;
+import com.lifelink.common.exception.LifeLinkException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
+import java.util.Map;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -27,15 +34,32 @@ public class AllocationController {
     public ApiResponse<AllocationService.Confirmation> confirm(
             @Valid @RequestBody ConfirmRequest request,
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyHeader) {
+        IdempotencyKeys.validateHeader(idempotencyHeader);
+        if (idempotencyHeader != null && !idempotencyHeader.isBlank()
+                && request.idempotencyKey() != null
+                && !idempotencyHeader.equals(request.idempotencyKey())) {
+            throw new IdempotencyKeyMismatchException();
+        }
         String key = idempotencyHeader != null && !idempotencyHeader.isBlank()
                 ? idempotencyHeader : request.idempotencyKey();
         return ApiResponse.ok(service.confirm(request.requestId(), request.unitIds(), key),
                 "Allocation confirmed; reservations created");
     }
 
-    public record RequestRequest(Long requestId) {
+    public record RequestRequest(@NotNull Long requestId) {
     }
 
-    public record ConfirmRequest(Long requestId, List<Long> unitIds, String idempotencyKey) {
+    public record ConfirmRequest(@NotNull Long requestId,
+                                 @NotEmpty List<@NotNull Long> unitIds,
+                                 @Size(max = 120) String idempotencyKey) {
+    }
+
+    /** A replay key must identify one request; divergent header/body keys are a client error. */
+    static final class IdempotencyKeyMismatchException extends LifeLinkException {
+        IdempotencyKeyMismatchException() {
+            super(ErrorCode.VALIDATION_ERROR,
+                    "Idempotency-Key header must match the request body idempotencyKey",
+                    Map.of("idempotencyKey", "must match the Idempotency-Key header"));
+        }
     }
 }
