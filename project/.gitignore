@@ -1,0 +1,56 @@
+# LifeLink - repository ignore rules
+# Keep generated artefacts, local secrets and editor/OS noise out of git.
+
+# Node / frontend build output
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Java / Maven build output
+target/
+*.class
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+
+# Local environment / secrets (keep the committed example)
+.env
+.env.*
+.env*
+!.env.example
+!**/.env.example
+
+# IDE and editor files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Coverage / reports
+coverage/
+.nyc_output/
+htmlcov/
+jacoco.exec
+site/
+*.lcov
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Docker / runtime leftovers
+*.pid
+*.seed

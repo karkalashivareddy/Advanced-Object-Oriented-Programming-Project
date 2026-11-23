@@ -1,0 +1,132 @@
+# LifeLink local development stack.
+# Development only. See ../docs/deployment/DEPLOYMENT_GUIDE.md before any real deployment.
+# Copy .env.example to .env (in this directory) to override the safe dev defaults.
+
+name: lifelink
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: lifelink-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lifelink}
+      POSTGRES_USER: ${POSTGRES_USER:-lifelink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lifelink_dev_only}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Localhost-only; remove this ports block for full network isolation.
+    ports:
+      - target: 5432
+        published: ${POSTGRES_PORT:-5432}
+        host_ip: 127.0.0.1
+        protocol: tcp
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lifelink} -d ${POSTGRES_DB:-lifelink}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - lifelink_net
+    mem_limit: 512m
+    cpus: 0.75
+
+  redis:
+    image: redis:7-alpine
+    container_name: lifelink-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_data:/data
+    # Localhost-only; remove this ports block for full network isolation.
+    ports:
+      - target: 6379
+        published: ${REDIS_PORT:-6379}
+        host_ip: 127.0.0.1
+        protocol: tcp
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - lifelink_net
+    mem_limit: 256m
+    cpus: 0.5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      args:
+        # Java 21 bytecode target; builder image is Temurin 21 regardless of host JDK.
+        JAVA_VERSION: "21"
+    image: lifelink/backend:dev
+    container_name: lifelink-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-lifelink}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lifelink}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lifelink_dev_only}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      JAVA_OPTS: ${JAVA_OPTS:--Xms128m -Xmx512m -XX:MaxRAMPercentage=65.0}
+    ports:
+      - target: 8080
+        published: ${BACKEND_PORT:-8080}
+        protocol: tcp
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # TCP check works even before Spring Boot Actuator is added to the backend.
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - lifelink_net
+    mem_limit: 768m
+    cpus: 1.0
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    image: lifelink/frontend:dev
+    container_name: lifelink-frontend
+    restart: unless-stopped
+    ports:
+      - target: 8080
+        published: ${FRONTEND_PORT:-5173}
+        protocol: tcp
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - lifelink_net
+    mem_limit: 256m
+    cpus: 0.5
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  lifelink_net:
+    driver: bridge
