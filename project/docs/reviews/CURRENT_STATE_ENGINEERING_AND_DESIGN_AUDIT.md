@@ -106,8 +106,9 @@ The corrected abstract uses the required 14-section academic structure, a
 crimson/burgundy professional design, accurate Java/React/TypeScript/PostgreSQL
 technology, real AOOP classes, and no unsupported feature claims. The PDF was
 validated as 4 pages with a 187-word abstract, all 14 numbered sections, no
-replacement/null characters, and accurate current stack/test phrases. The
-independent review’s blanket-pagination objection was corrected to state that
+replacement/null characters, no instructional parenthetical notes, and accurate
+current stack/test phrases. The independent review’s blanket-pagination
+objection was corrected to state that
 many collection endpoints are paginated while several array-returning
 endpoints are not; evidence is in
 [`../evidence/ABSTRACT_PDF_VALIDATION.json`](../evidence/ABSTRACT_PDF_VALIDATION.json)
