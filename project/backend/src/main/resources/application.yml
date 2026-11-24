@@ -54,6 +54,9 @@ lifelink:
     rule-version: "1.0-local-conservative"
     compatibility-mode: STRICT_SAME_GROUP
     clinical-approval-required: true
+  inventory:
+    # Organizations with fewer than ten AVAILABLE units are reported as low stock.
+    low-stock-threshold: ${LOW_STOCK_THRESHOLD:10}
   rate-limit:
     auth-max-attempts: ${AUTH_RATE_LIMIT_MAX_ATTEMPTS:10}
     auth-window-seconds: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:60}

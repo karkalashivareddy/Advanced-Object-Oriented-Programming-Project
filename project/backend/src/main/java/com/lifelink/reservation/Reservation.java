@@ -82,8 +82,9 @@ public class Reservation extends BaseEntity {
         this.status = Status.CANCELLED;
     }
 
+    /** CONFIRMED may be expired only while no dispatch owns the unit (checked by the service). */
     public void expire() {
-        if (status != Status.ACTIVE) {
+        if (status != Status.ACTIVE && status != Status.CONFIRMED) {
             throw new InvalidStateTransitionException(status.name(), Status.EXPIRED.name());
         }
         this.status = Status.EXPIRED;

@@ -3,6 +3,7 @@ package com.lifelink.donor;
 import com.lifelink.audit.AuditService;
 import com.lifelink.common.exception.BusinessRuleViolationException;
 import com.lifelink.common.exception.ResourceNotFoundException;
+import com.lifelink.common.exception.ValidationException;
 import com.lifelink.donor.dto.DonationDtos.ApprovalRequest;
 import com.lifelink.donor.dto.DonationDtos.CreateRequest;
 import com.lifelink.donor.dto.DonationDtos.RejectRequest;
@@ -149,6 +150,9 @@ public class DonationService {
 
     @Transactional
     public View reject(Long id, RejectRequest request) {
+        if (request == null || request.reason() == null || request.reason().isBlank()) {
+            throw new ValidationException("Reason is required", Map.of("reason", "must not be blank"));
+        }
         Donation donation = find(id);
         tenantAccess.requireOrganizationAndPermission(donation.getOrganization().getId(),
                 Permission.DONATION_APPROVE);

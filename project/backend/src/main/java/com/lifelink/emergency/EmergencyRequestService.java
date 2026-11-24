@@ -2,6 +2,7 @@ package com.lifelink.emergency;
 
 import com.lifelink.audit.AuditService;
 import com.lifelink.common.exception.ResourceNotFoundException;
+import com.lifelink.common.exception.ValidationException;
 import com.lifelink.emergency.dto.RequestDtos.CreateRequest;
 import com.lifelink.emergency.dto.RequestDtos.Detail;
 import com.lifelink.emergency.dto.RequestDtos.EventView;
@@ -14,34 +15,50 @@ import com.lifelink.identity.TenantAccessService;
 import com.lifelink.notification.NotificationService;
 import com.lifelink.organization.Organization;
 import com.lifelink.organization.OrganizationRepository;
+import com.lifelink.reservation.ReservationService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EmergencyRequestService {
+    private static final Logger log = LoggerFactory.getLogger(EmergencyRequestService.class);
+    private static final List<EmergencyRequest.Status> EXPIRABLE_STATUSES = List.of(
+            EmergencyRequest.Status.DRAFT, EmergencyRequest.Status.PENDING_VERIFICATION,
+            EmergencyRequest.Status.VERIFIED, EmergencyRequest.Status.APPROVED,
+            EmergencyRequest.Status.ALLOCATING, EmergencyRequest.Status.RESERVED);
+
     private final EmergencyRequestRepository repository;
     private final RequestEventRepository eventRepository;
     private final OrganizationRepository organizationRepository;
     private final TenantAccessService tenantAccess;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final ReservationService reservationService;
+    private final LifecycleBatches lifecycleBatches;
 
     public EmergencyRequestService(EmergencyRequestRepository repository,
                                    RequestEventRepository eventRepository,
                                    OrganizationRepository organizationRepository,
                                    TenantAccessService tenantAccess,
                                    AuditService auditService,
-                                   NotificationService notificationService) {
+                                   NotificationService notificationService,
+                                   ReservationService reservationService,
+                                   LifecycleBatches lifecycleBatches) {
         this.repository = repository;
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.tenantAccess = tenantAccess;
         this.auditService = auditService;
         this.notificationService = notificationService;
+        this.reservationService = reservationService;
+        this.lifecycleBatches = lifecycleBatches;
     }
 
     @Transactional(readOnly = true)
@@ -114,6 +131,7 @@ public class EmergencyRequestService {
 
     @Transactional
     public View reject(Long id, ReasonRequest request) {
+        requireReason(request);
         EmergencyRequest entity = find(id);
         tenantAccess.requireOrganizationAndPermission(entity.getRequestingOrganization().getId(),
                 Permission.REQUEST_APPROVE);
@@ -126,7 +144,10 @@ public class EmergencyRequestService {
 
     @Transactional
     public View cancel(Long id, ReasonRequest request) {
-        EmergencyRequest entity = find(id);
+        requireReason(request);
+        // Lock the request before releasing its reservations so cancellation follows
+        // the same request -> unit order as lifecycle expiry and allocation.
+        EmergencyRequest entity = findForUpdate(id);
         Long organizationId = entity.getRequestingOrganization().getId();
         tenantAccess.requireOrganization(organizationId);
         AuthenticatedUser user = tenantAccess.currentUser();
@@ -137,6 +158,7 @@ public class EmergencyRequestService {
                     "Missing permission to cancel this request");
         }
         entity.cancel();
+        reservationService.cancelForRequest(entity.getId());
         recordEvent(entity, "CANCELLED", request.reason());
         auditService.record("REQUEST_CANCEL", "EMERGENCY_REQUEST", entity.getPublicId(),
                 entity.getRequestingOrganization().getId(), "SUCCESS", Map.of());
@@ -145,6 +167,9 @@ public class EmergencyRequestService {
 
     @Transactional
     public View changePriority(Long id, PriorityRequest request) {
+        if (request == null || request.priority() == null) {
+            throw new ValidationException("Priority is required", Map.of("priority", "must not be null"));
+        }
         EmergencyRequest entity = find(id);
         tenantAccess.requireOrganizationAndPermission(entity.getRequestingOrganization().getId(),
                 Permission.REQUEST_APPROVE);
@@ -168,8 +193,31 @@ public class EmergencyRequestService {
         recordEvent(request, event, "Automatic workflow transition");
     }
 
+    /** Scheduler entry point: expires due requests and releases any unshipped reservations. */
+    public int expireRequests() {
+        Instant now = Instant.now();
+        List<Long> dueIds = repository.findExpirableIds(now, EXPIRABLE_STATUSES);
+        int processed = 0;
+        for (Long id : dueIds) {
+            try {
+                if (lifecycleBatches.expireRequest(id, now)) {
+                    processed++;
+                }
+            } catch (RuntimeException ex) {
+                log.warn("Lifecycle request expiry failed for id={}: {}", id, ex.getMessage());
+            }
+        }
+        return processed;
+    }
+
     public EmergencyRequest findEntity(Long id) {
         return find(id);
+    }
+
+    private void requireReason(ReasonRequest request) {
+        if (request == null || request.reason() == null || request.reason().isBlank()) {
+            throw new ValidationException("Reason is required", Map.of("reason", "must not be blank"));
+        }
     }
 
     private void recordEvent(EmergencyRequest request, String action, String notes) {
@@ -179,5 +227,45 @@ public class EmergencyRequestService {
     private EmergencyRequest find(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("EmergencyRequest", id));
+    }
+
+    private EmergencyRequest findForUpdate(Long id) {
+        return repository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("EmergencyRequest", id));
+    }
+
+    /** Per-item transaction so scheduler work has no ambient authentication and one bad row is isolated. */
+    @Service
+    public static class LifecycleBatches {
+        private final EmergencyRequestRepository repository;
+        private final RequestEventRepository eventRepository;
+        private final ReservationService reservationService;
+        private final AuditService auditService;
+
+        public LifecycleBatches(EmergencyRequestRepository repository,
+                                RequestEventRepository eventRepository,
+                                ReservationService reservationService,
+                                AuditService auditService) {
+            this.repository = repository;
+            this.eventRepository = eventRepository;
+            this.reservationService = reservationService;
+            this.auditService = auditService;
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        public boolean expireRequest(Long requestId, Instant now) {
+            EmergencyRequest request = repository.findByIdForUpdate(requestId).orElse(null);
+            if (request == null || !EXPIRABLE_STATUSES.contains(request.getStatus())
+                    || request.getRequiredBy().isAfter(now)) {
+                return false;
+            }
+            request.expire(now);
+            reservationService.expireForRequest(requestId);
+            eventRepository.save(new RequestEvent(request, "EXPIRED", "Required-by time elapsed", null));
+            auditService.record("REQUEST_EXPIRE", "EMERGENCY_REQUEST", request.getPublicId(),
+                    request.getRequestingOrganization().getId(), "SUCCESS",
+                    Map.of("requiredBy", request.getRequiredBy().toString()));
+            return true;
+        }
     }
 }

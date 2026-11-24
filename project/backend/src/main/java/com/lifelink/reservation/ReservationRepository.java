@@ -11,7 +11,12 @@ import org.springframework.data.repository.query.Param;
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
     Optional<Reservation> findByIdempotencyKey(String idempotencyKey);
 
-    @Query("select r from Reservation r where r.status = com.lifelink.reservation.Reservation$Status.ACTIVE and r.expiresAt < :now")
+    @Query("""
+            select r from Reservation r
+            where r.status in (com.lifelink.reservation.Reservation$Status.ACTIVE,
+                               com.lifelink.reservation.Reservation$Status.CONFIRMED)
+              and r.expiresAt < :now
+            """)
     List<Reservation> findExpired(@Param("now") Instant now);
 
     List<Reservation> findByRequestId(Long requestId);

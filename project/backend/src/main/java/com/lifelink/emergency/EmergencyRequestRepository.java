@@ -1,6 +1,9 @@
 package com.lifelink.emergency;
 
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -14,4 +17,8 @@ public interface EmergencyRequestRepository extends JpaRepository<EmergencyReque
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select e from EmergencyRequest e where e.id = :id")
     Optional<EmergencyRequest> findByIdForUpdate(@Param("id") Long id);
+
+    @Query("select e.id from EmergencyRequest e where e.requiredBy <= :now and e.status in :statuses")
+    List<Long> findExpirableIds(@Param("now") Instant now,
+                                @Param("statuses") Collection<EmergencyRequest.Status> statuses);
 }

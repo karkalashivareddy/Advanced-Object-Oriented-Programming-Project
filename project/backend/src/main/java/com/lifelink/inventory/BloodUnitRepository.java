@@ -77,4 +77,13 @@ public interface BloodUnitRepository extends JpaRepository<BloodUnit, Long> {
     @Query("select u from BloodUnit u where u.expiresAt < :cutoff and u.status in :statuses order by u.expiresAt")
     List<BloodUnit> findExpiring(@Param("cutoff") Instant cutoff,
                                  @Param("statuses") List<BloodUnit.Status> statuses);
+
+    /** Upper-bound-only query is for expiry processing; alerts need an explicit lower bound. */
+    @Query("""
+            select u from BloodUnit u
+            where u.expiresAt >= :from and u.expiresAt < :cutoff and u.status in :statuses
+            order by u.expiresAt
+            """)
+    List<BloodUnit> findExpiringBetween(@Param("from") Instant from, @Param("cutoff") Instant cutoff,
+                                        @Param("statuses") List<BloodUnit.Status> statuses);
 }

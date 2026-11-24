@@ -3,8 +3,15 @@ package com.lifelink.audit;
 import com.lifelink.common.CorrelationContext;
 import com.lifelink.identity.AuthenticatedUser;
 import com.lifelink.identity.TenantAccessService;
+import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -37,11 +44,37 @@ public class AuditService {
                 targetId, CorrelationContext.id(), safeMetadata, outcome));
     }
 
+    /**
+     * Builds predicates only for supplied filters. PostgreSQL cannot infer the type
+     * of a null parameter in a JPQL `(:param is null or ...)` expression, so the
+     * previous static query failed with SQLState 42804 whenever from/to were absent.
+     */
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<AuditEvent> search(Long organizationId, Long actorId,
-                                                                   String action, Instant from, Instant to,
-                                                                   org.springframework.data.domain.Pageable pageable) {
-        return repository.search(organizationId, actorId, action, from, to, pageable);
+    public Page<AuditEvent> search(Long organizationId, Long actorId,
+                                   String action, Instant from, Instant to,
+                                   Pageable pageable) {
+        Specification<AuditEvent> specification = (root, query, builder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (organizationId != null) {
+                predicates.add(builder.equal(root.get("organizationId"), organizationId));
+            }
+            if (actorId != null) {
+                predicates.add(builder.equal(root.get("actorId"), actorId));
+            }
+            if (action != null && !action.isBlank()) {
+                predicates.add(builder.like(
+                        builder.lower(root.get("action")),
+                        "%" + action.toLowerCase(Locale.ROOT) + "%"));
+            }
+            if (from != null) {
+                predicates.add(builder.greaterThanOrEqualTo(root.get("occurredAt"), from));
+            }
+            if (to != null) {
+                predicates.add(builder.lessThanOrEqualTo(root.get("occurredAt"), to));
+            }
+            return builder.and(predicates.toArray(Predicate[]::new));
+        };
+        return repository.findAll(specification, pageable);
     }
 
     private String sanitize(String value) {

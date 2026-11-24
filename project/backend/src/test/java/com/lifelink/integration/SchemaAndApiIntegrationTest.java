@@ -354,7 +354,7 @@ class SchemaAndApiIntegrationTest {
                 "priority", "URGENT",
                 "requiredBy", Instant.now().plus(Duration.ofHours(2)).toString(),
                 "reason", "Cross-tenant allocation regression"), hospitalHeaders).getBody();
-        long requestId = created.get("data").get("id").asLong();
+        long requestId = requireData(created, "cross-tenant request create").get("id").asLong();
         exchange("/api/v1/emergency-requests/" + requestId + "/verify", Map.of(), hospitalHeaders);
         exchange("/api/v1/emergency-requests/" + requestId + "/approve", Map.of(), hospitalHeaders);
 
@@ -685,9 +685,9 @@ class SchemaAndApiIntegrationTest {
         headers.set("Idempotency-Key", key);
         JsonNode confirmation = exchange("/api/v1/allocations/confirm", Map.of(
                 "requestId", requestId, "unitIds", List.of(unitId), "idempotencyKey", key), headers).getBody();
-        assertNotNull(confirmation);
-        assertEquals(1, confirmation.get("data").get("reservations").size());
-        return confirmation.get("data").get("reservations").get(0).get("id").asLong();
+        JsonNode confirmationData = requireData(confirmation, "bank allocation confirm");
+        assertEquals(1, confirmationData.get("reservations").size());
+        return confirmationData.get("reservations").get(0).get("id").asLong();
     }
 
     private long createAvailableWholeBloodUnit(String token, long organizationId) {
@@ -747,6 +747,12 @@ class SchemaAndApiIntegrationTest {
                 Map.of("email", email, "password", password), jsonHeaders());
         assertEquals(200, response.getStatusCode().value());
         return response.getBody();
+    }
+
+    private JsonNode requireData(JsonNode body, String context) {
+        assertNotNull(body, context + " returned no response body");
+        assertTrue(body.has("data"), () -> context + " returned " + body);
+        return body.get("data");
     }
 
     private ResponseEntity<JsonNode> exchange(String path, Object body, HttpHeaders headers) {

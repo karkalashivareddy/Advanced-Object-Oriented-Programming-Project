@@ -2,6 +2,7 @@ package com.lifelink.donor.dto;
 
 import com.lifelink.common.ComponentType;
 import com.lifelink.donor.Donation;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
@@ -20,7 +21,7 @@ public final class DonationDtos {
     public record ApprovalRequest(List<ComponentType> components) {
     }
 
-    public record RejectRequest(String reason) {
+    public record RejectRequest(@NotBlank String reason) {
     }
 
     public record View(Long id, String publicId, Long donorId, String donorName, Long organizationId,

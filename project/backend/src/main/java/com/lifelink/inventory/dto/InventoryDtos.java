@@ -4,6 +4,7 @@ import com.lifelink.common.BloodGroup;
 import com.lifelink.common.ComponentType;
 import com.lifelink.inventory.BloodUnit;
 import com.lifelink.inventory.InventoryMovement;
+import jakarta.validation.constraints.Negative;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
@@ -19,7 +20,7 @@ public final class InventoryDtos {
                                 @NotBlank String storageLocation) {
     }
 
-    public record AdjustmentRequest(@NotNull Long unitId, Integer delta, @NotBlank String reason,
+    public record AdjustmentRequest(@NotNull Long unitId, @Negative Integer delta, @NotBlank String reason,
                                     String location) {
     }
 

@@ -6,6 +6,7 @@ import com.lifelink.emergency.EmergencyRequest;
 import com.lifelink.emergency.RequestEvent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
@@ -20,10 +21,10 @@ public final class RequestDtos {
                                 @NotNull Instant requiredBy, String reason) {
     }
 
-    public record PriorityRequest(EmergencyRequest.Priority priority) {
+    public record PriorityRequest(@NotNull EmergencyRequest.Priority priority) {
     }
 
-    public record ReasonRequest(String reason) {
+    public record ReasonRequest(@NotBlank String reason) {
     }
 
     public record View(Long id, String publicId, String requestNumber, Long organizationId,

@@ -49,11 +49,11 @@ public class OrganizationService {
         if (tenantAccess.currentUser().isPlatformAdmin()) {
             return repository.findAll(pageable).map(View::of);
         }
-        return repository.findAllById(tenantAccess.currentUser().organizationIds()).stream()
-                .map(View::of)
-                .collect(java.util.stream.Collectors.collectingAndThen(
-                        java.util.stream.Collectors.toList(),
-                        list -> new org.springframework.data.domain.PageImpl<>(list, pageable, list.size())));
+        var organizationIds = tenantAccess.currentUser().organizationIds();
+        if (organizationIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return repository.findByIdInForPage(organizationIds, pageable).map(View::of);
     }
 
     @Transactional(readOnly = true)

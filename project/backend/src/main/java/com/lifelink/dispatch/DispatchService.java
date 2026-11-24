@@ -9,6 +9,7 @@ import com.lifelink.dispatch.dto.DispatchDtos.DeliveryRequest;
 import com.lifelink.dispatch.dto.DispatchDtos.IncidentRequest;
 import com.lifelink.dispatch.dto.DispatchDtos.View;
 import com.lifelink.emergency.EmergencyRequest;
+import com.lifelink.emergency.EmergencyRequestRepository;
 import com.lifelink.emergency.EmergencyRequestService;
 import com.lifelink.identity.AuthenticatedUser;
 import com.lifelink.identity.Permission;
@@ -23,6 +24,7 @@ import com.lifelink.organization.Organization;
 import com.lifelink.reservation.Reservation;
 import com.lifelink.reservation.ReservationRepository;
 import com.lifelink.reservation.ReservationService.Idempotency;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DispatchService {
     private final DispatchRepository repository;
     private final ReservationRepository reservationRepository;
+    private final EmergencyRequestRepository requestRepository;
     private final BloodUnitRepository unitRepository;
     private final InventoryMovementRepository movementRepository;
     private final EmergencyRequestService requestService;
@@ -41,12 +44,14 @@ public class DispatchService {
     private final Idempotency idempotency;
 
     public DispatchService(DispatchRepository repository, ReservationRepository reservationRepository,
-                           BloodUnitRepository unitRepository, InventoryMovementRepository movementRepository,
+                           EmergencyRequestRepository requestRepository, BloodUnitRepository unitRepository,
+                           InventoryMovementRepository movementRepository,
                            EmergencyRequestService requestService, NotificationService notificationService,
                            TenantAccessService tenantAccess, AuditService auditService,
                            Idempotency idempotency) {
         this.repository = repository;
         this.reservationRepository = reservationRepository;
+        this.requestRepository = requestRepository;
         this.unitRepository = unitRepository;
         this.movementRepository = movementRepository;
         this.requestService = requestService;
@@ -83,9 +88,10 @@ public class DispatchService {
         String key = idempotencyKey.trim();
         Reservation reservation = reservationRepository.findById(request.reservationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation", request.reservationId()));
-        if (reservation.getStatus() != Reservation.Status.CONFIRMED) {
-            throw new BusinessRuleViolationException("Only confirmed reservations can be dispatched");
-        }
+        // Lock in request -> unit order, the same order used by request expiry and
+        // allocation confirm, so a TTL expiry cannot deadlock against dispatch.
+        EmergencyRequest emergencyRequest = requestRepository.findByIdForUpdate(reservation.getRequest().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("EmergencyRequest", reservation.getRequest().getId()));
         // Lock the supplied unit before the idempotency claim so same-key replays and
         // competing reservations for the same unit serialize on a single row.
         BloodUnit unit = unitRepository.findByIdForUpdate(reservation.getBloodUnit().getId())
@@ -97,11 +103,18 @@ public class DispatchService {
         // identity: the same key with different staff must be a fingerprint conflict.
         String hash = Idempotency.fingerprint(String.valueOf(request.reservationId()),
                 request.assignedStaff().trim());
+        // State validation is part of the work, not a precondition: a COMPLETED replay
+        // must return its stored View even if the reservation TTL has since elapsed.
         return idempotency.execute(Idempotency.DISPATCH_CREATE, key, hash, View.class, () -> {
+            if (reservation.getStatus() != Reservation.Status.CONFIRMED) {
+                throw new BusinessRuleViolationException("Only confirmed reservations can be dispatched");
+            }
+            if (!reservation.getExpiresAt().isAfter(Instant.now())) {
+                throw new BusinessRuleViolationException("Confirmed reservation has expired");
+            }
             if (repository.existsByReservationId(reservation.getId())) {
                 throw new BusinessRuleViolationException("A dispatch already exists for this reservation");
             }
-            EmergencyRequest emergencyRequest = reservation.getRequest();
             Dispatch dispatch = new Dispatch(reservation, emergencyRequest, supplyingOrganization,
                     request.assignedStaff(), key);
             repository.saveAndFlush(dispatch);
@@ -171,12 +184,16 @@ public class DispatchService {
             throw new BusinessRuleViolationException("Dispatch must be in transit or have an open incident before delivery");
         }
         dispatch.deliver(request.recipientName());
+        // Keep the same request -> unit lock order as create/expiry before writing
+        // the terminal request state while the unit row is locked.
+        EmergencyRequest emergencyRequest = requestRepository.findByIdForUpdate(dispatch.getRequest().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("EmergencyRequest", dispatch.getRequest().getId()));
         BloodUnit unit = unitRepository.findByIdForUpdate(dispatch.getReservation().getBloodUnit().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("BloodUnit", dispatch.getReservation().getBloodUnit().getId()));
         unit.deliver();
         movementRepository.save(new InventoryMovement(unit, BloodUnit.Status.DISPATCHED.name(),
                 BloodUnit.Status.DELIVERED.name(), "Delivery confirmed", null));
-        requestService.markState(dispatch.getRequest().getId(), EmergencyRequest.Status.FULFILLED, "DELIVERY_CONFIRMED");
+        requestService.markState(emergencyRequest.getId(), EmergencyRequest.Status.FULFILLED, "DELIVERY_CONFIRMED");
         notificationService.notifyOrganizationAdmins(dispatch.getOrganization().getId(), "Delivery confirmed",
                 dispatch.getRequest().getRequestNumber() + " was delivered", "DELIVERY_CONFIRMED");
         auditService.record("DISPATCH_DELIVER", "DISPATCH", dispatch.getPublicId(),

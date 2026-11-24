@@ -5,6 +5,8 @@ import com.lifelink.common.BloodGroup;
 import com.lifelink.common.ComponentType;
 import com.lifelink.common.PageResponse;
 import com.lifelink.common.exception.ResourceNotFoundException;
+import com.lifelink.common.exception.ValidationException;
+import com.lifelink.dispatch.DispatchRepository;
 import com.lifelink.donor.Donation;
 import com.lifelink.identity.AuthenticatedUser;
 import com.lifelink.identity.Permission;
@@ -24,11 +26,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -50,6 +54,7 @@ public class InventoryService {
     private final TenantAccessService tenantAccess;
     private final AuditService auditService;
     private final LifecycleBatches lifecycleBatches;
+    private final int lowStockThreshold;
 
     public InventoryService(BloodUnitRepository unitRepository,
                             InventoryMovementRepository movementRepository,
@@ -57,7 +62,8 @@ public class InventoryService {
                             UserRepository userRepository,
                             TenantAccessService tenantAccess,
                             AuditService auditService,
-                            LifecycleBatches lifecycleBatches) {
+                            LifecycleBatches lifecycleBatches,
+                            @Value("${lifelink.inventory.low-stock-threshold:10}") int lowStockThreshold) {
         this.unitRepository = unitRepository;
         this.movementRepository = movementRepository;
         this.organizationRepository = organizationRepository;
@@ -65,6 +71,7 @@ public class InventoryService {
         this.tenantAccess = tenantAccess;
         this.auditService = auditService;
         this.lifecycleBatches = lifecycleBatches;
+        this.lowStockThreshold = lowStockThreshold;
     }
 
     @Transactional(readOnly = true)
@@ -152,18 +159,31 @@ public class InventoryService {
 
     @Transactional
     public View adjust(com.lifelink.inventory.dto.InventoryDtos.AdjustmentRequest request) {
+        if (request == null || (request.delta() != null && request.delta() >= 0)) {
+            throw new ValidationException("Delta must be negative to discard a unit",
+                    Map.of("delta", "must be negative or omitted"));
+        }
+        if (request.reason() == null || request.reason().isBlank()) {
+            throw new ValidationException("Reason is required", Map.of("reason", "must not be blank"));
+        }
         BloodUnit unit = lockedUnit(request.unitId());
         tenantAccess.requireOrganizationAndPermission(unit.getOrganization().getId(), Permission.INVENTORY_WRITE);
         String before = unit.getStatus().name();
+        boolean beforeReleased = unit.isReleased();
+        String beforeLocation = unit.getStorageLocation();
         if (request.location() != null && !request.location().isBlank()) {
             unit.changeLocation(request.location());
         }
-        if (request.delta() != null && request.delta() < 0) {
+        if (request.delta() != null) {
             unit.discard(request.reason());
         }
-        recordMovement(unit, before, unit.getStatus().name(), request.reason());
-        auditService.record("INVENTORY_ADJUST", "BLOOD_UNIT", unit.getPublicId(),
-                unit.getOrganization().getId(), "SUCCESS", Map.of("reason", request.reason()));
+        boolean mutated = !before.equals(unit.getStatus().name()) || beforeReleased != unit.isReleased()
+                || !Objects.equals(beforeLocation, unit.getStorageLocation());
+        if (mutated) {
+            recordMovement(unit, before, unit.getStatus().name(), request.reason());
+            auditService.record("INVENTORY_ADJUST", "BLOOD_UNIT", unit.getPublicId(),
+                    unit.getOrganization().getId(), "SUCCESS", Map.of("reason", request.reason()));
+        }
         return View.of(unit);
     }
 
@@ -178,14 +198,22 @@ public class InventoryService {
     @Transactional(readOnly = true)
     public Alerts alerts() {
         AuthenticatedUser user = tenantAccess.currentUser();
-        Instant soon = Instant.now().plus(7, ChronoUnit.DAYS);
-        long expiring = unitRepository.findExpiring(soon, ACTIVE_STATUSES).stream()
+        Instant now = Instant.now();
+        long expiring = unitRepository.findExpiringBetween(now, now.plus(7, ChronoUnit.DAYS), ACTIVE_STATUSES)
+                .stream().filter(u -> isVisibleForRead(user, u)).count();
+        long expired = unitRepository.findExpiring(now, ACTIVE_STATUSES).stream()
                 .filter(u -> isVisibleForRead(user, u))
                 .count();
-        long expired = unitRepository.findExpiring(Instant.now(), ACTIVE_STATUSES).stream()
-                .filter(u -> isVisibleForRead(user, u))
-                .count();
-        return new Alerts(expiring, expired, 0);
+        // Low-stock is an inventory read: membership alone must not reveal an
+        // organization's stock level when the caller has no effective INVENTORY_READ.
+        List<Long> readableOrganizationIds = user.isPlatformAdmin() ? null
+                : user.organizationIds().stream()
+                        .filter(orgId -> user.hasPermissionForOrganization(Permission.INVENTORY_READ, orgId))
+                        .toList();
+        long lowStock = readableOrganizationIds == null
+                ? organizationRepository.findAllLowStockIds(lowStockThreshold).size()
+                : organizationRepository.findLowStockIds(readableOrganizationIds, lowStockThreshold).size();
+        return new Alerts(expiring, expired, lowStock);
     }
 
     @Transactional(readOnly = true)
@@ -259,15 +287,18 @@ public class InventoryService {
         private final BloodUnitRepository unitRepository;
         private final InventoryMovementRepository movementRepository;
         private final ReservationRepository reservationRepository;
+        private final DispatchRepository dispatchRepository;
         private final AuditService auditService;
 
         public LifecycleBatches(BloodUnitRepository unitRepository,
                                 InventoryMovementRepository movementRepository,
                                 ReservationRepository reservationRepository,
+                                DispatchRepository dispatchRepository,
                                 AuditService auditService) {
             this.unitRepository = unitRepository;
             this.movementRepository = movementRepository;
             this.reservationRepository = reservationRepository;
+            this.dispatchRepository = dispatchRepository;
             this.auditService = auditService;
         }
 
@@ -302,10 +333,17 @@ public class InventoryService {
         @Transactional(propagation = Propagation.REQUIRES_NEW)
         public boolean expireReservation(Long reservationId) {
             Reservation reservation = reservationRepository.findById(reservationId).orElse(null);
-            if (reservation == null || reservation.getStatus() != Reservation.Status.ACTIVE) {
+            if (reservation == null || (reservation.getStatus() != Reservation.Status.ACTIVE
+                    && reservation.getStatus() != Reservation.Status.CONFIRMED)) {
                 return false;
             }
             BloodUnit unit = unitRepository.findByIdForUpdate(reservation.getBloodUnit().getId()).orElse(null);
+            // Final guard under the unit lock: dispatch creates that reservation row
+            // while holding that same lock, so this check cannot race with dispatch.
+            // The scheduler's pre-filter is only an optimization.
+            if (dispatchRepository.existsByReservationId(reservationId)) {
+                return false;
+            }
             reservationRepository.clearActiveUnit(reservationId);
             reservation.expire();
             if (unit != null) {

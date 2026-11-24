@@ -1,5 +1,6 @@
 package com.lifelink.common;
 
+import com.lifelink.emergency.EmergencyRequestService;
 import com.lifelink.inventory.InventoryService;
 import com.lifelink.notification.NotificationService;
 import com.lifelink.reservation.ReservationService;
@@ -14,12 +15,14 @@ public class LifecycleScheduler {
 
     private final InventoryService inventoryService;
     private final ReservationService reservationService;
+    private final EmergencyRequestService requestService;
     private final NotificationService notificationService;
 
     public LifecycleScheduler(InventoryService inventoryService, ReservationService reservationService,
-                              NotificationService notificationService) {
+                              EmergencyRequestService requestService, NotificationService notificationService) {
         this.inventoryService = inventoryService;
         this.reservationService = reservationService;
+        this.requestService = requestService;
         this.notificationService = notificationService;
     }
 
@@ -27,10 +30,11 @@ public class LifecycleScheduler {
     public void processLifecycle() {
         int expiredUnits = inventoryService.processExpiry();
         int expiredReservations = reservationService.expireReservations();
+        int expiredRequests = requestService.expireRequests();
         int events = notificationService.processOutbox();
-        if (expiredUnits > 0 || expiredReservations > 0 || events > 0) {
-            log.info("Lifecycle job: units={}, reservations={}, outbox={}",
-                    expiredUnits, expiredReservations, events);
+        if (expiredUnits > 0 || expiredReservations > 0 || expiredRequests > 0 || events > 0) {
+            log.info("Lifecycle job: units={}, reservations={}, requests={}, outbox={}",
+                    expiredUnits, expiredReservations, expiredRequests, events);
         }
     }
 }

@@ -12,3 +12,6 @@ spring:
 lifelink:
   seed:
     enabled: ${SEED_DEMO_DATA:false}
+  inventory:
+    # Organizations with fewer than ten AVAILABLE units are reported as low stock.
+    low-stock-threshold: ${LOW_STOCK_THRESHOLD:10}

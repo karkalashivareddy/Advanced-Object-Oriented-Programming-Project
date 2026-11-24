@@ -126,11 +126,25 @@ public class EmergencyRequest extends BaseEntity {
     public void markInTransit() { requireStatus(Status.RESERVED); this.status = Status.IN_TRANSIT; }
     public void fulfil() { requireStatus(Status.IN_TRANSIT, Status.RESERVED); this.status = Status.FULFILLED; }
 
+    /**
+     * requiredBy is the deadline for starting fulfilment. Once a dispatch is in transit,
+     * the request stays in that workflow state so delivery can still complete it.
+     */
+    public void expire(Instant now) {
+        if (requiredBy.isAfter(now)) {
+            throw new BusinessRuleViolationException("Request has not reached its required-by time");
+        }
+        requireStatus(Status.DRAFT, Status.PENDING_VERIFICATION, Status.VERIFIED,
+                Status.APPROVED, Status.ALLOCATING, Status.RESERVED);
+        this.status = Status.EXPIRED;
+    }
+
     public void changePriority(Priority priority, boolean authorized) {
         if (!authorized) {
             throw new BusinessRuleViolationException("Priority changes require authorization");
         }
-        if (status == Status.FULFILLED || status == Status.CANCELLED || status == Status.REJECTED) {
+        if (status == Status.FULFILLED || status == Status.CANCELLED || status == Status.REJECTED
+                || status == Status.EXPIRED) {
             throw new InvalidStateTransitionException(status.name(), "PRIORITY_CHANGE");
         }
         this.priority = priority;

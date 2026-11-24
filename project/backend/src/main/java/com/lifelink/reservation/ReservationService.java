@@ -8,6 +8,7 @@ import com.lifelink.common.exception.BusinessRuleViolationException;
 import com.lifelink.common.exception.ConcurrencyConflictException;
 import com.lifelink.common.exception.ResourceNotFoundException;
 import com.lifelink.common.exception.TenantAccessDeniedException;
+import com.lifelink.dispatch.DispatchRepository;
 import com.lifelink.emergency.EmergencyRequest;
 import com.lifelink.emergency.EmergencyRequestRepository;
 import com.lifelink.identity.AuthenticatedUser;
@@ -54,6 +55,7 @@ public class ReservationService {
     private final EmergencyRequestRepository requestRepository;
     private final OrganizationRepository organizationRepository;
     private final InventoryMovementRepository movementRepository;
+    private final DispatchRepository dispatchRepository;
     private final TenantAccessService tenantAccess;
     private final AuditService auditService;
     private final CompatibilitySpecification specification;
@@ -64,6 +66,7 @@ public class ReservationService {
                               EmergencyRequestRepository requestRepository,
                               OrganizationRepository organizationRepository,
                               InventoryMovementRepository movementRepository,
+                              DispatchRepository dispatchRepository,
                               TenantAccessService tenantAccess,
                               AuditService auditService,
                               CompatibilitySpecification specification,
@@ -74,6 +77,7 @@ public class ReservationService {
         this.requestRepository = requestRepository;
         this.organizationRepository = organizationRepository;
         this.movementRepository = movementRepository;
+        this.dispatchRepository = dispatchRepository;
         this.tenantAccess = tenantAccess;
         this.auditService = auditService;
         this.specification = specification;
@@ -155,16 +159,19 @@ public class ReservationService {
         Reservation reservation = find(id);
         tenantAccess.requireOrganizationAndPermission(reservation.getOrganization().getId(),
                 Permission.RESERVATION_CREATE);
-        BloodUnit unit = unitRepository.findByIdForUpdate(reservation.getBloodUnit().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("BloodUnit", reservation.getBloodUnit().getId()));
-        repository.clearActiveUnit(id);
-        reservation.cancel();
-        unit.clearReservation();
-        movementRepository.save(new InventoryMovement(unit, BloodUnit.Status.RESERVED.name(),
-                unit.getStatus().name(), "Reservation cancelled", null));
-        auditService.record("RESERVATION_CANCEL", "RESERVATION", reservation.getPublicId(),
-                reservation.getOrganization().getId(), "SUCCESS", Map.of());
+        release(reservation, "RESERVATION_CANCEL", false);
         return View.of(reservation);
+    }
+
+    /** Called by the request service after it has authorized the request cancellation. */
+    @Transactional
+    public int cancelForRequest(Long requestId) {
+        return releaseForRequest(requestId, "RESERVATION_CANCEL", false);
+    }
+
+    @Transactional
+    public int expireForRequest(Long requestId) {
+        return releaseForRequest(requestId, "RESERVATION_EXPIRE", true);
     }
 
     /**
@@ -173,7 +180,12 @@ public class ReservationService {
      * one locked or already-expired row cannot abort the remaining batch.
      */
     public int expireReservations() {
-        List<Long> expiredIds = repository.findExpired(Instant.now()).stream().map(Reservation::getId).toList();
+        List<Long> expiredIds = repository.findExpired(Instant.now()).stream()
+                // A confirmed reservation with a dispatch is in flight; its TTL no longer applies.
+                .filter(reservation -> reservation.getStatus() != Reservation.Status.CONFIRMED
+                        || !dispatchRepository.existsByReservationId(reservation.getId()))
+                .map(Reservation::getId)
+                .toList();
         int processed = 0;
         for (Long id : expiredIds) {
             try {
@@ -185,6 +197,34 @@ public class ReservationService {
             }
         }
         return processed;
+    }
+
+    private int releaseForRequest(Long requestId, String auditAction, boolean expired) {
+        int released = 0;
+        for (Reservation reservation : repository.findByRequestId(requestId)) {
+            if (reservation.getStatus() == Reservation.Status.ACTIVE
+                    || reservation.getStatus() == Reservation.Status.CONFIRMED) {
+                release(reservation, auditAction, expired);
+                released++;
+            }
+        }
+        return released;
+    }
+
+    private void release(Reservation reservation, String auditAction, boolean expired) {
+        BloodUnit unit = unitRepository.findByIdForUpdate(reservation.getBloodUnit().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("BloodUnit", reservation.getBloodUnit().getId()));
+        repository.clearActiveUnit(reservation.getId());
+        if (expired) {
+            reservation.expire();
+        } else {
+            reservation.cancel();
+        }
+        unit.clearReservation();
+        movementRepository.save(new InventoryMovement(unit, BloodUnit.Status.RESERVED.name(),
+                unit.getStatus().name(), expired ? "Reservation expired" : "Reservation cancelled", null));
+        auditService.record(auditAction, "RESERVATION", reservation.getPublicId(),
+                reservation.getOrganization().getId(), "SUCCESS", Map.of());
     }
 
     private Reservation find(Long id) {
