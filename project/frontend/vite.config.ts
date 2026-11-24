@@ -25,6 +25,22 @@ export default defineConfig({
           proxy.on('proxyReq', (proxyReq) => proxyReq.removeHeader('origin'));
         },
       },
+      // SockJS negotiates /ws/info over HTTP and then upgrades to a WebSocket.
+      // Both must reach the backend for the browser STOMP client; the development
+      // port is not in the backend's CORS origin list, so strip Origin as above.
+      '/ws': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        ws: true,
+        configure: (proxy) => {
+          const stripOrigin = (proxyReq: { removeHeader: (name: string) => void }) =>
+            proxyReq.removeHeader('origin');
+          proxy.on('proxyReq', stripOrigin);
+          // WebSocket upgrades use a separate http-proxy event. Without this,
+          // SockJS falls back to XHR streaming instead of upgrading.
+          proxy.on('proxyReqWs', stripOrigin);
+        },
+      },
     },
   },
   preview: {

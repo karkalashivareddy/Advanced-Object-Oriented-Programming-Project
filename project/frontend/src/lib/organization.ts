@@ -19,3 +19,18 @@ export function organizationNameForScope(
 ): string | undefined {
   return activeMembership(memberships, organizationId)?.organizationName;
 }
+
+/**
+ * Restores only a previously valid explicit scope. No first-membership fallback
+ * is allowed: a user with several memberships must choose a scope, while an
+ * unscoped platform admin remains unscoped until an explicit selection is made.
+ */
+export function resolveOrganizationScope(
+  memberships: readonly OrganizationMembership[] | undefined,
+  storedOrganizationId: number | null,
+): number | null {
+  if (storedOrganizationId === null) return null;
+  return memberships?.some((membership) => membership.organizationId === storedOrganizationId)
+    ? storedOrganizationId
+    : null;
+}

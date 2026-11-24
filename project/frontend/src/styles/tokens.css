@@ -113,4 +113,33 @@
   --sidebar-width: 252px;
   --sidebar-width-collapsed: 76px;
   --topbar-height: 68px;
+
+  /* Bloodstream identity: deep vessel tones with a single restrained arterial accent. */
+  --color-vessel-950: #210811;
+  --color-vessel-900: #370a19;
+  --color-vessel-800: #520d22;
+  --color-vessel-700: #741329;
+  --color-vessel-600: #981a33;
+  --color-vessel-500: #b92a43;
+  --color-vessel-100: #f7e8eb;
+  --color-vessel-50: #fcf5f6;
+  --color-plasma: #fff8f9;
+  --color-plasma-rgb: 255 248 249;
+  --color-cell: #d5485f;
+  --color-cell-bright: #f06c7e;
+  --color-cell-core: #8d1c31;
+  --color-vessel-rgb: 168 31 46;
+
+  /* Editorial display face for public storytelling; workspace remains utility-first. */
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia,
+    'Times New Roman', serif;
+
+  /* Motion is intentionally slow enough to read as flow, never as an alert. */
+  --motion-fast: 180ms;
+  --motion-base: 420ms;
+  --motion-slow: 900ms;
+  --motion-flow: 14s;
+  --motion-pulse: 3.2s;
+  --ease-flow: cubic-bezier(0.45, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
 }

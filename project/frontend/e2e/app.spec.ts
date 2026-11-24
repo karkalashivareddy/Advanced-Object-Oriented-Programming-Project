@@ -42,3 +42,49 @@ test('mobile navigation opens as a focusable dialog and closes on Escape', async
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 });
+
+test('analytics has no horizontal page overflow on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+
+  await page.getByRole('button', { name: 'Open navigation menu' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Navigation menu' });
+  await dialog.getByRole('link', { name: 'Analytics' }).click();
+  await expect(page.getByRole('heading', { name: /Analytics/i }).first()).toBeVisible();
+
+  const widths = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: document.documentElement.clientWidth,
+    bodyWidth: document.body.scrollWidth,
+  }));
+  expect(widths.documentWidth).toBeLessThanOrEqual(widths.viewportWidth);
+  expect(widths.bodyWidth).toBeLessThanOrEqual(widths.viewportWidth);
+});
+
+test('browser opens an authenticated STOMP subscription while REST polling remains active', async ({ page }) => {
+  const sentFrames: string[] = [];
+  const restPolls: string[] = [];
+
+  page.on('websocket', (socket) => {
+    if (socket.url().includes('/ws/')) {
+      socket.on('framesent', (frame) => sentFrames.push(String(frame.payload)));
+    }
+  });
+  page.on('request', (request) => {
+    if (request.url().includes('/api/v1/notifications/unread-count')) restPolls.push(request.url());
+  });
+
+  await login(page);
+
+  await expect.poll(
+    () => sentFrames.some((frame) => frame.includes('CONNECT') && frame.includes('Bearer ')),
+    { timeout: 15_000 },
+  ).toBe(true);
+  await expect.poll(
+    () => sentFrames.some((frame) =>
+      frame.includes('SUBSCRIBE') && frame.includes('/user/queue/notifications')),
+    { timeout: 15_000 },
+  ).toBe(true);
+  expect(restPolls.length).toBeGreaterThan(0);
+  await expect(page.getByRole('button', { name: /Notifications/ })).toBeVisible();
+});

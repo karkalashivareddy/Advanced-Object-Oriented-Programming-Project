@@ -14,10 +14,13 @@ export function OrganizationSwitcher() {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const memberships: OrganizationMembership[] = auth.user?.memberships ?? [];
+  const canWorkUnscoped = auth.hasRole('PLATFORM_ADMIN');
   const active = memberships.find(
     (membership) => membership.organizationId === auth.organizationId,
   );
-  const activeName = active?.organizationName ?? (memberships.length ? 'Choose organization' : 'Unscoped');
+  const activeName = auth.organizationId === null
+    ? 'Unscoped'
+    : active?.organizationName ?? (memberships.length ? 'Choose organization' : 'Unscoped');
 
   const close = (restoreFocus = false) => {
     setOpen(false);
@@ -104,19 +107,40 @@ export function OrganizationSwitcher() {
         >
           <div className="popover-header">
             <span>Organization scope</span>
-            <span className="text-muted text-xs">{memberships.length} available</span>
+            <span className="text-muted text-xs">
+              {memberships.length + (canWorkUnscoped ? 1 : 0)} available
+            </span>
           </div>
           <div className="popover-list">
-            {memberships.length === 0 && (
+            {canWorkUnscoped && (
+              <button
+                ref={(element) => {
+                  optionRefs.current[0] = element;
+                }}
+                type="button"
+                role="option"
+                aria-selected={auth.organizationId === null}
+                className={cx('popover-item', 'org-option', auth.organizationId === null && 'is-selected')}
+                onClick={() => choose(null)}
+              >
+                <span className="org-option-name">
+                  <strong>Unscoped</strong>
+                  <span>Platform view · no organization header</span>
+                </span>
+                {auth.organizationId === null && <Check size={16} aria-hidden="true" />}
+              </button>
+            )}
+            {!canWorkUnscoped && memberships.length === 0 && (
               <p className="card-pad text-muted text-sm">No organization memberships are available.</p>
             )}
             {memberships.map((membership, index) => {
               const selected = membership.organizationId === auth.organizationId;
+              const optionIndex = index + (canWorkUnscoped ? 1 : 0);
               return (
                 <button
                   key={membership.organizationId}
                   ref={(element) => {
-                    optionRefs.current[index] = element;
+                    optionRefs.current[optionIndex] = element;
                   }}
                   type="button"
                   role="option"

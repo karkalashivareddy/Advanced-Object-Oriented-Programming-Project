@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { api } from './api';
+import { resolveOrganizationScope } from './organization';
 import { tokenStore } from './tokenStore';
 import { canAccess as checkAccess, hasAnyPermission, hasPermission as checkPermission, hasRole as checkRole, type AccessRule } from './permissions';
 import type { AuthResponse, Role, UserView } from '@/types/domain';
@@ -65,8 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncOrganization = useCallback(
     (nextUser: UserView) => {
       const stored = tokenStore.getOrganizationId();
-      const validIds = nextUser.memberships.map((membership) => membership.organizationId);
-      const resolved = stored && validIds.includes(stored) ? stored : (validIds[0] ?? null);
+      // Platform admins may work unscoped. No user is silently scoped to a
+      // first membership: multi-membership accounts must choose explicitly.
+      const resolved = resolveOrganizationScope(nextUser.memberships, stored);
       if (stored !== resolved) clearScopedData();
       tokenStore.setOrganizationId(resolved);
       setOrganizationId(resolved);

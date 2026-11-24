@@ -13,6 +13,10 @@ const mocks = vi.hoisted(() => ({
   apiGet: vi.fn(),
   logout: vi.fn(),
   selectOrganization: vi.fn(),
+  authState: {
+    organizationId: 20 as number | null,
+    canAccessNotifications: true,
+  },
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -31,7 +35,7 @@ vi.mock('@/lib/auth', () => ({
       ],
     },
     status: 'authenticated',
-    organizationId: 20,
+    organizationId: mocks.authState.organizationId,
     login: vi.fn(),
     register: vi.fn(),
     logout: mocks.logout,
@@ -42,7 +46,7 @@ vi.mock('@/lib/auth', () => ({
     hasPermission: () => true,
     hasAnyPermission: () => true,
     hasRole: (role: string) => role === 'PLATFORM_ADMIN',
-    canAccess: () => true,
+    canAccess: () => mocks.authState.canAccessNotifications,
   }),
 }));
 
@@ -63,6 +67,10 @@ function renderWithProviders(ui: ReactNode) {
 }
 
 beforeEach(() => {
+  mocks.authState.organizationId = 20;
+  mocks.authState.canAccessNotifications = true;
+  mocks.selectOrganization.mockClear();
+  mocks.apiGet.mockClear();
   mocks.apiGet.mockImplementation(async (path: string) => {
     if (path.includes('unread-count')) return 0;
     return { content: [], totalElements: 0, totalPages: 0, size: 8, number: 0 };
@@ -77,7 +85,7 @@ describe('organization switcher keyboard behaviour', () => {
 
     await user.click(trigger);
     const options = screen.getAllByRole('option');
-    expect(options).toHaveLength(2);
+    expect(options).toHaveLength(3);
     expect(options[0]).toHaveFocus();
 
     await user.tab();
@@ -87,6 +95,17 @@ describe('organization switcher keyboard behaviour', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+
+  it('offers an explicit unscoped option to platform administrators', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrganizationSwitcher />);
+
+    await user.click(screen.getByRole('button', { name: /Active organization/ }));
+    const unscoped = screen.getByRole('option', { name: /Unscoped/ });
+    await user.click(unscoped);
+
+    expect(mocks.selectOrganization).toHaveBeenCalledWith(null);
   });
 });
 
@@ -107,6 +126,14 @@ describe('notification popover keyboard behaviour', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: 'Notifications' })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+
+  it('hides the bell and does not poll without NOTIFICATION_READ', () => {
+    mocks.authState.canAccessNotifications = false;
+    renderWithProviders(<NotificationCenter />);
+
+    expect(screen.queryByRole('button', { name: /Notifications/ })).not.toBeInTheDocument();
+    expect(mocks.apiGet).not.toHaveBeenCalledWith('/notifications/unread-count');
   });
 });
 

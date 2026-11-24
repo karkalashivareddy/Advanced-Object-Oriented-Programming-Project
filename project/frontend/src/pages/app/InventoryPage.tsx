@@ -16,6 +16,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { BLOOD_GROUPS, COMPONENT_TYPES, UNIT_STATUSES } from '@/lib/constants';
 import { PERMISSIONS } from '@/lib/permissions';
 import { useInvalidateDomains } from '@/lib/queryCache';
+import { activeMembership as resolveActiveMembership } from '@/lib/organization';
 import {
   daysUntil,
   formatDate,
@@ -105,10 +106,8 @@ export function InventoryPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const activeMembership =
-    auth.user?.memberships.find((membership) => membership.organizationId === auth.organizationId) ??
-    auth.user?.memberships[0];
-  const activeOrganizationId = activeMembership?.organizationId ?? auth.organizationId;
+  const activeMembership = resolveActiveMembership(auth.user?.memberships, auth.organizationId);
+  const activeOrganizationId = auth.organizationId;
   const canChooseOrganization = auth.hasPermission(PERMISSIONS.ORGANIZATION_READ);
 
   // The inventory API exposes organization, group, component, status and expiry

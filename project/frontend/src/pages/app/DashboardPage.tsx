@@ -210,8 +210,9 @@ export function DashboardPage() {
     enabled: showDonorHome && canDonors,
   });
 
-  const donorId =
-    donorProfiles.data?.find((profile) => profile.userId === auth.user?.id)?.id ?? donorProfiles.data?.[0]?.id ?? null;
+  // Never fall back to an unrelated donor profile: that would request another
+  // person's appointments and donations for this signed-in user.
+  const donorId = donorProfiles.data?.find((profile) => profile.userId === auth.user?.id)?.id ?? null;
 
   const donorAppointments = useQuery({
     queryKey: ['dashboard', 'donors', donorId, 'appointments'],

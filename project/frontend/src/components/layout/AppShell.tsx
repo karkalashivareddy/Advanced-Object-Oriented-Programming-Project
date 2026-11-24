@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { RealtimeNotificationsBridge } from '@/lib/useRealtimeNotifications';
 import { cx } from '@/lib/utils';
 
 const COLLAPSE_KEY = 'lifelink.sidebarCollapsed';
@@ -50,6 +51,7 @@ export function AppShell() {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
+      <RealtimeNotificationsBridge />
       <Sidebar
         collapsed={collapsed}
         onToggleCollapse={toggleCollapse}

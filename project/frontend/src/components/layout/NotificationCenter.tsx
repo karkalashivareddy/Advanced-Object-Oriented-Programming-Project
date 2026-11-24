@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Bell, CheckCheck } from 'lucide-react';
 import { api, getErrorMessage } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/permissions';
 import { formatDateTime } from '@/lib/utils';
 import { useToast } from '@/components/ui';
 import type { NotificationView } from '@/types/domain';
@@ -19,6 +21,8 @@ function unreadFrom(value: unknown): number {
 }
 
 export function NotificationCenter() {
+  const auth = useAuth();
+  const canRead = auth.canAccess({ permissions: [PERMISSIONS.NOTIFICATION_READ] });
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -28,13 +32,14 @@ export function NotificationCenter() {
   const countQuery = useQuery({
     queryKey: ['notifications', 'unread-count'],
     queryFn: () => api.get<unknown>('/notifications/unread-count'),
-    refetchInterval: 60_000,
+    enabled: canRead,
+    refetchInterval: canRead ? 60_000 : false,
   });
 
   const listQuery = useQuery({
     queryKey: ['notifications', 'list'],
     queryFn: () => api.get<PageResponse<NotificationView>>('/notifications', { query: { size: 8 } }),
-    enabled: open,
+    enabled: open && canRead,
   });
 
   const markRead = useMutation({
@@ -68,6 +73,8 @@ export function NotificationCenter() {
 
   const unread = unreadFrom(countQuery.data);
   const notifications = listQuery.data?.content ?? [];
+
+  if (!canRead) return null;
 
   return (
     <div className="menu-anchor" ref={anchorRef}>

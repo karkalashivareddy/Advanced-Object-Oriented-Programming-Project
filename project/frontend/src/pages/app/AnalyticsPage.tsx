@@ -124,8 +124,8 @@ function AnimatedMetric({ metric, reduced }: { metric: OverviewMetric; reduced: 
 
 function ChartTable({ caption, data, valueLabel }: { caption: string; data: ChartDatum[]; valueLabel: string }) {
   return (
-    <div className="surface surface-raised">
-      <table className="premium-table">
+    <div className="surface surface-raised chart-data-table-wrap">
+      <table className="premium-table chart-data-table">
         <caption>{caption}</caption>
         <thead>
           <tr>
@@ -164,7 +164,9 @@ export function AnalyticsPage() {
   const canReadAnalytics = auth.hasPermission(PERMISSIONS.ANALYTICS_READ);
   const isPlatformAdmin = auth.hasRole('PLATFORM_ADMIN');
   const analyticsScope = isPlatformAdmin ? platformScope : auth.organizationId;
-  const scopeOptions = analyticsScope === null ? undefined : { organizationId: analyticsScope };
+  // `undefined` would make api.ts fall back to the stored active organization.
+  // Passing null explicitly removes the header for the "All organizations" scope.
+  const scopeOptions = { organizationId: analyticsScope };
   const canReadInventory = auth.hasPermission(PERMISSIONS.INVENTORY_READ);
   const canReadRequests = auth.hasPermission(PERMISSIONS.REQUEST_READ);
 

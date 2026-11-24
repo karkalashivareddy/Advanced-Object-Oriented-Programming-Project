@@ -10,7 +10,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   // Keep clean runs honest: a retry must not hide flaky workspace behaviour.
   retries: 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Two workers keep the live API/login probe realistic without racing the
+  // local seed backend with six simultaneous sessions.
+  workers: process.env.CI ? 1 : 2,
   reporter: [
     ['list'],
     ['json', { outputFile: '../docs/evidence/PLAYWRIGHT_RESULTS.json' }],

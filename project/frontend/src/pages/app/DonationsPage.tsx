@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -16,6 +16,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { COMPONENT_TYPES, DONATION_STATUSES } from '@/lib/constants';
 import { PERMISSIONS } from '@/lib/permissions';
 import { auditKeys, useInvalidateDomains } from '@/lib/queryCache';
+import { activeMembership as resolveActiveMembership } from '@/lib/organization';
 import { formatDateTime, fromDateTimeLocal, humanize, toDateTimeLocal } from '@/lib/utils';
 import {
   DataTable,
@@ -106,9 +107,7 @@ export function DonationsPage() {
   const [components, setComponents] = useState<ComponentType[]>(['RED_CELLS']);
 
   const canChooseOrganization = auth.hasPermission(PERMISSIONS.ORGANIZATION_READ);
-  const activeMembership =
-    auth.user?.memberships.find((membership) => membership.organizationId === auth.organizationId) ??
-    auth.user?.memberships[0];
+  const activeMembership = resolveActiveMembership(auth.user?.memberships, auth.organizationId);
   const scopedOrganizationId = orgFilter || auth.organizationId || '';
 
   const donorsQuery = useQuery({
@@ -122,12 +121,6 @@ export function DonationsPage() {
     queryFn: () => api.get<PageResponse<OrganizationView>>('/organizations', { query: { size: 100 } }),
     enabled: canChooseOrganization,
   });
-
-  useEffect(() => {
-    if (!auth.organizationId && !orgFilter && organizationsQuery.data?.content.length) {
-      setOrgFilter(String(organizationsQuery.data.content[0].id));
-    }
-  }, [auth.organizationId, orgFilter, organizationsQuery.data]);
 
   const donationsQuery = useQuery({
     queryKey: ['donations', 'list', donorFilter, scopedOrganizationId, auth.organizationId],
@@ -510,7 +503,7 @@ export function DonationsPage() {
                     setPage(0);
                   }}
                 >
-                  <option value="">Active organization</option>
+                  <option value="">{auth.organizationId === null ? 'All organizations' : 'Active organization'}</option>
                   {organizationOptions.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.name}
