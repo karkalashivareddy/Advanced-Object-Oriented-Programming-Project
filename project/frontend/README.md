@@ -1,6 +1,6 @@
 # LifeLink Frontend
 
-React 19 + TypeScript + Vite single-page application for the LifeLink blood supply platform. It talks to the documented `/api/v1` REST API; the UI contains no production mock data and no live STOMP client (the notification inbox uses REST polling). The Compose nginx image also proxies `/ws/` and `/sockjs/`; a live authenticated SockJS/STOMP smoke passed through that proxy using a **standalone Node script**, not an SPA STOMP client (frame sequence `CONNECTED`, `MESSAGE`; [`../docs/evidence/STOMP_SMOKE_RESULT.json`](../docs/evidence/STOMP_SMOKE_RESULT.json)). See [`../docs/user-guide/USER_GUIDE.md`](../docs/user-guide/USER_GUIDE.md) for the implemented role journeys.
+React 19 + TypeScript + Vite single-page application for the LifeLink blood supply platform. It talks to the documented `/api/v1` REST API and contains no production mock data. The REST inbox is authoritative, and the SPA also mounts an authenticated SockJS/STOMP bridge through `/ws` that invalidates notification caches. Both a standalone authenticated smoke and a browser `CONNECT`/`SUBSCRIBE`/`CONNECTED` capture are recorded ([`../docs/evidence/STOMP_SMOKE_RESULT.json`](../docs/evidence/STOMP_SMOKE_RESULT.json), [`../docs/evidence/BROWSER_STOMP_RESULT.json`](../docs/evidence/BROWSER_STOMP_RESULT.json)). See [`../docs/user-guide/USER_GUIDE.md`](../docs/user-guide/USER_GUIDE.md) for the implemented role journeys.
 
 ## Requirements
 
@@ -17,7 +17,7 @@ cp .env.example .env   # optional; defaults are correct for local development
 npm run dev
 ```
 
-The dev server listens on `http://localhost:5173` and proxies `/api` to `http://localhost:8080` by default. For the verified Compose stack set `VITE_API_PROXY_TARGET=http://127.0.0.1:18080`; the backend must be running with a shell-supplied `JWT_SECRET` and, for demo data under the `postgres` profile, `SEED_DEMO_DATA=true`. See [`../docs/deployment/DEPLOYMENT_GUIDE.md`](../docs/deployment/DEPLOYMENT_GUIDE.md).
+The dev server listens on `http://localhost:5173` and proxies both `/api` and `/ws` (SockJS HTTP and WebSocket upgrade) to `http://localhost:8080` by default. For the verified Compose stack set `VITE_API_PROXY_TARGET=http://127.0.0.1:18080`; the backend must be running with a shell-supplied `JWT_SECRET` and, for demo data under the `postgres` profile, `SEED_DEMO_DATA=true`. See [`../docs/deployment/DEPLOYMENT_GUIDE.md`](../docs/deployment/DEPLOYMENT_GUIDE.md).
 
 ## Environment variables
 
@@ -32,11 +32,11 @@ The dev server listens on `http://localhost:5173` and proxies `/api` to `http://
 | `npm run dev` | Start Vite on port 5173 with the `/api` proxy. |
 | `npm run build` | Type-check with TypeScript project references and build to `dist/`. |
 | `npm run preview` | Serve the production build locally. |
-| `npm test` | Run the Vitest unit suite once (33 tests in the final run). |
+| `npm test` | Run the Vitest unit suite once (39 tests in the current run). |
 | `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run test:e2e` | Run Playwright specs under `e2e/` (6 passed on Chrome and Edge with retries 0 in the final run; see [`../docs/evidence/PLAYWRIGHT_RESULTS.json`](../docs/evidence/PLAYWRIGHT_RESULTS.json)). |
+| `npm run test:e2e` | Run Playwright specs under `e2e/` (18 passes on Chrome and Edge with retries 0 in the current run; see [`../docs/evidence/PLAYWRIGHT_RESULTS.json`](../docs/evidence/PLAYWRIGHT_RESULTS.json)). |
 | `npm run test:e2e:ui` | Open the Playwright UI runner. |
-| `npm run test:stomp` | Standalone Node SockJS/STOMP smoke through the configured nginx/backend target; this is not an SPA client. |
+| `npm run test:stomp` | Standalone Node SockJS/STOMP smoke through the configured nginx/backend target; the SPA bridge evidence is captured separately. |
 | `npm run typecheck` | Type-check without emitting files. |
 
 ## Structure
@@ -63,11 +63,12 @@ API contracts are mirrored from [`../docs/architecture/API_CONTRACTS.md`](../doc
 - The access token is kept **in memory only**. A page reload requires the refresh token to obtain a new access token.
 - The refresh token is stored in **`sessionStorage`**, so it survives reloads in the current browser tab but not a new tab or a browser restart. This intentionally reduces persistence at the cost of convenience.
 - UI permission and role checks only hide navigation and controls. **The server is authoritative**: every protected endpoint enforces authorization and organization scoping regardless of what this SPA displays. Analytics uses the same validated scope; platform admins may omit the header for a global view or scope to one organization.
+- Login restores only a previously valid explicit organization selection. The SPA never auto-selects the first membership; an unscoped request lets the backend apply its documented single-membership default.
 - Server-side logout denies only the presented bearer `jti` in the process that handled it; that denylist and the auth rate limiter are in-memory, while password/status revocation uses a persistent token version. A multi-instance deployment needs shared stores.
 - `Idempotency-Key` is generated with `crypto.randomUUID()` (or a short fallback when unavailable) for reservations, allocation confirmations, and dispatch creation.
 - No tokens, passwords, or secrets are written to `localStorage`. The sidebar preference is the only value persisted outside the auth store, and it contains no sensitive data.
 - For production deployments, pair this app with HTTPS, strict CSP, secure cookie/session configuration on the API, and a review of third-party scripts. None of that is installed in the local Compose stack.
-- The live STOMP smoke was driven by a standalone Node script through the Compose nginx proxy, not by this SPA; the notification inbox poll remains the SPA's reliable fallback.
+- The standalone STOMP smoke verifies the server path; the SPA bridge is recorded in [`../docs/evidence/BROWSER_STOMP_RESULT.json`](../docs/evidence/BROWSER_STOMP_RESULT.json). REST inbox polling remains the authoritative fallback, STOMP only invalidates caches, and no client-to-server SEND workflow is supported.
 
 ## Accounts
 
@@ -75,7 +76,7 @@ API contracts are mirrored from [`../docs/architecture/API_CONTRACTS.md`](../doc
 
 ## Design system
 
-A deliberate light theme is defined in `src/styles/tokens.css`: white and soft-neutral surfaces, a healthcare red accent (`#b42332`), deep slate text, and green/amber/blue/red status colours. Components use semantic HTML, visible focus rings, labelled inputs, responsive breakpoints, and `prefers-reduced-motion` support. No Tailwind or component-framework CSS is used.
+A deliberate light theme is defined in `src/styles/tokens.css`, extended by the Bloodstream identity (`BloodstreamVisual`, `JourneyVessel`, `bloodstream-flow`, SMIL cells) on the public landing page. It uses white and soft-neutral surfaces, crimson/burgundy accents, deep slate text, and green/amber/blue/red status colours. Components use semantic HTML, visible focus rings, labelled inputs, responsive breakpoints, and `prefers-reduced-motion` support. No Tailwind or component-framework CSS is used.
 
 ## Known constraints
 

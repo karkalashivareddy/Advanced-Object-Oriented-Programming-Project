@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-11-24T08:59:45.736Z",
+  "baseUrl": "http://127.0.0.1:4174",
+  "authenticatedUser": "admin@lifelink.local",
+  "observed": {
+    "websocketUrls": [
+      "ws://127.0.0.1:4174/ws/{server}/{session}/websocket"
+    ],
+    "connectFrameWithBearerToken": true,
+    "subscribeDestination": "/user/queue/notifications",
+    "connectedFrameReceived": true,
+    "notificationRestPollRequests": 0,
+    "closedSockets": 0
+  },
+  "note": "JWT values are deliberately omitted; booleans and destinations are derived from the captured frames."
+}

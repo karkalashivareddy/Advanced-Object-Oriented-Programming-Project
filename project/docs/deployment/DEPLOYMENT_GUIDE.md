@@ -1,7 +1,7 @@
 # LifeLink Deployment & Local Development Guide
 
-Date: 2026-11-23
-Status: describes the implemented local/demo stack and its final verification. Docker image builds for `lifelink/backend:dev` and `lifelink/frontend:dev` succeeded. The Compose stack was verified healthy on override ports `18080/15173/15432` (backend `/actuator/health` 200 with liveness/readiness, frontend `/healthz` 200 `ok`, SPA root 200, login through nginx proxy 200, Flyway V1–V5 success, seed organizations=2/users=6/blood_units=9). A live SockJS/STOMP smoke passed through the nginx proxy using a standalone Node client. No production deployment or CI run is claimed.
+Date: 24 November 2026
+Status: describes the implemented local/demo stack and current verification. Docker image builds for `lifelink/backend:dev` and `lifelink/frontend:dev` succeeded previously. The Compose stack was verified healthy on override ports `18080/15173/15432` (backend `/actuator/health` 200 with liveness/readiness, frontend `/healthz` 200 `ok`, SPA root 200, login through nginx proxy 200, Flyway V1–V5 success, seed organizations=2/users=6/blood_units=9). Both a standalone SockJS/STOMP smoke and an authenticated browser bridge are recorded. Current gates are 119 backend tests, 39 frontend tests, and 18 Playwright passes. No production deployment or CI run is claimed.
 
 ## 1. Prerequisites
 
@@ -94,7 +94,7 @@ docker compose down -v           # DESTROYS local database data
 
 ### Vite dev server (optional)
 
-Run `npm run dev` in `project/frontend`. Vite serves on `http://localhost:5173` and proxies `/api` to `http://localhost:8080` by default; for the verified Compose stack set `VITE_API_PROXY_TARGET=http://127.0.0.1:18080`. It does not proxy `/ws`, and the SPA has no live STOMP client. The client sends `X-Organization-Id` on every request when an organization is selected and clears React Query caches on switch; `AnalyticsPage` also has a platform-admin scope override. You can run only backing services with `docker compose up -d db backend` from `project/docker`. For host-run backend with the `postgres` profile, supply the same datasource variables and `JWT_SECRET`; the `dev`/`default` profiles use H2 by default and the seeder is enabled through `SEED_DEMO_DATA=true`.
+Run `npm run dev` in `project/frontend`. Vite serves on `http://localhost:5173` and proxies `/api` to `http://localhost:8080` by default; for the verified Compose stack set `VITE_API_PROXY_TARGET=http://127.0.0.1:18080`. Vite proxies both `/api` and `/ws` (SockJS HTTP + WebSocket upgrade, with `Origin` stripped), and the SPA mounts an authenticated STOMP bridge. The client sends `X-Organization-Id` on every request when an organization is selected and clears React Query caches on switch; `AnalyticsPage` also has a platform-admin scope override that omits the header for all organizations. You can run only backing services with `docker compose up -d db backend` from `project/docker`. For host-run backend with the `postgres` profile, supply the same datasource variables and `JWT_SECRET`; the `dev`/`default` profiles use H2 by default and the seeder is enabled through `SEED_DEMO_DATA=true`.
 
 ## 3. Environment variable reference
 
@@ -125,14 +125,15 @@ Backend configuration notes:
 - Flyway migrations `V1`–`V5` define the schema in every profile: V1 core, V2 operational, V3 dispatch idempotency, V4 integrity/idempotency (`idempotency_records`, sparse one-active-reservation slot, status CHECK constraints), and V5 `users.token_version` for persistent monotonic access-token revocation. All five succeeded in the final Compose run.
 - Version stack: Spring Boot `3.5.16`, Java `21` target, Maven Wrapper `3.9.11`, PostgreSQL 16.
 
-## 4. Recorded runtime evidence (2026-11-23)
+## 4. Recorded runtime evidence
 
 | Area | Result | Evidence |
 | --- | --- | --- |
 | Compose stack | Services healthy; backend `/actuator/health` 200 (`liveness`,`readiness`), frontend `/healthz` 200 `ok`, SPA root 200, login through nginx proxy 200; Flyway V1–V5 success; seed organizations=2 users=6 blood_units=9 | [`../evidence/COMPOSE_VERIFICATION.json`](../evidence/COMPOSE_VERIFICATION.json) |
-| STOMP | Authenticated CONNECT, personal-queue subscribe, notification delivered; frame sequence `CONNECTED`, `MESSAGE`; standalone Node SockJS/STOMP client through nginx proxy, not an SPA client | [`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json) |
-| Browser E2E | Playwright 6 passed on Chrome and Edge, retries 0 | [`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json) |
-| Unit/integration | Backend 93 tests, 0 failures/errors/skips; frontend 33 unit tests | local test runs (see quality docs owned by the quality workstream) |
+| STOMP (standalone) | Authenticated CONNECT, personal-queue subscribe, notification delivered; frame sequence `CONNECTED`, `MESSAGE` through nginx proxy | [`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json) |
+| STOMP (browser) | Bearer CONNECT, `/user/queue/notifications` SUBSCRIBE, CONNECTED frame captured from the SPA bridge | [`../evidence/BROWSER_STOMP_RESULT.json`](../evidence/BROWSER_STOMP_RESULT.json) |
+| Browser E2E | Playwright 18 passed on Chrome and Edge, retries 0, flaky 0 | [`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json) |
+| Unit/integration | Backend 119 tests, 0 failures/errors/skips; frontend 39 unit tests | [`../quality/TEST_RESULTS.md`](../quality/TEST_RESULTS.md) |
 
 These are local-development / supervised-demo results. They do not imply a
 production deployment, a CI run, or a shared-store multi-instance deployment.
@@ -160,8 +161,8 @@ The Compose stack is a **development/demo** stack. Before any real deployment, a
 3. **Dev credentials are intentionally weak** and all ports are published on `127.0.0.1`. This is acceptable only on a trusted machine.
 4. **Backend Compose healthcheck is a TCP liveness check**, not an HTTP readiness check. `/actuator/health` is implemented and returned HTTP 200 with liveness/readiness groups in the final Compose run, but the container check itself remains TCP-based.
 5. **Logout revocation is process-local (`F-04`).** The bearer `jti` denylist and the auth rate limiter are in-memory; a multi-instance deployment needs shared stores. Persistent `token_version` revocation of password/status changes is database-backed.
-6. **Live STOMP smoke used a standalone client.** A SockJS/STOMP script (`npm run test:stomp`) passed through nginx with `CONNECTED`/`MESSAGE`; the SPA itself has no STOMP client and uses REST polling. See [`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json).
+6. **Standalone STOMP smoke is retained as server-path evidence.** A SockJS/STOMP script passed through nginx with `CONNECTED`/`MESSAGE`; the SPA also has an authenticated browser bridge, while the REST inbox remains authoritative and polling is the fallback. See [`../evidence/BROWSER_STOMP_RESULT.json`](../evidence/BROWSER_STOMP_RESULT.json).
 7. **nginx config is embedded in the frontend Dockerfile** because `project/frontend/` is owned by another workstream. Custom config would need a Dockerfile change.
-8. **`.dockerignore` files are provided** in `project/backend/` and `project/frontend/` (currently untracked in this worktree, so they must be included when the work is committed) to keep `target/` and `node_modules/` out of build contexts.
+8. **`.dockerignore` files are provided** in `project/backend/` and `project/frontend/` (both tracked) to keep `target/` and `node_modules/` out of build contexts.
 9. **Vite output path is assumed to be `dist`**, the default.
 10. **Windows Make** requires a POSIX implementation (Git Bash or Chocolatey `make`); use `dev.ps1` on native PowerShell.

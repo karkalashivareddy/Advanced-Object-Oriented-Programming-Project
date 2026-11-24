@@ -1,16 +1,81 @@
 # LifeLink Verified Test Results
 
-Date: 2026-11-23 — final Phase 2 verification and audit-fix reconciliation.
-
-Branch: `feature/lifelink-enterprise-platform`. Baseline HEAD:
-`195e88a81b105baea69018e44f4b57f3f806937a` (Phase 1). Phase 2 work was
-**uncommitted** at verification time; **nothing was pushed**. Scope: `project/`
-only — root `README.md`, `LAB-WORK/`, and Git history were not modified.
+**Current verification: 24 November 2026.** Branch:
+`feature/lifelink-bloodstream-experience`, base HEAD
+`59401d45e511183ede59e7d55073f07e2cf5eacd`. Changes are **uncommitted**;
+**nothing was pushed or merged**. Current scope is `project/` plus the root
+`README.md`; `LAB-WORK/` and Git history are preserved. The older Phase 2
+figures below are explicitly historical.
 
 **Status legend:** **V** Verified (command executed / probe recorded) ·
 **I** Implemented but not runtime-verified · **N** Not implemented ·
 **B** Blocked by environment or edit scope. These are local/demo results;
 **no production-readiness claim** is made.
+
+## Current verification (2026-11-24)
+
+| Area | Exact command / source | Status | Recorded result |
+| --- | --- | --- | --- |
+| Backend full suite (from `project/backend`) | `.\mvnw.cmd test` | V | **119 tests, 0 failures, 0 errors, 0 skipped** across **28 Surefire XML reports**. Includes Testcontainers PostgreSQL 16 concurrency, the new lifecycle/validation regressions, and Flyway `V1`–`V5` with Hibernate `ddl-auto=validate`. |
+| Frontend typecheck | `npm run typecheck` | V | Passed; no TypeScript errors. |
+| Frontend unit tests | `npm test -- --run` | V | **39 tests in 7 files**, all pass. |
+| Tenancy scope regression | `organization.test.ts` → `resolveOrganizationScope` | V | A valid stored scope is restored; invalid/null stored scopes resolve to `null` with no first-membership fallback. |
+| Frontend production build | `npm run build` | V | Vite production build passed. |
+| Dependency audit | `npm audit --audit-level=high` | V | **0** high/critical vulnerabilities. |
+| Browser E2E | `VITE_API_PROXY_TARGET=http://127.0.0.1:18080 npm run test:e2e` with `workers: 2` | V | **18 passed** on Chrome and Edge (9 specs × 2 projects), 0 failures, 0 flaky, 0 skipped. [PLAYWRIGHT_RESULTS.json](../evidence/PLAYWRIGHT_RESULTS.json) |
+| Browser STOMP | Authenticated browser capture against the live stack | V | CONNECT frame with bearer token, SUBSCRIBE to `/user/queue/notifications`, and CONNECTED frame observed. [BROWSER_STOMP_RESULT.json](../evidence/BROWSER_STOMP_RESULT.json) |
+| DOM / responsive evidence | Playwright browser probes | V | Landing and Analytics desktop/mobile `documentScrollWidth` equals viewport; reduced-motion SMIL `animateMotion` count is `0`; Analytics chart-table wrappers use `overflow-x: auto`. [AFTER_BROWSER_AUDIT.json](../evidence/AFTER_BROWSER_AUDIT.json) |
+| Health probes | Direct HTTP probes to the already-running Compose stack | V | Backend `/actuator/health` HTTP 200 `{"status":"UP","groups":["liveness","readiness"]}`; frontend `/healthz` HTTP 200 `ok`. |
+| Flyway status | Direct database query | V | `V1`–`V5` all `success = t`. |
+| Corrected abstract PDF | `project/docs/abstract/LifeLink_Project_Abstract.pdf`, validated by [ABSTRACT_PDF_VALIDATION.json](../evidence/ABSTRACT_PDF_VALIDATION.json) and [ABSTRACT_PDF_TEXT.txt](../evidence/ABSTRACT_PDF_TEXT.txt) | V | **4 pages**, 14 numbered sections, **187-word** abstract (limit 250), no replacement/null characters, accurate Java/Spring Boot/React/TypeScript/PostgreSQL phrases, current 119/39/18 evidence, and preserved original form/verification PDF. All automated checks passed. |
+
+The focused browser STOMP capture reports `notificationRestPollRequests: 0`.
+The Playwright suite separately asserts REST polling requests exist; do not
+infer continuous polling from the standalone capture alone. A Maven full run
+may emit a late Testcontainers shutdown scheduler connection error after the
+tests pass; successful runs still ended with `BUILD SUCCESS`.
+
+The Word COM export of the corrected DOCX hung and was terminated before
+producing a PDF, so the final PDF was rendered from the same corrected
+14-section content with PyMuPDF. It is not a byte-for-byte Word export of the
+DOCX. Manual visual inspection was unavailable; the PDF checks use text
+extraction, page count, metadata, and section enumeration. Administrative
+fields reproduced from the submitted form still require human confirmation.
+
+Current backend test classes (28 Surefire reports): `audit/PostgresAuditSearchTest`;
+`allocation/CompatibilitySpecificationSelectionTest`;
+`analytics/AnalyticsServiceTenantScopeTest`;
+`concurrency/ConcurrencyExceptionMappingTest` and
+`concurrency/PostgresIdempotencyConcurrencyTest`;
+`dispatch/DispatchLockOrderTest` and `dispatch/DispatchLifecycleRegressionTest`;
+`domain/BloodUnitTest` and `domain/EmergencyRequestTest`;
+`emergency/EmergencyCancelLockOrderTest` and
+`emergency/EmergencyLifecycleRegressionTest`;
+`identity/AuthControllerLogoutTest`, `identity/AuthRateLimitFilterTest`,
+`identity/AuthServiceSecurityTest`, `identity/ControllerValidationTest`,
+`identity/JwtAuthenticationFilterTest`, `identity/JwtServiceTest`,
+`identity/PasswordValidationTest`, `identity/TenantAccessServiceTest`, and
+`identity/UserServiceScopingTest`;
+`integration/SchemaAndApiIntegrationTest`;
+`inventory/InventoryDefaultLowStockTest` and `inventory/InventoryRegressionTest`;
+`notification/OutboxRetryTerminationTest` and
+`notification/StompAuthenticationInterceptorTest`;
+`organization/OrganizationPaginationTest`;
+`security/TenantBoundaryRegressionTest`; and
+`validation/NullReasonAndPriorityValidationTest`.
+
+Current frontend test files are `src/lib/api.test.ts`,
+`src/lib/organization.test.ts`, `src/lib/queryCache.test.ts`,
+`src/lib/routeGuard.test.ts`, `src/components/brand/brand.test.tsx`,
+`src/components/layout/layout-keyboard.test.tsx`, and
+`src/components/ui/components.test.tsx`.
+
+---
+
+## Historical Phase 2 record (2026-11-23; superseded)
+
+Everything from this point through the end of this file preserves the earlier
+Phase 2 evidence and counts. Do not read those figures as current status.
 
 ## 1. Results at a glance
 
@@ -97,10 +162,11 @@ What the full run verifies:
 | F-05 | Low | Unbounded idempotency-key length | `@Size(max = 120)` on controllers/DTOs plus `IdempotencyKeys.MAX_LENGTH`; `ControllerValidationTest` | V |
 | F-06 | Medium | E2E / STOMP evidence gaps | Persisted JSON reports linked in §1 | V |
 
-A second independent review returned **`PASS WITH RESIDUALS`** with no new
-critical, high, or medium finding; all six Phase F findings are resolved. It
-approves this tree only as a local-development / supervised-demo release, not
-as production-ready. See
+The historical Phase 2 second review returned **`PASS WITH RESIDUALS`** with no
+new critical, high, or medium finding; all six Phase F findings were resolved at
+that time. It approved that tree only as a local-development / supervised-demo
+release, not as production-ready. Current reconciliation is in
+[`../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md). See
 [`../reviews/PHASE_2_SECOND_REVIEW.md`](../reviews/PHASE_2_SECOND_REVIEW.md).
 The earlier review record is
 [`../reviews/FINAL_INDEPENDENT_REVIEW.md`](../reviews/FINAL_INDEPENDENT_REVIEW.md)
@@ -146,7 +212,7 @@ lazy proxy dereference, non-committing replay revocation, idempotency race,
 scoping, compatibility checks, disabled-token handling, STOMP interception,
 donor IDOR, membership/global-role separation, dispatch idempotency, JWT
 issuer/audience, stale `PROCESSING` outbox retry, role fallback, API contract,
-Makefile targets) remain fixed and are exercised by the current 93-test run.
+Makefile targets) remain fixed and are exercised by the current 119-test run.
 
 ## 7. Not claimed in this record
 
@@ -157,6 +223,7 @@ Makefile targets) remain fixed and are exercised by the current 93-test run.
 | B | GitHub Actions execution (root `.github/workflows` outside edit scope) |
 
 Historical review records preserve their original counts and verdicts with
-dated supersession notes. For current status, treat this file,
-[`../reviews/PHASE_2_FINAL_REVIEW.md`](../reviews/PHASE_2_FINAL_REVIEW.md),
+dated supersession notes. For current status, treat the **Current verification**
+section above,
+[`../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md),
 and the linked JSON evidence as authoritative.

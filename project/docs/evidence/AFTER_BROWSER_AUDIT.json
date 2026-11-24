@@ -1,0 +1,123 @@
+{
+  "generatedAt": "2026-11-24T08:59:30.391Z",
+  "baseUrl": "http://127.0.0.1:4174",
+  "note": "Browser run against the local Vite dev-server proxy to the live Compose backend; no containers or database were recreated.",
+  "pages": [
+    {
+      "label": "desktop",
+      "url": "/",
+      "title": "LifeLink — Coordinated blood supply",
+      "h1": "Every drop has a journey.",
+      "viewportWidth": 1440,
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "bloodstreamTokens": {
+        "vessel900": "#370a19",
+        "vessel500": "#b92a43",
+        "motionPulse": "3.2s"
+      },
+      "bloodstreamVisualPresent": true,
+      "cssFlowAnimation": "bloodstream-flow",
+      "smilAnimateMotionCount": 10,
+      "chartTableWrapPresent": false,
+      "chartTableWrapOverflowX": null,
+      "chartTableCount": 0,
+      "prefersReducedMotion": false
+    },
+    {
+      "label": "mobile",
+      "url": "/",
+      "title": "LifeLink — Coordinated blood supply",
+      "h1": "Every drop has a journey.",
+      "viewportWidth": 390,
+      "documentScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "horizontalOverflow": false,
+      "bloodstreamTokens": {
+        "vessel900": "#370a19",
+        "vessel500": "#b92a43",
+        "motionPulse": "3.2s"
+      },
+      "bloodstreamVisualPresent": true,
+      "cssFlowAnimation": "bloodstream-flow",
+      "smilAnimateMotionCount": 10,
+      "chartTableWrapPresent": false,
+      "chartTableWrapOverflowX": null,
+      "chartTableCount": 0,
+      "prefersReducedMotion": false
+    },
+    {
+      "label": "reduced-motion",
+      "url": "/",
+      "title": "LifeLink — Coordinated blood supply",
+      "h1": "Every drop has a journey.",
+      "viewportWidth": 1440,
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "bloodstreamTokens": {
+        "vessel900": "#370a19",
+        "vessel500": "#b92a43",
+        "motionPulse": "3.2s"
+      },
+      "bloodstreamVisualPresent": true,
+      "cssFlowAnimation": "none",
+      "smilAnimateMotionCount": 0,
+      "chartTableWrapPresent": false,
+      "chartTableWrapOverflowX": null,
+      "chartTableCount": 0,
+      "prefersReducedMotion": true
+    },
+    {
+      "label": "desktop",
+      "url": "/app/analytics",
+      "title": "LifeLink — Coordinated blood supply",
+      "h1": "Analytics",
+      "viewportWidth": 1440,
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "bloodstreamTokens": {
+        "vessel900": "#370a19",
+        "vessel500": "#b92a43",
+        "motionPulse": "3.2s"
+      },
+      "bloodstreamVisualPresent": false,
+      "cssFlowAnimation": null,
+      "smilAnimateMotionCount": 0,
+      "chartTableWrapPresent": true,
+      "chartTableWrapOverflowX": "auto",
+      "chartTableCount": 4,
+      "prefersReducedMotion": false,
+      "consoleErrors": [],
+      "serverErrors": [],
+      "notificationPolls": 1
+    },
+    {
+      "label": "mobile",
+      "url": "/app/analytics",
+      "title": "LifeLink — Coordinated blood supply",
+      "h1": "Analytics",
+      "viewportWidth": 390,
+      "documentScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "horizontalOverflow": false,
+      "bloodstreamTokens": {
+        "vessel900": "#370a19",
+        "vessel500": "#b92a43",
+        "motionPulse": "3.2s"
+      },
+      "bloodstreamVisualPresent": false,
+      "cssFlowAnimation": null,
+      "smilAnimateMotionCount": 0,
+      "chartTableWrapPresent": true,
+      "chartTableWrapOverflowX": "auto",
+      "chartTableCount": 4,
+      "prefersReducedMotion": false,
+      "consoleErrors": [],
+      "serverErrors": [],
+      "notificationPolls": 1
+    }
+  ]
+}

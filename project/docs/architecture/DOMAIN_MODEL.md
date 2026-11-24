@@ -1,7 +1,7 @@
 # LifeLink Domain Model
 
-Date: 2026-11-23
-Status: implementation-aligned working document.
+Date: 24 November 2026
+Status: current-state working document for `feature/lifelink-bloodstream-experience`; historical Phase 2 records are preserved under [`../reviews/`](../reviews/).
 
 **Authority:** enum literals, endpoints, and view fields follow [`API_CONTRACTS.md`](API_CONTRACTS.md). The transition tables below are taken from the entity classes in `project/backend/src/main/java/com/lifelink`, not from the superseded planned design. Mermaid views are in [`UML.md`](UML.md); class-to-concept evidence is in [`../academic/AOOP_CONCEPT_MAPPING.md`](../academic/AOOP_CONCEPT_MAPPING.md).
 
@@ -203,7 +203,7 @@ There is no `PENDING` or `FULFILLED` reservation status. Leaving `ACTIVE` clears
 ```text
 PREPARING --depart()--> IN_TRANSIT
 IN_TRANSIT / INCIDENT --deliver(recipientName)--> DELIVERED
-PREPARING / IN_TRANSIT --reportIncident(description)--> INCIDENT
+PREPARING / IN_TRANSIT / INCIDENT --reportIncident(description)--> INCIDENT
 ```
 
 | From | To | Trigger | Guard | Endpoint |
@@ -211,7 +211,7 @@ PREPARING / IN_TRANSIT --reportIncident(description)--> INCIDENT
 | — | `PREPARING` | `DispatchService.create` | `CONFIRMED` reservation, blood-bank scope, idempotency key | `POST /dispatches` |
 | `PREPARING` | `IN_TRANSIT` | `depart()` | `DISPATCH_MANAGE` | `POST /dispatches/{id}/depart` |
 | `IN_TRANSIT`/`INCIDENT` | `DELIVERED` | `deliver(recipientName)` | nonblank recipient, `DISPATCH_MANAGE` | `POST /dispatches/{id}/deliver` |
-| `PREPARING`/`IN_TRANSIT` | `INCIDENT` | `reportIncident(description)` | nonblank description | `POST /dispatches/{id}/incident` |
+| `PREPARING`/`IN_TRANSIT`/`INCIDENT` | `INCIDENT` | `reportIncident(description)` | nonblank description | `POST /dispatches/{id}/incident` |
 
 A delivery after an incident is allowed (recovery delivery). Delivery moves the unit to `DELIVERED`, clears its active reservation pointer, and can fulfil the request.
 
@@ -251,7 +251,7 @@ flowchart LR
 ```
 
 1. `Donation.approve()` creates units with `donationId`; `GET /donations/{id}/units` returns them.
-2. Each `BloodUnit` has `unitNumber`, `publicId`, `version`, `activeReservationId`, and a location string; movements are appended.
+2. Each `BloodUnit` has `unitNumber`, `publicId`, `version`, `activeReservationId`, and a location string; movements are appended. `activeReservationId` is internal entity/repository state used to hold one active reservation per unit; `InventoryDtos.View` does not expose it.
 3. Each `Reservation` stores its unit, request, organization, expiry, and idempotency key; V4 records the request fingerprint separately.
 4. Each `Dispatch` stores reservation, request, organization, staff, and idempotency key; delivery closes the chain and produces audit/outbox entries with one correlation id.
 5. No step may be skipped: reservation requires `AVAILABLE` unit, dispatch requires `CONFIRMED` reservation, fulfilment follows delivery.

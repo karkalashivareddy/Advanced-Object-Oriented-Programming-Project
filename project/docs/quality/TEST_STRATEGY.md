@@ -1,9 +1,10 @@
 # LifeLink Test Strategy
 
-Date: 2026-11-23. This document describes the suites that exist in the final
-Phase 2 tree and how to run them. Recorded results are in
-[`TEST_RESULTS.md`](TEST_RESULTS.md): 93 backend tests, 33 frontend tests,
-6 Playwright passes, live STOMP smoke, and Compose probes.
+Date: 24 November 2026. This document describes the suites that exist in the
+current tree and how to run them. Recorded results are in
+[`TEST_RESULTS.md`](TEST_RESULTS.md): 119 backend tests, 39 frontend tests,
+18 Playwright passes, standalone and browser STOMP evidence, and Compose probes.
+Historical Phase 2 counts remain preserved in dated review records.
 
 Status labels: **V** verified · **I** implemented but not runtime-verified ·
 **N** not implemented · **B** blocked by environment/scope. The final-tree
@@ -14,7 +15,7 @@ frontend build and dependency audit passed; no CI run and
 
 ## 1. Scope and test pyramid
 
-Backend: 17 test classes / 93 recorded tests in five levels.
+Backend: 28 Surefire reports / 119 recorded tests in five levels.
 
 1. **Domain unit tests** — pure Java entity guards and state transitions
    (`domain/BloodUnitTest`, `domain/EmergencyRequestTest`). No Spring, DB, or network.
@@ -39,8 +40,9 @@ Backend: 17 test classes / 93 recorded tests in five levels.
    itself only when Docker is unavailable
    (`@Testcontainers(disabledWithoutDocker = true)`).
 
-Frontend: 6 Vitest files / 33 tests, plus a real-browser Playwright suite and a
-live STOMP smoke script against the Compose stack.
+Frontend: 7 Vitest files / 39 tests, plus a real-browser Playwright suite, an
+authenticated browser STOMP bridge, and a standalone STOMP smoke script against
+the Compose stack.
 
 ## 2. Concurrency strategy
 
@@ -49,8 +51,10 @@ submits two simultaneous confirmations with one key and asserts a single
 reservation; the PostgreSQL test adds real-database contention (V). The
 emergency-request row is locked before idempotency is evaluated, the blood-unit
 row is locked again during reservation creation, and the key is re-checked after
-lock acquisition. Allocation confirmation locks selected units in ascending id
-order. Refresh rotation uses a pessimistic row lock; the frontend uses a
+lock acquisition. Dispatch creation locks request → unit in the same order used
+by expiry and allocation, resolves idempotent replay before TTL validation, and
+rechecks state inside the locked work. Allocation confirmation locks selected
+units in ascending id order. Refresh rotation uses a pessimistic row lock; the frontend uses a
 tab-local single-flight refresh promise. Active reservation slots are ordered
 deterministically, V4 adds idempotency/integrity constraints, and V5 persists
 the token version. Stale writes and integrity races map centrally to
@@ -111,8 +115,8 @@ npm test -- --run
 npm run test:watch
 npm run typecheck
 npm run build
-npm audit --audit-level=low
-VITE_API_PROXY_TARGET=http://127.0.0.1:18080 npm run test:e2e
+npm audit --audit-level=high
+VITE_API_PROXY_TARGET=http://127.0.0.1:18080 npm run test:e2e -- --workers=2
 npm run test:stomp
 ```
 
@@ -137,15 +141,24 @@ production build, dependency audit, E2E, STOMP smoke, and Compose probes are
 - **Organization/cache** (`src/lib/organization.test.ts`,
   `src/lib/queryCache.test.ts`) — switching scope and invalidating cached queries.
 - **Components** (`src/components/ui/components.test.tsx`,
-  `src/components/layout/layout-keyboard.test.tsx`) — loading/empty/error states
-  and keyboard accessibility.
-- **E2E** (`e2e/app.spec.ts`) — 3 scenarios executed on Chrome and Edge via a
-  Vite dev server proxying `/api` to `http://127.0.0.1:18080`; 6 passes, retries 0
+  `src/components/layout/layout-keyboard.test.tsx`,
+  `src/components/brand/brand.test.tsx`) — loading/empty/error states, keyboard
+  accessibility, and bloodstream brand tokens.
+- **E2E** (`e2e/app.spec.ts`, `e2e/landing.spec.ts`) — 9 scenarios executed on
+  Chrome and Edge via a Vite dev server proxying `/api` and `/ws` to the live
+  backend; 18 passes with `workers: 2`, retries 0
   ([PLAYWRIGHT_RESULTS.json](../evidence/PLAYWRIGHT_RESULTS.json)).
-- **Live STOMP** (`scripts/stomp-smoke.mjs`) — login, SockJS info, websocket
+- **Browser DOM evidence** (`docs/evidence/after_browser_audit.cjs`) — landing
+  and Analytics desktop/mobile overflow checks, reduced-motion SMIL count, and
+  chart-table wrapper computed style
+  ([AFTER_BROWSER_AUDIT.json](../evidence/AFTER_BROWSER_AUDIT.json)).
+- **Standalone STOMP** (`scripts/stomp-smoke.mjs`) — login, SockJS info, websocket
   transport, authenticated `CONNECTED`, own-queue `SUBSCRIBE`, and delivered
   notification through the Compose nginx proxy
   ([STOMP_SMOKE_RESULT.json](../evidence/STOMP_SMOKE_RESULT.json)).
+- **Browser STOMP** — `useRealtimeNotifications.ts` CONNECT/SUBSCRIBE frames and
+  CONNECTED frame captured in a real browser
+  ([BROWSER_STOMP_RESULT.json](../evidence/BROWSER_STOMP_RESULT.json)).
 
 Production source uses real `/api/v1` endpoints; mocks exist only in
 `*.test.*` files.
@@ -153,8 +166,9 @@ Production source uses real `/api/v1` endpoints; mocks exist only in
 ## 7. Deliberately not covered / not claimed
 
 - **I** — cross-tab refresh coordination at runtime (tab-local single-flight
-  only); multi-instance STOMP/logout revocation; browser-side live STOMP
-  integration in the SPA (the smoke probe is a script).
+  only); multi-instance STOMP/logout revocation; production-scale socket
+  behaviour. Browser-side STOMP is now verified for CONNECT/SUBSCRIBE, but the
+  event only invalidates caches and REST remains authoritative.
 - **N** — MFA, breach-password screening, audit retention/tamper evidence,
   external email/SMS delivery, shared rate-limit/jti denylist store, load/soak,
   penetration, backup/restore, or production-scale capacity testing.

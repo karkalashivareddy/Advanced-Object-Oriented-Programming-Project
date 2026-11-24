@@ -1,9 +1,12 @@
 # Known Limitations
 
-Date: 2026-11-23. Status: current for the implemented Phase 2 local/demo system.
-This is the authoritative limitation list. Supporting runs are in
-[`TEST_RESULTS.md`](TEST_RESULTS.md) and raw probe results in
-[`../evidence/`](../evidence/). **No production-readiness claim is made.**
+Date: 24 November 2026. Status: current for the implemented local/demo system on
+`feature/lifelink-bloodstream-experience`. This is the authoritative limitation
+list. Supporting runs are in [`TEST_RESULTS.md`](TEST_RESULTS.md), the current
+reconciliation in
+[`../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md),
+and raw probe results in [`../evidence/`](../evidence/). **No production-readiness
+claim is made.**
 
 Status labels: **V** verified by an executed probe · **I** implemented but not
 runtime-verified · **N** not implemented · **B** blocked by environment/scope.
@@ -52,12 +55,16 @@ Items describe residual limitations even where the related feature is Verified.
 
 ## Notifications and WebSocket
 
-13. **Live broker path is verified, SPA integration is not.** (V + I) The
-    authenticated SockJS/websocket handshake, own-queue `SUBSCRIBE`, and delivered
-    notification are recorded in
-    [STOMP_SMOKE_RESULT.json](../evidence/STOMP_SMOKE_RESULT.json). The SPA itself
-    uses REST polling and has no live STOMP client, so browser-side integration
-    is not verified.
+13. **Browser STOMP is verified, but delivery semantics are narrow.** (V) A
+    standalone smoke test recorded the authenticated SockJS/websocket handshake,
+    own-queue `SUBSCRIBE`, and a delivered message
+    ([STOMP_SMOKE_RESULT.json](../evidence/STOMP_SMOKE_RESULT.json)). The SPA now
+    opens an authenticated browser bridge and subscribes to
+    `/user/queue/notifications`
+    ([BROWSER_STOMP_RESULT.json](../evidence/BROWSER_STOMP_RESULT.json)), but the
+    event only invalidates React Query caches; REST remains authoritative. The
+    focused browser capture recorded zero REST polls, while Playwright separately
+    verifies polling exists. No client→server workflow is supported.
 14. **No client→server STOMP messaging.** (N) `SEND` frames are rejected because
     there are no `@MessageMapping` handlers; notifications are one-way
     (server→client) and the REST inbox remains the reliable fallback.
@@ -90,31 +97,43 @@ Items describe residual limitations even where the related feature is Verified.
 22. **No CI execution.** (B) Root `.github/workflows` is outside the permitted
     edit scope; `project/deployment/github-actions.yml` is a template and has not
     run. GitHub CLI 2.97.0 is installed but no Actions workflow was executed.
-23. **E2E coverage is narrow.** (V + I) 3 scenarios passed on Chrome and Edge
+23. **E2E coverage is still bounded.** (V + I) 9 scenarios passed on Chrome and
+    Edge, for 18 executions
     ([PLAYWRIGHT_RESULTS.json](../evidence/PLAYWRIGHT_RESULTS.json)); there are no
-    visual snapshot baselines, full-workflow browser journeys, or a wider
-    browser/device matrix.
+    visual snapshot baselines, complete donation-to-delivery browser journeys, or
+    a wider browser/device matrix. Workers are fixed at `2` to avoid races against
+    the live seeded backend.
 24. **Historical review records are intentionally dated.** (I)
     [`FINAL_INDEPENDENT_REVIEW.md`](../reviews/FINAL_INDEPENDENT_REVIEW.md) and
     [`PHASE_2_GAP_ANALYSIS.md`](../reviews/PHASE_2_GAP_ANALYSIS.md) preserve
     pre-fix counts and verdicts with dated supersession notes. They are not
     current status; this file, [`TEST_RESULTS.md`](TEST_RESULTS.md),
-    [`PHASE_2_FINAL_REVIEW.md`](../reviews/PHASE_2_FINAL_REVIEW.md), and the
-    linked JSON evidence are authoritative.
+    [`CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md),
+    and the linked JSON evidence are authoritative.
+25. **Manual visual inspection was unavailable.** (B) Screenshots and PDF page
+    renders were validated through DOM measurements, computed styles, extracted
+    text, and render artifacts, not by a human viewing each image.
+26. **Some documentation remains historical by design.** (I) The original
+    abstract and its verification PDF are preserved unchanged; the corrected
+    PDF is a separate file. Administrative roster, section, team, course-code,
+    and faculty details require human confirmation.
+27. **PDF is not a Word export.** (B) The Word COM export attempt hung and was
+    terminated; the validated PDF was rendered from the same corrected content
+    with PyMuPDF. It is not a byte-for-byte Word rendering of the DOCX.
 
 ## Design deviations from the original academic plan
 
-25. **Flat packages.** (I) Modules are flat `com.lifelink.<module>` packages, not
+28. **Flat packages.** (I) Modules are flat `com.lifelink.<module>` packages, not
     `api`/`application`/`domain`/`infrastructure` sub-packages.
-26. **No typed identifiers.** (I) Entity ids are `Long` with a separate public
+29. **No typed identifiers.** (I) Entity ids are `Long` with a separate public
     `publicId` string; no typed-id wrapper classes exist.
-27. **Framework-coupled domain.** (I) Entities carry JPA annotations; there is no
+30. **Framework-coupled domain.** (I) Entities carry JPA annotations; there is no
     framework-free domain layer, ArchUnit suite, or reflection test asserting
     `final` classes / no setters.
-28. **Narrow design patterns.** (I) Real `AllocationStrategy`, `FeefoStrategy`,
+31. **Narrow design patterns.** (I) Real `AllocationStrategy`, `FeefoStrategy`,
     and specification classes exist, but there is no `BloodUnitFactory`, no
     Template Method hierarchy, and no generic observer bus beyond the outbox.
-29. **Historical docs superseded.** (I) The proposal and initial audit are
+32. **Historical docs superseded.** (I) The proposal and initial audit are
     preserved as dated baselines; their "planned/no implementation" statements
     are not current. See
     [`../proposal/PROJECT_PROPOSAL.md`](../proposal/PROJECT_PROPOSAL.md) and

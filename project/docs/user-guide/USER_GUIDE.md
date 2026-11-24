@@ -1,6 +1,6 @@
 # LifeLink User Guide
 
-Date: 2026-11-23
+Date: 24 November 2026
 Status: describes the implemented local-development application and its documented API. It is not a claim of a production deployment. All REST paths below are relative to `/api/v1` and follow [`../architecture/API_CONTRACTS.md`](../architecture/API_CONTRACTS.md); state names follow [`../architecture/DOMAIN_MODEL.md`](../architecture/DOMAIN_MODEL.md).
 
 > **WARNING: The credentials below are local-only seeded development fixtures.** They are enabled by `lifelink.seed.enabled=true` / `SEED_DEMO_DATA=true` in `dev`, `default`, or `postgres` profiles. They must never be enabled in a production or publicly reachable environment. Production credentials come from environment configuration and are not documented here.
@@ -30,7 +30,7 @@ These credentials are used by the integration suite. The final Compose run verif
 ## 2. Signing in and switching organization
 
 1. Open the frontend and sign in with one of the accounts above. The client calls `POST /auth/login` with `{ "email", "password" }` and stores the returned access/refresh token pair.
-2. The identity menu shows the current organization. Use **Switch organization** to select another membership; the frontend sends `X-Organization-Id: <id>` on subsequent API requests and clears cached query results so no data from the previous organization remains visible.
+2. The identity menu shows the current organization. Use **Switch organization** to select another membership; the frontend sends `X-Organization-Id: <id>` on subsequent API requests and clears cached query results so no data from the previous organization remains visible. Login restores only a previously valid explicit selection; no first membership is auto-selected, and an unscoped request lets the backend apply its documented single-membership default.
 3. A malformed `X-Organization-Id` is rejected with `400 VALIDATION_ERROR`; an id outside the caller's memberships returns `403 TENANT_ACCESS_DENIED`. Permissions are never expanded by the header: a user with only `DONOR` still sees only their own data.
 4. `PLATFORM_ADMIN` may select any organization for reads but must still obey the domain state machines. The frontend's disabled controls are not an authorization mechanism; server method security is.
 
@@ -40,7 +40,7 @@ Token details: access tokens carry a unique `jti` and `token_version`. Password 
 
 ## 3. Role journeys that work end to end
 
-The following sequences are implemented. The final local run recorded backend 93 tests with 0 failures/errors/skips, frontend 33 unit tests, and Playwright 6 passed on Chrome and Edge with retries 0
+The following sequences are implemented. The current local run recorded backend 119 tests with 0 failures/errors/skips, frontend 39 unit tests, and Playwright 18 passed on Chrome and Edge with retries 0
 ([`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json)); detailed per-class results are maintained in the quality workstream's test documents. Steps marked *advisory* produce suggestions, not guaranteed stock.
 
 ### 3.1 Donor
@@ -49,7 +49,7 @@ The following sequences are implemented. The final local run recorded backend 93
 2. `GET /donors` returns the donor profiles visible to the caller (a donor sees their own profile); use the returned numeric id as `{id}`. The SPA then reads `GET /donors/{id}`, `GET /donors/{id}/appointments`, `GET /donors/{id}/consents`, and `GET /donations?donorId={id}`. There is no `/donors/me` or `/donors/me/...` route.
 3. Request an appointment with `POST /donors/{id}/appointments` (`scheduledAt`, `organizationId`, optional notes). Default status is `REQUESTED`; staff can move it to `CONFIRMED`, `COMPLETED`, `REJECTED`, or `CANCELLED` via `PATCH /donors/appointments/{appointmentId}`.
 4. Record consent with `POST /donors/{id}/consents` and withdraw via `PATCH /donors/{id}/consents/{consentId}`.
-5. Read notifications with `GET /notifications` (the unread count is `{ "count": ... }`, not a bare number) and mark them read with `POST /notifications/{id}/read`. The SPA uses REST polling; the backend also supports authenticated STOMP (CONNECT requires a `Bearer`-prefixed JWT and SUBSCRIBE is limited to the caller's own `/user/...` destination), but the SPA has no live STOMP client. The live smoke used a standalone Node SockJS/STOMP client through the nginx proxy.
+5. Read notifications with `GET /notifications` (the unread count is `{ "count": ... }`, not a bare number) and mark them read with `POST /notifications/{id}/read`. The REST inbox is authoritative and polling is the fallback. The SPA also mounts an authenticated SockJS/STOMP bridge through `/ws`: CONNECT carries a `Bearer` JWT, SUBSCRIBE is limited to `/user/queue/notifications`, and broker events invalidate notification caches without bypassing REST ownership checks. Evidence: [`../evidence/BROWSER_STOMP_RESULT.json`](../evidence/BROWSER_STOMP_RESULT.json).
 
 ### 3.2 Inventory manager
 
@@ -88,7 +88,7 @@ The following sequences are implemented. The final local run recorded backend 93
 
 ## 4. UI and interaction notes
 
-- The interface is a premium light-mode React/TypeScript SPA with a role-aware dashboard, donor landing page, task queues, filters, confirmation modals, pickers, freshness indicators, skeleton/empty/error states, responsive dialogs, reduced-motion support, and text alternatives for charts. Dashboard values come from real API responses; there is no hardcoded data.
+- The interface is a React/TypeScript SPA with the Bloodstream visual identity (`Every drop has a journey.`, `BloodstreamVisual`, `JourneyVessel`, `bloodstream-flow`, and SMIL cells), a role-aware dashboard, task queues, filters, confirmation modals, pickers, freshness indicators, skeleton/empty/error states, responsive dialogs, reduced-motion support, and text alternatives for charts. Dashboard values come from real API responses; there is no hardcoded data. Evidence: [`../evidence/AFTER_BROWSER_AUDIT.json`](../evidence/AFTER_BROWSER_AUDIT.json).
 - Filter selections are kept in React Query keys, so different filter combinations cache independently. Analytics query keys also include the selected organization scope, so switching scope cannot reuse another organization's cached figures. Confirmation modals protect destructive actions such as cancellation, expiry, and status changes.
 - A visible "last updated" indicator reflects the API fetch time; it is not a live socket guarantee.
 - Audit and error responses include a correlation id (`X-Correlation-Id`). Quote it when reporting a problem.
@@ -97,8 +97,8 @@ The following sequences are implemented. The final local run recorded backend 93
 
 ## 5. Known limits
 
-- WebSocket delivery is implemented behind authenticated STOMP. A live SockJS/STOMP smoke passed through the Compose nginx proxy (`CONNECTED`, `MESSAGE`) using a **standalone Node script**, not an SPA STOMP client; the SPA inbox still uses REST polling. See [`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json).
+- WebSocket delivery is implemented behind authenticated STOMP. A standalone SockJS/STOMP smoke recorded `CONNECTED` and `MESSAGE` through the Compose nginx proxy, and the SPA now has an authenticated browser bridge recorded in [`../evidence/BROWSER_STOMP_RESULT.json`](../evidence/BROWSER_STOMP_RESULT.json). The REST inbox remains the authoritative fallback; no client-to-server SEND workflow is supported.
 - Rate limiting and the logout `jti` denylist are in-memory (`F-04`); a multi-instance deployment would need shared stores. Persistent `token_version` revocation is database-backed.
 - No MFA, no breach-password check, no audit retention/tamper-evidence, and no production TLS/secrets configuration are provided in this local stack. CI is documented as a deployment step only and has not run.
-- Playwright E2E specs under `project/frontend/e2e` passed 6 tests on Chrome and Edge with retries 0
+- Playwright E2E specs under `project/frontend/e2e` passed 18 tests on Chrome and Edge with retries 0 (`app.spec.ts` 5 cases and `landing.spec.ts` 4 cases per browser)
   ([`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json)). See [`../quality/KNOWN_LIMITATIONS.md`](../quality/KNOWN_LIMITATIONS.md) for the full limitation list.

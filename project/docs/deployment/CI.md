@@ -57,12 +57,14 @@ cd project/backend && ./mvnw -B verify       # Windows: .\mvnw.cmd -B verify
 cd project/frontend && npm ci && CI=true npm run build && CI=true npm test
 ```
 
-Additional local checks recorded for the final Phase 2 run (not part of the CI
-template): backend 93 tests with 0 failures/errors/skips, frontend 33 unit tests,
-Playwright 6 passed on Chrome and Edge with retries 0
+Additional local checks recorded for the current branch (not part of the CI
+template): backend 119 tests with 0 failures/errors/skips, frontend 39 unit tests,
+Playwright 18 passed on Chrome and Edge with retries 0
 ([`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json)),
-and the standalone SockJS/STOMP smoke test (`npm run test:stomp`,
-[`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json)).
+the standalone SockJS/STOMP smoke test (`npm run test:stomp`,
+[`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json)), and
+the authenticated browser STOMP capture
+([`../evidence/BROWSER_STOMP_RESULT.json`](../evidence/BROWSER_STOMP_RESULT.json)).
 Browser E2E can be repeated with `npm run test:e2e` from `project/frontend`.
 
 ## Updating the workflow

@@ -1,7 +1,7 @@
 # LifeLink System Architecture
 
-Date: 2026-11-23
-Status: implementation-aligned working document for Phase 2 (`feature/lifelink-enterprise-platform`; baseline HEAD `195e88a81b105baea69018e44f4b57f3f806937a`, Phase 2 uncommitted at time of writing, nothing pushed).
+Date: 24 November 2026
+Status: current-state working document for `feature/lifelink-bloodstream-experience` (base HEAD `59401d45e511183ede59e7d55073f07e2cf5eacd`, changes uncommitted, nothing pushed). Historical Phase 2 records remain under [`../reviews/`](../reviews/) and are not rewritten. The authoritative reconciliation is [`../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md).
 **Source of truth for external behaviour:** [`API_CONTRACTS.md`](API_CONTRACTS.md). Companion documents: [`DOMAIN_MODEL.md`](DOMAIN_MODEL.md), [`UML.md`](UML.md), [`../academic/AOOP_CONCEPT_MAPPING.md`](../academic/AOOP_CONCEPT_MAPPING.md).
 
 This document replaces the earlier "planned design / no implementation claimed" version.
@@ -26,7 +26,7 @@ flowchart LR
     UI[React + TypeScript SPA] -->|same-origin /api/v1 proxy| API[Spring Boot modular monolith]
     UI -->|/ws, /sockjs STOMP| API
     API --> PG[(PostgreSQL 16 + Flyway V1-V5)]
-    API --> AUDIT[(audit_logs in same DB)]
+    API --> AUDIT[(audit_events in same DB)]
     API --> OUT[(outbox_events in same DB)]
     S[LifecycleScheduler every 5 min] --> OUT
     S --> API
@@ -174,7 +174,7 @@ sequenceDiagram
     participant L as LifecycleScheduler (5 min)
     participant N as NotificationService.processOutbox
     S->>DB: update aggregate + version
-    S->>DB: insert audit_log (SUCCESS)
+    S->>DB: insert audit_event (SUCCESS) into audit_events
     S->>DB: insert notification + outbox_event(notification.created)
     DB-->>S: commit
     L->>N: processOutbox()
@@ -188,11 +188,17 @@ sequenceDiagram
 - Failed events retry with backoff and end in `FAILED` after 5 attempts; `lastError` is
   truncated before storage.
 - Live WebSocket push from the STOMP broker is configured and unit-tested at the
-  interceptor level. A live SockJS/STOMP smoke test through the Compose nginx proxy passed
-  on 2026-11-23 (`CONNECTED`, `MESSAGE`;
-  [`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json)), driven by a
-  standalone Node script (`npm run test:stomp`) rather than an SPA STOMP client. The SPA
-  continues to poll the REST inbox.
+  interceptor level. A standalone Node smoke test through the Compose nginx proxy recorded
+  an authenticated `CONNECTED`, a personal-queue `SUBSCRIBE`, and a delivered `MESSAGE`
+  ([`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json)).
+- The SPA now mounts `useRealtimeNotifications`, dynamically loads SockJS and STOMP.js,
+  connects through `/ws` with a bearer JWT, and invalidates React Query notification
+  caches on broker events. Browser capture confirms CONNECT with bearer token,
+  SUBSCRIBE to `/user/queue/notifications`, and a CONNECTED frame
+  ([`../evidence/BROWSER_STOMP_RESULT.json`](../evidence/BROWSER_STOMP_RESULT.json)).
+  REST `/notifications` remains authoritative; polling is the fallback when no socket can
+  connect. The standalone capture recorded zero REST polls during that focused observation,
+  while the Playwright suite separately asserts polling requests exist.
 - No email/SMS provider is configured or claimed.
 
 See [`ADR/ADR-004-outbox-notifications.md`](ADR/ADR-004-outbox-notifications.md).
@@ -230,7 +236,8 @@ See [`ADR/ADR-004-outbox-notifications.md`](ADR/ADR-004-outbox-notifications.md)
 2. **JWT secret:** `JWT_SECRET` is required in every non-test profile; there is no committed
    fallback. Missing, short (<32 byte), or test-only secrets fail fast at startup. The test
    profile has a dedicated test-only key.
-3. **Authorization:** `Role` and `Permission` enums drive method security. Notable rule:
+3. **Authorization:** `Role` and `Permission` enums drive programmatic checks in services
+   and controllers; no `@PreAuthorize` or `@RolesAllowed` annotations are used. Notable rule:
    dispatch creation requires `DISPATCH_CREATE` in the **supplying** blood-bank organization;
    hospital membership alone never grants it.
 4. **Tenancy:** `X-Organization-Id` is optional and validated by `TenantAccessService`
@@ -241,7 +248,9 @@ See [`ADR/ADR-004-outbox-notifications.md`](ADR/ADR-004-outbox-notifications.md)
    may omit the header for a global view or send it to scope one organization; non-admins
    with one membership are implicitly scoped, while multiple memberships require an explicit
    selection. `AnalyticsPage` exposes an Organization scope select and includes the scope in
-   query keys.
+   query keys; selecting **All organizations** passes explicit `null` so the SPA omits
+   `X-Organization-Id` instead of sending a literal null value. Other protected pages
+   do not fall back to a first membership when none is selected.
 5. **Rate limiting and lockout:** login/register/refresh 401 responses are limited to
    10/60s per IP+account+path in memory; the next attempt returns `429 RATE_LIMITED`. Failed
    logins also persist 5-failure/15-minute account lockout in `login_attempts`. The limiter
@@ -255,8 +264,10 @@ See [`ADR/ADR-004-outbox-notifications.md`](ADR/ADR-004-outbox-notifications.md)
 7. **WebSocket:** STOMP CONNECT requires a `Bearer`-prefixed JWT (native `Authorization`
    preferred, STOMP header/passcode/login fallback; no raw token); SUBSCRIBE is restricted
    to the caller's own queue and requires `NOTIFICATION_READ`; SEND is denied because no
-   `@MessageMapping` handlers exist. Broker errors are generic. The live smoke was driven by
-   a standalone Node SockJS/STOMP client through the nginx proxy, not by the SPA.
+   `@MessageMapping` handlers exist. Broker errors are generic. Both a standalone Node
+   client and the authenticated SPA bridge were observed through the nginx proxy. Vite
+   strips `Origin` from `/ws` proxy requests; the socket client is never opened for
+   anonymous visitors.
 8. **UI security posture:** SPA role checks only shape the interface; server authorization
    is authoritative.
 
@@ -315,6 +326,6 @@ See [`ADR/ADR-001-modular-monolith.md`](ADR/ADR-001-modular-monolith.md) and
 - [ ] Automated ArchUnit-style package-boundary tests (not present; source review only).
 - [ ] CI pipeline execution (not installed in this repository; documented as a deployment step
       only — no GitHub Actions run is claimed).
-- [x] Full-stack login / health evidence and live SockJS/STOMP smoke evidence recorded
-      (standalone Node STOMP client, not the SPA).
+- [x] Full-stack login / health evidence, standalone SockJS/STOMP smoke evidence, and
+      authenticated browser STOMP frame evidence recorded.
 - [ ] Shared revocation/rate-limit store for multi-instance deployment (process-local today).

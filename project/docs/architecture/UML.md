@@ -1,7 +1,7 @@
 # LifeLink UML Views
 
-Date: 2026-11-23
-Status: implementation-aligned working document
+Date: 24 November 2026
+Status: current-state working document; historical review records are preserved under [`../reviews/`](../reviews/).
 
 ## Purpose
 
@@ -16,8 +16,8 @@ Flyway migrations `V1`–`V5` (including persistent `users.token_version`),
 `DevelopmentDataSeeder`, `SecurityConfig`, `StompAuthenticationInterceptor`, the recorded
 checks in [`../quality/TEST_RESULTS.md`](../quality/TEST_RESULTS.md), and the durable
 evidence under [`../evidence/`](../evidence/). Current release status is authoritative
-in [`../reviews/PHASE_2_FINAL_REVIEW.md`](../reviews/PHASE_2_FINAL_REVIEW.md). External
-HTTP behaviour is authoritative in [`API_CONTRACTS.md`](API_CONTRACTS.md).
+in [`../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md).
+External HTTP behaviour is authoritative in [`API_CONTRACTS.md`](API_CONTRACTS.md).
 
 ---
 
@@ -183,13 +183,18 @@ classDiagram
         -boolean read
         +markRead() void
     }
-    class AuditLog {
-        -User actor
+    class AuditEvent {
+        <<table audit_events>>
+        -Long id
+        -Long actorId
+        -Long organizationId
         -String action
-        -String entityType
-        -String entityId
-        -Outcome outcome
+        -String targetType
+        -String targetId
         -String correlationId
+        -String metadata
+        -String outcome
+        -Instant occurredAt
     }
     class IdempotencyRecord {
         <<V4 table>>
@@ -224,7 +229,6 @@ classDiagram
     BaseEntity <|-- Reservation
     BaseEntity <|-- Dispatch
     BaseEntity <|-- Notification
-    BaseEntity <|-- AuditLog
     BaseEntity <|-- IdempotencyRecord
 
     User "1" -- "*" UserOrganization
@@ -237,7 +241,7 @@ classDiagram
     BloodUnit "1" -- "0..1" Reservation : sparse active hold (V4)
     Reservation "1" -- "0..1" Dispatch
     User "1" -- "*" Notification
-    User "1" -- "*" AuditLog : actor
+    User "1" -- "*" AuditEvent : actor (actorId)
 
     AllocationStrategy <|.. FeefoStrategy
     CompatibilitySpecification <|.. StrictSameGroupSpecification
@@ -328,10 +332,12 @@ Implemented behaviour reflected here:
 - STOMP CONNECT requires a `Bearer` JWT in the native `Authorization` header; SUBSCRIBE
   is restricted to the caller's own queue with `NOTIFICATION_READ`; `/app` SEND frames
   are denied because no `@MessageMapping` handler exists. No raw passcode is accepted.
-  Live STOMP delivery through the Compose nginx proxy is **verified**: a standalone Node
-  smoke script obtained authenticated `CONNECTED` and a notification `MESSAGE`
-  ([`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json)). The SPA
-  itself still has no live STOMP client; notifications are shown via the REST inbox.
+  Live STOMP delivery through the Compose nginx proxy is **verified** by both a standalone
+  Node smoke script ([`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json))
+  and the authenticated SPA bridge
+  ([`../evidence/BROWSER_STOMP_RESULT.json`](../evidence/BROWSER_STOMP_RESULT.json)).
+  The SPA subscribes to `/user/queue/notifications` and uses broker events to invalidate
+  React Query caches; REST inbox polling remains the authoritative fallback.
 
 ---
 
@@ -505,7 +511,8 @@ stateDiagram-v2
         IN_TRANSIT --> DELIVERED : deliver(recipientName)
         PREPARING --> INCIDENT : reportIncident(description)
         IN_TRANSIT --> INCIDENT : reportIncident(description)
-        INCIDENT --> DELIVERED : recovery delivery
+        INCIDENT --> INCIDENT : reportIncident(description)
+        INCIDENT --> DELIVERED : deliver(recipientName)
     }
 
     state Donation {

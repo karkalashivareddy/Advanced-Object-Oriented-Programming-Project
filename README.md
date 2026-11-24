@@ -1,15 +1,15 @@
 <div align="center">
 
-# Advanced Object-Oriented Programming
+# LifeLink — Advanced Object-Oriented Programming Project
 
-### Course Project Repository
+### Java Spring Boot backend · React/TypeScript web interface
 
 [![Course](https://img.shields.io/badge/Course-Advanced%20Object--Oriented%20Programming-1F6FEB?style=for-the-badge)](#)
 [![Student](https://img.shields.io/badge/Student-Karkala%20Shiva%20Reddy-2EA043?style=for-the-badge)](#)
 [![Student ID](https://img.shields.io/badge/ID-2520030105-8957E5?style=for-the-badge)](#)
-[![Status](https://img.shields.io/badge/Status-In%20Development-FFA500?style=for-the-badge)](#)
+[![Status](https://img.shields.io/badge/Status-Implemented%20local%20demo-16865B?style=for-the-badge)](#)
 
-*A structured, version-controlled academic software project demonstrating advanced object-oriented design and engineering practice.*
+*A structured, version-controlled academic project demonstrating advanced object-oriented design in a Java backend with a polished React/TypeScript web interface.*
 
 </div>
 
@@ -23,166 +23,176 @@
 | **Student ID** | 2520030105 |
 | **Subject** | Advanced Object-Oriented Programming |
 | **Repository** | [Advanced-Object-Oriented-Programming-Project](https://github.com/karkalashivareddy/Advanced-Object-Oriented-Programming-Project) |
-| **Project Status** | In Development — Project Title Finalization |
-| **Last Updated** | November 2026 |
+| **Project Title** | LifeLink — Blood Bank Coordination Platform |
+| **Implementation status** | Implemented and verified locally; not a production deployment |
+| **Last Updated** | 24 November 2026 |
+
+> The abstract submission form also lists additional team members and administrative fields. Those fields are preserved in the corrected abstract source; any roster or faculty-detail discrepancy requires human confirmation and is not silently changed here.
 
 ---
 
 ## Project Overview
 
-This repository is the official submission workspace for the **Advanced Object-Oriented Programming** course project. It will contain the complete software development lifecycle for the project — from problem definition and object-oriented design to implementation, testing, and documentation.
+LifeLink coordinates the path from donor to delivery: donor profiles and consent records, donation screening, blood-unit inventory, hospital emergency requests, allocation suggestions, time-bound reservations, dispatch and delivery, notifications, audit records, and scoped analytics.
 
-The project is currently in the **planning and title-selection phase**. Once the project title and scope are approved, this section will be updated with the formal problem statement, objectives, and expected outcomes.
+The application is a **modular Java monolith with a separate static web client**:
 
-> **Project Title:** `To Be Finalized`
->
-> **Current Phase:** Planning & Object-Oriented Design
->
-> **Goal:** Deliver a well-architected, thoroughly documented, and fully tested application that applies advanced OOP principles to a real-world problem.
+- **Java 21 / Spring Boot 3.5.16** owns every business rule, entity invariant, validation, transaction, authorization decision, repository query, and analytics calculation.
+- **React 19 / TypeScript 5.9 / Vite 7** provides the presentation layer: responsive pages, forms, tables, charts, role-aware navigation, loading/error/empty states, and reduced-motion support.
+- **PostgreSQL 16** is the development/demo database, managed by Flyway migrations `V1`–`V5`.
+- **REST `/api/v1`** is the client/server contract. Authenticated **SockJS/STOMP over `/ws`** supplies notification-cache invalidation; the REST inbox remains the authoritative notification path.
+
+Java is the primary implementation language for the AOOP assessment. React/TypeScript is retained by explicit project decision for the web interface; the application is **not** described as Java-only or Vaadin-based. No C/C++ or Python module is part of the application.
 
 ---
 
-## Project Title Selection
+## Current Technology Stack
 
-The project title is being finalized based on the criteria below. This section will be updated with the approved title, abstract, and scope before implementation begins.
-
-| Evaluation Criterion | Why It Matters |
+| Area | Actual selection |
 | :--- | :--- |
-| **OOP Depth** | Must meaningfully apply encapsulation, inheritance, polymorphism, abstraction, and composition. |
-| **Real-World Relevance** | Should solve a recognizable problem with clear users and use cases. |
-| **Design Scalability** | Should support clean extension through interfaces and established design patterns. |
-| **Testability** | Should be structured for unit testing and maintainable evolution. |
-| **Scope Feasibility** | Must be achievable within the course timeline and credit requirements. |
-
-**Next milestone:** Publish the approved title, abstract, and functional requirements in this repository.
-
----
-
-## Planned Learning Outcomes
-
-The project is designed to demonstrate practical mastery of the following advanced OOP concepts:
-
-- **Encapsulation** — protecting object state through well-defined interfaces and invariants.
-- **Inheritance & Composition** — modeling relationships with an emphasis on composition over inheritance.
-- **Polymorphism** — designing extensible behavior through interfaces and abstract types.
-- **Abstraction** — separating domain contracts from implementation details.
-- **SOLID Principles** — building modules that are cohesive, loosely coupled, and open to extension.
-- **Design Patterns** — applying appropriate creational, structural, and behavioral patterns.
-- **Exception Handling** — implementing robust, fail-safe error management.
-- **Generics & Collections** — writing type-safe, reusable data structures and algorithms.
-- **Persistence & File I/O** — managing application state beyond runtime.
-- **Unit Testing** — validating behavior with automated, repeatable tests.
-- **UML Modeling** — documenting class, sequence, and use-case designs before coding.
-- **Clean Code & Documentation** — producing readable, maintainable, professional-grade source code.
-
----
-
-## Proposed Architecture
-
-The application will follow a layered architecture to keep concerns separated and the codebase maintainable:
-
-```text
-┌─────────────────────────────────────────────┐
-│              Presentation Layer             │
-│         (UI / Console / Controllers)        │
-├─────────────────────────────────────────────┤
-│               Service Layer                 │
-│      (Business Logic & Use Cases)           │
-├─────────────────────────────────────────────┤
-│                Domain Layer                 │
-│     (Entities, Value Objects, Contracts)    │
-├─────────────────────────────────────────────┤
-│             Persistence Layer               │
-│       (Repositories, File / Database)       │
-└─────────────────────────────────────────────┘
-```
-
-**Design goals:** low coupling, high cohesion, dependency inversion, and clear separation between domain rules and infrastructure concerns.
-
----
-
-## Technology Stack
-
-| Area | Selection | Status |
-| :--- | :--- | :--- |
-| **Primary Language** | To be finalized | Pending |
-| **Build Tool** | To be finalized | Pending |
-| **Testing Framework** | To be finalized | Pending |
-| **Version Control** | Git & GitHub | Active |
-| **Documentation** | Markdown & UML | Active |
-
-> The technology stack will be confirmed alongside the project title and added here before development begins.
+| Backend language | Java 21 |
+| Backend framework | Spring Boot 3.5.16: Web MVC, Security, Data JPA/Hibernate, Validation, WebSocket/STOMP, Actuator, springdoc OpenAPI |
+| Frontend | React 19.2, TypeScript 5.9, Vite 7.3, React Router 7.9, TanStack Query 5, Recharts 3, SockJS + STOMP.js |
+| Database | PostgreSQL 16 (Docker Compose); H2 PostgreSQL mode and Testcontainers PostgreSQL in tests |
+| Migrations | Flyway `V1`–`V5` with Hibernate `ddl-auto=validate` |
+| Build | Maven Wrapper 3.9.11 (`project/backend`), npm (`project/frontend`) |
+| Tests | JUnit 5, Mockito, Spring Boot Test, Testcontainers, Vitest, Playwright |
+| Local runtime | Docker Compose with PostgreSQL, Spring Boot backend, and nginx-served SPA |
+| Development host | Windows in this workspace; Linux-based container images are runtime packaging only |
 
 ---
 
 ## Repository Structure
 
-The repository will evolve into the following structure as the project progresses:
-
 ```text
 Advanced-Object-Oriented-Programming-Project/
-│
-├── README.md                 # Project overview and documentation index
-├── docs/                     # Design documents, UML diagrams, reports
-│   ├── proposal/             # Project proposal and approved scope
-│   └── design/               # Class, sequence, and use-case diagrams
-├── src/                      # Application source code
-│   ├── domain/               # Entities, value objects, interfaces
-│   ├── service/              # Business logic and use cases
-│   ├── persistence/          # Repositories and data access
-│   └── presentation/         # User interface and controllers
-├── tests/                    # Unit and integration tests
-└── .gitignore                # Build artifacts and IDE files
+├── README.md                         # This project overview
+├── LAB-WORK/                         # Course lab PDFs and related work (preserved)
+└── project/
+    ├── backend/                      # Java 21 / Spring Boot Maven application
+    │   └── src/main/java/com/lifelink/
+    ├── frontend/                     # React/TypeScript Vite SPA
+    │   ├── src/
+    │   └── e2e/
+    ├── docker/                       # Local Compose stack
+    └── docs/                         # Architecture, academic mapping, evidence, reviews
 ```
+
+The authoritative current-state record is
+[`project/docs/reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](project/docs/reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md).
 
 ---
 
-## Roadmap
+## Learning Outcomes Demonstrated in Java
 
-- [x] Create the official course project repository
-- [x] Define the professional repository documentation structure
-- [ ] Finalize and approve the project title
-- [ ] Publish the project proposal and problem statement
-- [ ] Complete requirements analysis and use-case modeling
-- [ ] Design the UML class and sequence diagrams
-- [ ] Implement the domain and service layers
-- [ ] Implement persistence and the presentation layer
-- [ ] Write unit and integration tests
-- [ ] Conduct code review and refactoring
-- [ ] Finalize documentation and user guide
-- [ ] Prepare the final demonstration and submission
+- **Encapsulation:** `BloodUnit`, `EmergencyRequest`, `Reservation`, and `Dispatch` expose guarded transition methods instead of public state mutators.
+- **Inheritance:** JPA aggregates extend `BaseEntity`; `LifeLinkException` is the base of the typed exception hierarchy.
+- **Polymorphism:** `AllocationStrategy` and `CompatibilitySpecification` have interchangeable Java implementations.
+- **Abstraction and interfaces:** repositories, strategies, notification channels, and DTO records separate contracts from implementations.
+- **Exception handling:** `GlobalExceptionHandler` maps typed Java exceptions to stable API error codes.
+- **Collections and generics:** `List<BloodUnit>`, `Set<Long>`, `Page<T>`, `Specification<T>`, and typed API envelopes are used throughout.
+- **Design patterns:** Repository, Strategy, Specification, DTO, Transactional Outbox, and Idempotency Key.
+- **Separation of concerns:** controllers, services, domain entities, repositories, security/configuration, and DTOs have distinct responsibilities.
+
+See [`project/docs/academic/AOOP_CONCEPT_MAPPING.md`](project/docs/academic/AOOP_CONCEPT_MAPPING.md) for class-by-class evidence.
 
 ---
 
 ## Getting Started
 
-To clone this repository locally:
+### Prerequisites
 
-```bash
-git clone https://github.com/karkalashivareddy/Advanced-Object-Oriented-Programming-Project.git
-cd Advanced-Object-Oriented-Programming-Project
+- JDK 21 (the Maven Wrapper downloads Maven 3.9.11)
+- Node.js 24 and npm 11
+- Docker Desktop / Docker Compose (for the PostgreSQL-backed local stack)
+- PowerShell on Windows, or an equivalent shell
+
+### Run the complete local stack
+
+```powershell
+$env:JWT_SECRET = '<generate-a-long-random-development-secret>'
+docker compose -f project/docker/docker-compose.yml up -d --build
 ```
 
-Build and execution instructions will be added once the technology stack and project structure are finalized.
+Default loopback ports:
+
+| Service | URL |
+| :--- | :--- |
+| SPA | `http://127.0.0.1:15173` |
+| Backend health | `http://127.0.0.1:18080/actuator/health` |
+| PostgreSQL | `127.0.0.1:15432` |
+
+Demo seed accounts are development fixtures only; see
+[`project/docs/user-guide/USER_GUIDE.md`](project/docs/user-guide/USER_GUIDE.md). Never use them in a real deployment.
+
+### Backend tests
+
+```powershell
+cd project/backend
+.\mvnw.cmd test
+```
+
+### Frontend checks
+
+```powershell
+cd project/frontend
+npm ci
+npm run typecheck
+npm test -- --run
+npm run build
+npm audit --audit-level=high
+```
+
+### Browser tests
+
+With the Compose backend available:
+
+```powershell
+cd project/frontend
+$env:VITE_API_PROXY_TARGET = 'http://127.0.0.1:18080'
+npm run test:e2e
+```
 
 ---
 
-## Documentation & Deliverables
+## Verified Results Summary
 
-The following deliverables will be maintained in this repository:
+| Gate | Recorded result |
+| :--- | :--- |
+| Backend full suite | **119 tests, 0 failures, 0 errors, 0 skipped** across 28 Surefire reports |
+| Frontend typecheck / units / build / audit | Passed / **39 tests in 7 files** / passed / **0 high-or-critical vulnerabilities** |
+| Playwright E2E | **18 tests passed** on Chrome and Edge, retries 0, flaky 0 |
+| Browser STOMP | Authenticated `CONNECT` with Bearer token, own-queue `SUBSCRIBE`, and `CONNECTED` frame observed; REST polling remains active |
+| Live stack | Backend `/actuator/health` UP, frontend `/healthz` 200, Flyway `V1`–`V5` success |
+| Corrected abstract | 4-page PDF with 14 sections, 187-word abstract, and no replacement characters; original submission files preserved |
 
-- Project proposal and approved scope
-- UML design diagrams
-- Source code with inline documentation
-- Automated test suite
-- User guide and setup instructions
-- Final project report and presentation materials
+Full commands, evidence links, and limitations are in
+[`project/docs/quality/TEST_RESULTS.md`](project/docs/quality/TEST_RESULTS.md).
+
+---
+
+## Documentation and Deliverables
+
+- [Corrected abstract PDF](project/docs/abstract/LifeLink_Project_Abstract.pdf)
+- [Editable abstract source](project/docs/abstract/LifeLink_Project_Abstract.docx)
+- [Abstract PDF validation evidence](project/docs/evidence/ABSTRACT_PDF_VALIDATION.json)
+- [Project proposal](project/docs/proposal/PROJECT_PROPOSAL.md)
+- [System architecture](project/docs/architecture/SYSTEM_ARCHITECTURE.md)
+- [API contracts](project/docs/architecture/API_CONTRACTS.md)
+- [Domain model](project/docs/architecture/DOMAIN_MODEL.md)
+- [UML and workflows](project/docs/architecture/UML.md)
+- [AOOP concept mapping](project/docs/academic/AOOP_CONCEPT_MAPPING.md)
+- [User guide](project/docs/user-guide/USER_GUIDE.md)
+- [Deployment guide](project/docs/deployment/DEPLOYMENT_GUIDE.md)
+- [Test results](project/docs/quality/TEST_RESULTS.md)
+- [Known limitations](project/docs/quality/KNOWN_LIMITATIONS.md)
+- [Browser evidence](project/docs/evidence/)
 
 ---
 
 ## Academic Integrity
 
-This repository contains original academic work completed for the **Advanced Object-Oriented Programming** course. All external references, libraries, and learning resources used will be appropriately cited. The work is intended for academic evaluation and demonstration purposes.
+This repository contains original academic work prepared for the Advanced Object-Oriented Programming course. The `LAB-WORK/` PDFs are course reference material and are preserved unchanged. External libraries and frameworks are used under their published licences. Demo credentials are local development fixtures and are explicitly forbidden in production.
 
 ---
 
@@ -196,6 +206,6 @@ GitHub: [@karkalashivareddy](https://github.com/karkalashivareddy)
 
 <div align="center">
 
-*Advanced Object-Oriented Programming — Course Project*
+*Java remains the central AOOP language; React/TypeScript provides the web interface.*
 
 </div>

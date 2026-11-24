@@ -19,12 +19,12 @@ Implement a **transactional outbox** inside the same PostgreSQL database:
 
 The original design also proposed domain-appended events for every aggregate, `SKIP LOCKED` polling, a unique `(userId, eventId)` deduplication key, per-aggregate ordering, and published lag metrics. Those were not implemented; see below.
 
-## Implementation status (2026-11-23)
+## Implementation status (updated 24 November 2026)
 
-- Implemented: transactional `notification.created` outbox rows, scheduled processing, per-item fault isolation, retry/backoff, and in-app channel delivery.
+- Implemented: transactional `notification.created` outbox rows, scheduled processing, per-item fault isolation, bounded retry/backoff ending in `FAILED`, and in-app channel delivery.
 - Implemented: STOMP CONNECT authentication and own-queue subscription restrictions in `StompAuthenticationInterceptor`, with unit tests recorded in [`../../quality/TEST_RESULTS.md`](../../quality/TEST_RESULTS.md).
 - Deviated from the original design: the outbox is notification-specific, there is no `SKIP LOCKED` claim, no generic domain-event bus, no `(userId, eventId)` deduplication constraint, no aggregate ordering guarantee, and no lag/retry metrics export.
-- Verified: a live SockJS/STOMP smoke through the Compose nginx proxy recorded authenticated `CONNECTED`, accepted personal-queue `SUBSCRIBE`, and delivered `MESSAGE` in [`../../evidence/STOMP_SMOKE_RESULT.json`](../../evidence/STOMP_SMOKE_RESULT.json). This is a standalone Node client, not a browser/SPA STOMP client. No production notification provider is claimed.
+- Verified: a standalone SockJS/STOMP smoke through the Compose nginx proxy recorded authenticated `CONNECTED`, accepted personal-queue `SUBSCRIBE`, and delivered `MESSAGE` in [`../../evidence/STOMP_SMOKE_RESULT.json`](../../evidence/STOMP_SMOKE_RESULT.json). The SPA now also opens an authenticated browser bridge and invalidates React Query caches on broker events ([`../../evidence/BROWSER_STOMP_RESULT.json`](../../evidence/BROWSER_STOMP_RESULT.json)). REST remains authoritative. No production notification provider is claimed.
 
 ## Consequences
 

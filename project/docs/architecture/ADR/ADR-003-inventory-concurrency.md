@@ -19,12 +19,12 @@ Use a **database-centred, pessimistic-first strategy** on `BloodUnit`:
 5. `POST /allocations/suggestions` is read-only and takes no locks; it never promises stock.
 6. `POST /allocations/confirm`, `POST /reservations`, and `POST /dispatches` record `(scope, key)` in `idempotency_records` with a SHA-256 request fingerprint and replay the stored response.
 
-## Implementation status (2026-11-23)
+## Implementation status (updated 24 November 2026)
 
-- Implemented: pessimistic unit locks, sorted allocation locks, V4 idempotency records and sparse one-active-reservation constraint, status CHECK constraints, and central `409 CONCURRENCY_CONFLICT` mapping.
-- Implemented: dispatch creation locks the unit before claiming idempotency so replay and competing reservation paths serialize on the same row.
+- Implemented: pessimistic unit/request locks, sorted allocation locks, V4 idempotency records and sparse one-active-reservation constraint, status CHECK constraints, and central `409 CONCURRENCY_CONFLICT` mapping.
+- Implemented: dispatch creation locks the emergency request before the unit (matching expiry/allocation order), then locks the unit before claiming idempotency so replay and competing reservation paths serialize on the same row. Idempotent replay is resolved before TTL validation, and the confirmed/expired checks are re-evaluated inside the locked work.
 - Deviated from the original design: the repository method is named `findByIdForUpdate`, the lock is on `BaseEntity.version`, the active-reservation constraint is a nullable-column + CHECK rather than a PostgreSQL partial index, and there is no automatic retry.
-- Backend coverage includes `concurrency/PostgresIdempotencyConcurrencyTest` and `concurrency/ConcurrencyExceptionMappingTest`. The final full run passed: **93 tests, 0 failures/errors/skips across 17 Surefire reports**, including Testcontainers PostgreSQL 16 concurrency and Flyway `V1`–`V5` with Hibernate `ddl-auto=validate`. See [`../../quality/TEST_RESULTS.md`](../../quality/TEST_RESULTS.md), [`../../reviews/PHASE_2_FINAL_REVIEW.md`](../../reviews/PHASE_2_FINAL_REVIEW.md), and durable evidence under [`../../evidence/`](../../evidence/). No load or penetration test was performed; no production-readiness claim is made.
+- Backend coverage includes PostgreSQL concurrency and lifecycle regression tests. The current full run passed: **119 tests, 0 failures/errors/skips across 28 Surefire reports**, including Testcontainers PostgreSQL 16 concurrency and Flyway `V1`–`V5` with Hibernate `ddl-auto=validate`. See [`../../quality/TEST_RESULTS.md`](../../quality/TEST_RESULTS.md), [`../../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md), and durable evidence under [`../../evidence/`](../../evidence/). No load or penetration test was performed; no production-readiness claim is made.
 
 ## Consequences
 

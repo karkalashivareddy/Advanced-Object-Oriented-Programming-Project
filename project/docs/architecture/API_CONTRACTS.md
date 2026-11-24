@@ -1,16 +1,17 @@
 # LifeLink API Contracts (v1)
 
-**Implementation status (2026-11-23, final audit-fix pass):** this contract describes the running
-Spring Boot 3.5.16 backend on `feature/lifelink-enterprise-platform`. Phase 2
-work is uncommitted at the time of writing; no commit hash is claimed for it
-and nothing was pushed. The Phase 1 baseline is
-`195e88a81b105baea69018e44f4b57f3f806937a`. Paths, DTO fields, enum values, headers, and
-error codes below are taken from controllers, DTOs, entities, migrations
-`V1`–`V5`, and security configuration in `project/backend/`. Where older
-documents disagree, this file is authoritative for external behaviour. `V5`
-adds `users.token_version`; the persistent monotonic version makes lock,
-disable, and re-enable permanently revoke older access tokens. This is a local
-development / supervised demo contract, not a production-readiness claim.
+**Implementation status (24 November 2026):** this contract describes the running
+Spring Boot 3.5.16 backend on `feature/lifelink-bloodstream-experience`, based on HEAD
+`59401d45e511183ede59e7d55073f07e2cf5eacd`. Current changes are uncommitted; nothing was
+pushed. Historical Phase 2 records from `feature/lifelink-enterprise-platform` and baseline
+HEAD `195e88a` are preserved elsewhere and are not current. Paths, DTO fields, enum values,
+headers, and error codes below are taken from controllers, DTOs, entities, migrations
+`V1`–`V5`, and security configuration in `project/backend/`. Where older documents disagree,
+this file is authoritative for external behaviour, with the current reconciliation in
+[`../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md).
+`V5` adds `users.token_version`; the persistent monotonic version makes lock, disable, and
+re-enable permanently revoke older access tokens. This is a local development / supervised
+demo contract, not a production-readiness claim.
 
 Base path: `/api/v1`. JSON request/response bodies. Timestamps are ISO-8601 UTC.
 
@@ -91,7 +92,10 @@ inside `ApiResponse`: `GET /donors`, `/donors/{id}/consents`,
 - Invalid or non-member ids produce `400 VALIDATION_ERROR` (malformed) or
   `403 TENANT_ACCESS_DENIED` (not a membership).
 - The SPA sends the header on every API call when an organization is selected
-  and clears React Query caches on organization switch.
+  and clears React Query caches on organization switch. On login it restores
+  only a previously valid explicit selection; otherwise it sends no header and
+  lets the backend apply its single-membership default. It never silently
+  selects a first membership.
 
 **Analytics scoping (`F-02`):** all three `/api/v1/analytics/*` endpoints resolve
 scope through `TenantAccessService`, never through an unverified client value.
@@ -255,8 +259,10 @@ type BloodUnitView = {
   id:number; publicId:string; unitNumber:string; bloodGroup:BloodGroup;
   componentType:ComponentType; status:UnitStatus; released:boolean;
   collectedAt:string; expiresAt:string; storageLocation:string;
-  organizationId:number; donationId?:number; activeReservationId?:number; version:number;
+  organizationId:number; donationId?:number; version:number;
 };
+// activeReservationId is an internal BloodUnit field used by repository locks
+// and the one-active-reservation constraint; it is not exposed in InventoryDtos.View.
 ```
 
 ## Emergency requests, allocation, reservations, dispatch
@@ -274,10 +280,12 @@ type BloodUnitView = {
 | POST | `/allocations/suggestions` | `ALLOCATION_REVIEW` | `{requestId}` → advisory candidates |
 | POST | `/allocations/confirm` | `ALLOCATION_CONFIRM` | `Idempotency-Key` header or body key + `{requestId,unitIds[],idempotencyKey}` → reservations |
 | GET | `/reservations` | scoped `RESERVATION_READ` | `ReservationView[]` |
+| GET | `/reservations/{id}` | scoped `RESERVATION_READ` | `ReservationView` |
 | POST | `/reservations` | scoped `RESERVATION_CREATE` | `{unitId,requestId,idempotencyKey}` |
 | POST | `/reservations/{id}/confirm` | scoped `RESERVATION_CONFIRM` | no body |
 | POST | `/reservations/{id}/cancel` | scoped `RESERVATION_CREATE` | release unit |
 | GET | `/dispatches` | scoped `DISPATCH_READ` | `DispatchView[]` |
+| GET | `/dispatches/{id}` | scoped `DISPATCH_READ` | `DispatchView` |
 | POST | `/dispatches` | blood-bank `DISPATCH_CREATE` in the **supplying** organization | `Idempotency-Key` header + `{reservationId,assignedStaff}` |
 | POST | `/dispatches/{id}/depart` | scoped `DISPATCH_MANAGE` | no body |
 | POST | `/dispatches/{id}/deliver` | scoped `DISPATCH_MANAGE` | `{recipientName}` |
@@ -344,11 +352,13 @@ stale-version tokens are rejected.
 - In-app notifications are published with
   `convertAndSendToUser(<email>, "/queue/notifications", event)`.
 
-**Verified (2026-11-23):** interceptor behaviour is covered by unit tests, and a
-live SockJS/STOMP smoke test passed through the Compose frontend nginx proxy at
+**Verified evidence:** interceptor behaviour is covered by unit tests. A standalone
+SockJS/STOMP smoke test passed through the Compose frontend nginx proxy at
 `http://127.0.0.1:15173` with an authenticated `CONNECT`, a personal-queue
-`SUBSCRIBE`, and a delivered `MESSAGE` (frame sequence `CONNECTED`, `MESSAGE`;
-[`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json)).
-That smoke test was driven by a **standalone Node SockJS/STOMP script**
-(`npm run test:stomp`), not by the SPA: `frontend/src` still has no live STOMP
-client and the inbox uses REST polling.
+`SUBSCRIBE`, and a delivered `MESSAGE` ([`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json)).
+The SPA now also opens an authenticated SockJS bridge through `/ws` and subscribes to
+`/user/queue/notifications`; browser capture recorded a CONNECT frame carrying the bearer
+token and a CONNECTED frame ([`../evidence/BROWSER_STOMP_RESULT.json`](../evidence/BROWSER_STOMP_RESULT.json)).
+STOMP events invalidate React Query caches only. The REST inbox is authoritative and
+polling remains the fallback when no socket connects; the standalone capture recorded zero
+REST polls in its focused window, while the Playwright suite separately verifies polling.
