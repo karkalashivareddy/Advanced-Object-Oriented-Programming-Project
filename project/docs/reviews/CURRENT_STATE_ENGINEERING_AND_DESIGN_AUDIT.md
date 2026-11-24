@@ -4,7 +4,7 @@
 **Branch:** `feature/lifelink-bloodstream-experience`
 **Base HEAD:** `59401d45e511183ede59e7d55073f07e2cf5eacd`
 **Audit scope:** `project/` plus the root `README.md`; `LAB-WORK/` preserved and untouched
-**Git state after commit:** three local commits on this branch; **nothing was pushed or merged**
+**Git state after commit:** local commits on this branch; **nothing was pushed or merged**
 
 > This is the authoritative current-state record. Earlier review files under
 > [`./`](./) and the baseline audit in [`../audit/INITIAL_REPOSITORY_AUDIT.md`](../audit/INITIAL_REPOSITORY_AUDIT.md)
