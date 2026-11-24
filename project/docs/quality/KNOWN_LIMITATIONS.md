@@ -118,8 +118,9 @@ Items describe residual limitations even where the related feature is Verified.
     PDF is a separate file. Administrative roster, section, team, course-code,
     and faculty details require human confirmation.
 27. **PDF is not a Word export.** (B) The Word COM export attempt hung and was
-    terminated; the validated PDF was rendered from the same corrected content
-    with PyMuPDF. It is not a byte-for-byte Word rendering of the DOCX.
+    terminated; the validated PDF was edited from the supplied verification PDF
+    with PyMuPDF so the original monochrome form layout is preserved. It is not
+    a byte-for-byte Word rendering of the DOCX.
 
 ## Design deviations from the original academic plan
 

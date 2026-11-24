@@ -164,7 +164,7 @@ npm run test:e2e
 | Playwright E2E | **18 tests passed** on Chrome and Edge, retries 0, flaky 0 |
 | Browser STOMP | Authenticated `CONNECT` with Bearer token, own-queue `SUBSCRIBE`, and `CONNECTED` frame observed; REST polling remains active |
 | Live stack | Backend `/actuator/health` UP, frontend `/healthz` 200, Flyway `V1`–`V5` success |
-| Corrected abstract | 4-page PDF with 14 sections, 187-word abstract, and no replacement characters; original submission files preserved |
+| Corrected abstract | 4-page PDF in the original black-and-white submission form layout, with all 9 form sections, a 187-word abstract, and no replacement characters; original submission files preserved |
 
 Full commands, evidence links, and limitations are in
 [`project/docs/quality/TEST_RESULTS.md`](project/docs/quality/TEST_RESULTS.md).

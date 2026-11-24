@@ -100,22 +100,22 @@ The original editable source and original verification PDF remain preserved:
 The corrected, maintainable deliverables are:
 
 - `project/docs/abstract/LifeLink_Project_Abstract.docx` — editable source
-- `project/docs/abstract/LifeLink_Project_Abstract.pdf` — validated PDF rendered from the same corrected content
+- `project/docs/abstract/LifeLink_Project_Abstract.pdf` — validated PDF edited from the supplied verification PDF
 
-The corrected abstract uses the required 14-section academic structure, a
-crimson/burgundy professional design, accurate Java/React/TypeScript/PostgreSQL
-technology, real AOOP classes, and no unsupported feature claims. The PDF was
-validated as 4 pages with a 187-word abstract, all 14 numbered sections, no
-replacement/null characters, no instructional parenthetical notes, and accurate
-current stack/test phrases. The independent review’s blanket-pagination
-objection was corrected to state that
-many collection endpoints are paginated while several array-returning
-endpoints are not; evidence is in
+The corrected abstract keeps the original 9-section black-and-white submission
+form layout, including its fonts, tables, line art, and page geometry. Only
+content and line alignment were changed: the course title typo, outdated
+Linux-hosting claims, stale test counts, and instructional prompt text were
+corrected or removed, while accurate Java/React/TypeScript/PostgreSQL technology
+and real AOOP examples were retained. The PDF was validated as 4 pages with a
+187-word abstract, monochrome text spans, original drawing counts, no
+replacement/null characters, no instructional prompts, and accurate current
+stack/test phrases. Evidence is in
 [`../evidence/ABSTRACT_PDF_VALIDATION.json`](../evidence/ABSTRACT_PDF_VALIDATION.json)
 and [`../quality/TEST_RESULTS.md`](../quality/TEST_RESULTS.md). The Word COM
-export attempt hung and was terminated, so PyMuPDF rendered the PDF from the
-same corrected content; it is not a byte-for-byte Word export. Manual visual
-inspection and human confirmation of administrative fields remain outstanding.
+export attempt hung and was terminated, so PyMuPDF edited the supplied form PDF;
+it is not a byte-for-byte Word export. Manual visual inspection and human
+confirmation of administrative fields remain outstanding.
 
 ## 5. Website and visual redesign
 

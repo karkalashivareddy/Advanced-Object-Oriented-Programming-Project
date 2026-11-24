@@ -27,7 +27,7 @@ figures below are explicitly historical.
 | DOM / responsive evidence | Playwright browser probes | V | Landing and Analytics desktop/mobile `documentScrollWidth` equals viewport; reduced-motion SMIL `animateMotion` count is `0`; Analytics chart-table wrappers use `overflow-x: auto`. [AFTER_BROWSER_AUDIT.json](../evidence/AFTER_BROWSER_AUDIT.json) |
 | Health probes | Direct HTTP probes to the already-running Compose stack | V | Backend `/actuator/health` HTTP 200 `{"status":"UP","groups":["liveness","readiness"]}`; frontend `/healthz` HTTP 200 `ok`. |
 | Flyway status | Direct database query | V | `V1`–`V5` all `success = t`. |
-| Corrected abstract PDF | `project/docs/abstract/LifeLink_Project_Abstract.pdf`, validated by [ABSTRACT_PDF_VALIDATION.json](../evidence/ABSTRACT_PDF_VALIDATION.json) and [ABSTRACT_PDF_TEXT.txt](../evidence/ABSTRACT_PDF_TEXT.txt) | V | **4 pages**, 14 numbered sections, **187-word** abstract (limit 250), no replacement/null characters, no instructional parenthetical notes, accurate Java/Spring Boot/React/TypeScript/PostgreSQL phrases, current 119/39/18 evidence, and preserved original form/verification PDF. All automated checks passed. |
+| Corrected abstract PDF | `project/docs/abstract/LifeLink_Project_Abstract.pdf`, validated by [ABSTRACT_PDF_VALIDATION.json](../evidence/ABSTRACT_PDF_VALIDATION.json) and [ABSTRACT_PDF_TEXT.txt](../evidence/ABSTRACT_PDF_TEXT.txt) | V | **4 pages**, original 9-section submission-form layout, monochrome text, preserved line art/table drawings, **187-word** abstract (limit 250), no replacement/null characters, no instructional prompt text, accurate Java/Spring Boot/React/TypeScript/PostgreSQL phrases, current 119/39/18 evidence, and preserved original form/verification PDF. All automated checks passed. |
 
 The focused browser STOMP capture reports `notificationRestPollRequests: 0`.
 The Playwright suite separately asserts REST polling requests exist; do not
@@ -36,10 +36,12 @@ may emit a late Testcontainers shutdown scheduler connection error after the
 tests pass; successful runs still ended with `BUILD SUCCESS`.
 
 The Word COM export of the corrected DOCX hung and was terminated before
-producing a PDF, so the final PDF was rendered from the same corrected
-14-section content with PyMuPDF. It is not a byte-for-byte Word export of the
-DOCX. Manual visual inspection was unavailable; the PDF checks use text
-extraction, page count, metadata, and section enumeration. Administrative
+producing a PDF, so the final PDF was edited from the supplied verification PDF
+with PyMuPDF. Only text content and its line alignment were changed; the
+original fonts, tables, line art, page geometry, and black text colour were
+preserved. It is not a byte-for-byte Word export of the DOCX. Manual visual
+inspection was unavailable; the PDF checks use text extraction, page count,
+monochrome text spans, drawing counts, and section enumeration. Administrative
 fields reproduced from the submitted form still require human confirmation.
 
 Current backend test classes (28 Surefire reports): `audit/PostgresAuditSearchTest`;
