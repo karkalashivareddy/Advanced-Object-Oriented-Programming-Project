@@ -5,7 +5,7 @@
 **Baseline HEAD:** `5cf42191683adeebc9ca493c81b5d26254fcb3b3`  
 **Delivery status:** verified local increment; this is not a claim that the full requested product transformation is complete.
 
-**Local commit:** `47b462d` (`Add privacy-aware nearby donor discovery`). Nothing was pushed or merged.
+**Prior commits:** `47b462d` (`Add privacy-aware nearby donor discovery`), `48d8bf2` (`Document LifeLink verification and remaining risks`). Follow-up code, tests and evidence are included in the commit containing this report; publication status is recorded in the final delivery summary.
 
 ## Summary
 
@@ -21,6 +21,9 @@ This increment adds privacy-aware nearby donor discovery, synthetic demo-data la
 - Added a nearby-donor search page with explicit location input/geolocation permission, blood-group/radius controls, approximate distance bands and clinical-verification guidance. It does not fabricate donor map markers or road distance.
 - Added synthetic donor-location fixtures and a runtime mode endpoint. The authenticated UI labels seeded records `DEMO DATA — NOT LIVE BLOOD AVAILABILITY`; the mobile header has a compact visible label with the full warning as its accessible name.
 - Fixed digit spacing in dashboard labels and a mobile topbar overflow (401px document width at a 390px viewport).
+- Changed the donor directory to bounded server-side search, filtering and pagination (page size capped at 100), with query-level tenant scope and stable ordering.
+- Replaced full-table analytics reads/client truncation with database aggregates for available inventory by blood group, emergency requests by status and expiry count. Removed duplicated chart/table presentations.
+- Made the donor-to-delivery stages selectable with a live accessible explanation; balanced dashboard and analytics overview metrics at desktop/tablet/mobile widths.
 - Added research, architecture/API/domain updates, AOOP syllabus matrix, lecturer demo guide, limitations and this report.
 
 ## Java AOOP evidence
@@ -40,14 +43,14 @@ Detailed class/test mapping: [`../academic/AOOP_SYLLABUS_IMPLEMENTATION_MATRIX.m
 
 | Check | Exact result |
 | --- | --- |
-| Backend full suite | Cached Maven 3.9.11 direct invocation, from `project/backend`: `mvn -B -ntp -Dmaven.repo.local=C:\Users\karka\.m2\repository test` — **130 passed, 0 failures, 0 errors, 0 skipped**. PostgreSQL 16 Testcontainers covered V1–V6, donor-search privacy/tenant checks, and concurrency/idempotency. |
-| Frontend unit tests | `npm.cmd test` from `project/frontend` — **47 passed across 9 files**. |
+| Backend full suite | Cached Maven 3.9.11 direct invocation, from `project/backend`: `mvn -B -ntp -Dmaven.repo.local=C:\Users\karka\.m2\repository test` — **135 passed, 0 failures, 0 errors, 0 skipped**. PostgreSQL 16 Testcontainers covered V1–V6, donor-search privacy/tenant checks, pagination/aggregates, and concurrency/idempotency. |
+| Frontend unit tests | `npm.cmd test` from `project/frontend` — **48 passed across 9 files**. |
 | TypeScript and production bundle | `npm.cmd run build` — passed; 2,280 modules transformed. Analytics route chunk was 491.05 kB raw / 139.09 kB gzip. |
-| Browser E2E | `$env:VITE_API_PROXY_TARGET='http://127.0.0.1:18182'; npm.cmd run test:e2e` — **18/18 passed** across Chrome and Edge. |
-| E2E coverage | Seeded admin login/dashboard, request status refetch, mobile navigation, mobile analytics no-overflow, STOMP authenticated subscription + REST polling, landing journey, mobile landing, reduced motion and keyboard skip link. |
+| Browser E2E | `$env:VITE_API_PROXY_TARGET='http://127.0.0.1:18182'; npm.cmd run test:e2e` — **24/24 passed** across Chrome and Edge (12 specs × 2 browsers). |
+| E2E coverage | Seeded admin login/dashboard, 3-column dashboard metric layout, bounded donor search/filter queries, donations with paged donor options, request status refetch, mobile navigation, mobile analytics and desktop nearby/request no-overflow, authenticated STOMP + REST polling, landing journey, reduced motion and keyboard skip link. |
 | Diff hygiene | `git diff --check` — passed. |
 
-Browser E2E results: [`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json). Authenticated screenshot files currently available under [`../evidence/screenshots`](../evidence/screenshots), with the `final_*` prefix. The broader capture was interrupted before it wrote its summary JSON; those images are individual visual artifacts, not a completed all-routes accessibility or performance audit.
+Browser E2E results: [`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json). The completed capture inspected 61 route/viewport states; it found zero horizontal-overflow cases, zero missing expected headings, zero failed HTTP responses, and no optional route omissions. The browser console did report a 404 resource warning and repeated Chromium unload-policy messages; the audit does not suppress or claim those are application failures. Authenticated screenshots are under [`../evidence/screenshots`](../evidence/screenshots), with the `final_*` prefix. Custom DOM/accessibility and timing evidence are not formal accessibility or performance certification.
 
 ## Research and design decisions
 
@@ -57,8 +60,8 @@ Coordinates are optional and donor-controlled. Donor distance is straight-line H
 
 ## Findings and limitations remaining
 
-- The donors directory still loads broad data and filters/paginates on the client; its PII exposure and unbounded retrieval need server-side pagination and field-scope review.
-- Analytics still combines current API data in the client and may be incomplete beyond its source limits; server-side aggregates/date-range support remain work.
+- The donor directory now uses server-side bounded search and pagination; a mediated contact workflow remains unimplemented.
+- Current analytics aggregates cover available blood groups, request statuses and expiry count. Historical time-series/date-range analysis and additional component-level aggregate endpoints remain limited.
 - Donor discovery has no mediated outreach/contact workflow, production map provider, geocoding, routing or road-time estimates.
 - Nearby search's 20/minute guard is process-local. A multi-instance deployment needs a shared gateway/data-store rate limiter.
 - This increment did not fully redesign every operational route, implement cold-chain/device telemetry, request-stage search/expand workflows, or expand every seeded workflow record described in the request.

@@ -1,6 +1,10 @@
 .app-shell {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
   min-height: 100dvh;
   background: var(--color-canvas);
   transition: grid-template-columns var(--transition-base);
@@ -373,6 +377,7 @@
 .app-content {
   flex: 1;
   min-width: 0;
+  overflow-x: clip;
   padding: var(--space-6) var(--space-6) var(--space-12);
 }
 

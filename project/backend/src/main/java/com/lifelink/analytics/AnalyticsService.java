@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AnalyticsService {
     private final BloodUnitRepository unitRepository;
+    private final AnalyticsReadRepository analyticsReadRepository;
     private final EmergencyRequestRepository requestRepository;
     private final ReservationRepository reservationRepository;
     private final DispatchRepository dispatchRepository;
@@ -31,12 +32,14 @@ public class AnalyticsService {
     private final TenantAccessService tenantAccess;
 
     public AnalyticsService(BloodUnitRepository unitRepository,
+                            AnalyticsReadRepository analyticsReadRepository,
                             EmergencyRequestRepository requestRepository,
                             ReservationRepository reservationRepository,
                             DispatchRepository dispatchRepository,
                             OrganizationRepository organizationRepository,
                             TenantAccessService tenantAccess) {
         this.unitRepository = unitRepository;
+        this.analyticsReadRepository = analyticsReadRepository;
         this.requestRepository = requestRepository;
         this.reservationRepository = reservationRepository;
         this.dispatchRepository = dispatchRepository;
@@ -51,10 +54,8 @@ public class AnalyticsService {
         long available = countUnits(organizationId, BloodUnit.Status.AVAILABLE);
         long reserved = countUnits(organizationId, BloodUnit.Status.RESERVED);
         long quarantined = countUnits(organizationId, BloodUnit.Status.QUARANTINED);
-        long expiring = unitRepository.findExpiring(Instant.now().plus(7, ChronoUnit.DAYS),
-                        List.of(BloodUnit.Status.AVAILABLE, BloodUnit.Status.RESERVED)).stream()
-                .filter(unit -> organizationId == null || unit.getOrganization().getId().equals(organizationId))
-                .count();
+        long expiring = analyticsReadRepository.countExpiring(
+                organizationId, Instant.now().plus(7, ChronoUnit.DAYS));
         long pendingRequests = organizationId == null
                 ? requestRepository.countByStatus(EmergencyRequest.Status.PENDING_VERIFICATION)
                 : requestRepository.countByRequestingOrganizationIdAndStatus(
@@ -78,10 +79,11 @@ public class AnalyticsService {
         for (BloodGroup group : BloodGroup.values()) {
             result.put(group.name(), 0L);
         }
-        unitRepository.findAll().stream()
-                .filter(unit -> organizationId == null || unit.getOrganization().getId().equals(organizationId))
-                .filter(unit -> unit.getStatus() == BloodUnit.Status.AVAILABLE)
-                .forEach(unit -> result.merge(unit.getBloodGroup().name(), 1L, Long::sum));
+        for (Object[] row : analyticsReadRepository.inventoryByBloodGroup(organizationId)) {
+            BloodGroup group = (BloodGroup) row[0];
+            long count = ((Number) row[1]).longValue();
+            result.put(group.name(), count);
+        }
         return result;
     }
 
@@ -90,9 +92,11 @@ public class AnalyticsService {
         tenantAccess.requirePermission(Permission.ANALYTICS_READ);
         Long organizationId = selectedOrganizationId();
         Map<String, Long> result = new LinkedHashMap<>();
-        requestRepository.findAll().stream()
-                .filter(r -> organizationId == null || r.getRequestingOrganization().getId().equals(organizationId))
-                .forEach(r -> result.merge(r.getStatus().name(), 1L, Long::sum));
+        for (Object[] row : analyticsReadRepository.requestsByStatus(organizationId)) {
+            EmergencyRequest.Status status = (EmergencyRequest.Status) row[0];
+            long count = ((Number) row[1]).longValue();
+            result.put(status.name(), count);
+        }
         return result;
     }
 

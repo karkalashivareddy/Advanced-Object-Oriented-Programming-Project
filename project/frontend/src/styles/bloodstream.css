@@ -365,20 +365,61 @@
   text-align: center;
 }
 
-.journey-stage__node {
+.journey-stage__select {
   position: absolute;
   top: 0;
   left: 50%;
-  display: grid;
-  place-items: center;
   width: 44px;
   height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
   transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.journey-stage__select:focus-visible {
+  outline: 3px solid var(--color-vessel-600);
+  outline-offset: 4px;
+}
+
+.journey-stage__node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
   border: 2px solid var(--color-vessel-600);
   border-radius: 50%;
   background: #fff;
   color: var(--color-vessel-700);
   box-shadow: 0 0 0 7px var(--color-vessel-50);
+}
+
+.journey-stage.is-selected .journey-stage__node {
+  background: var(--color-vessel-700);
+  color: #fff;
+  box-shadow: 0 0 0 7px var(--color-vessel-100), 0 0 24px rgb(168 31 46 / 28%);
+}
+
+.journey-vessel__selection {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--color-vessel-600);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--color-vessel-50);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.journey-vessel__selection strong { color: var(--color-vessel-700); }
+
+@media (max-width: 640px) {
+  .journey-vessel__selection { align-items: flex-start; flex-direction: column; gap: var(--space-1); }
 }
 
 .journey-stage__index {

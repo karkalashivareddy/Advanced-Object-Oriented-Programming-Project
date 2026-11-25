@@ -1,0 +1,1650 @@
+{
+  "generatedAt": "2026-11-25T03:26:02.823Z",
+  "method": "Custom DOM-level Playwright checks on real rendered routes",
+  "scope": "lang, single H1, expected H1, accessible names for visible interactives, img alt, heading order, initial focus visibility, reduced-motion",
+  "limitations": "Not a full axe-core audit, not a screen-reader session, and not a formal WCAG conformance claim.",
+  "records": [
+    {
+      "label": "landing_desktop1440",
+      "route": "/",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2,
+        4,
+        4
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "login_desktop1440",
+      "route": "/login",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "register_desktop1440",
+      "route": "/register",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 2,
+      "unnamedInteractive": [
+        {
+          "index": 4,
+          "tag": "input",
+          "type": "password",
+          "cls": "input"
+        },
+        {
+          "index": 6,
+          "tag": "input",
+          "type": "password",
+          "cls": "input"
+        }
+      ],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "not_found_desktop1440",
+      "route": "/not-found-route",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "dashboard_desktop1440",
+      "route": "/app/dashboard",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "inventory_desktop1440",
+      "route": "/app/inventory",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "donors_desktop1440",
+      "route": "/app/donors",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "donors_nearby_desktop1440",
+      "route": "/app/donors/nearby",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        2,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "donations_desktop1440",
+      "route": "/app/donations",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "requests_desktop1440",
+      "route": "/app/requests",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "allocations_desktop1440",
+      "route": "/app/allocations",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        3,
+        2,
+        3,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "reservations_desktop1440",
+      "route": "/app/reservations",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "dispatch_desktop1440",
+      "route": "/app/dispatch",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "notifications_desktop1440",
+      "route": "/app/notifications",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "audit_desktop1440",
+      "route": "/app/audit",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "analytics_desktop1440",
+      "route": "/app/analytics",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        2,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "admin_users_desktop1440",
+      "route": "/app/admin/users",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "admin_organizations_desktop1440",
+      "route": "/app/admin/organizations",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "profile_desktop1440",
+      "route": "/app/profile",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "landing_tablet768",
+      "route": "/",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2,
+        4,
+        4
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "login_tablet768",
+      "route": "/login",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "register_tablet768",
+      "route": "/register",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 2,
+      "unnamedInteractive": [
+        {
+          "index": 4,
+          "tag": "input",
+          "type": "password",
+          "cls": "input"
+        },
+        {
+          "index": 6,
+          "tag": "input",
+          "type": "password",
+          "cls": "input"
+        }
+      ],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "not_found_tablet768",
+      "route": "/not-found-route",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "dashboard_tablet768",
+      "route": "/app/dashboard",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "inventory_tablet768",
+      "route": "/app/inventory",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "donors_tablet768",
+      "route": "/app/donors",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "donors_nearby_tablet768",
+      "route": "/app/donors/nearby",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        2,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "donations_tablet768",
+      "route": "/app/donations",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "requests_tablet768",
+      "route": "/app/requests",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "allocations_tablet768",
+      "route": "/app/allocations",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        3,
+        2,
+        3,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "reservations_tablet768",
+      "route": "/app/reservations",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "dispatch_tablet768",
+      "route": "/app/dispatch",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "notifications_tablet768",
+      "route": "/app/notifications",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "audit_tablet768",
+      "route": "/app/audit",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "analytics_tablet768",
+      "route": "/app/analytics",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        2,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "admin_users_tablet768",
+      "route": "/app/admin/users",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "admin_organizations_tablet768",
+      "route": "/app/admin/organizations",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "profile_tablet768",
+      "route": "/app/profile",
+      "viewport": "tablet768",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "landing_mobile390",
+      "route": "/",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2,
+        4,
+        4
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "login_mobile390",
+      "route": "/login",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "register_mobile390",
+      "route": "/register",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 2,
+      "unnamedInteractive": [
+        {
+          "index": 4,
+          "tag": "input",
+          "type": "password",
+          "cls": "input"
+        },
+        {
+          "index": 6,
+          "tag": "input",
+          "type": "password",
+          "cls": "input"
+        }
+      ],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "not_found_mobile390",
+      "route": "/not-found-route",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "dashboard_mobile390",
+      "route": "/app/dashboard",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "inventory_mobile390",
+      "route": "/app/inventory",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "donors_mobile390",
+      "route": "/app/donors",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "donors_nearby_mobile390",
+      "route": "/app/donors/nearby",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        2,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "donations_mobile390",
+      "route": "/app/donations",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "requests_mobile390",
+      "route": "/app/requests",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "allocations_mobile390",
+      "route": "/app/allocations",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        3,
+        2,
+        3,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "reservations_mobile390",
+      "route": "/app/reservations",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "dispatch_mobile390",
+      "route": "/app/dispatch",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "notifications_mobile390",
+      "route": "/app/notifications",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "audit_mobile390",
+      "route": "/app/audit",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "analytics_mobile390",
+      "route": "/app/analytics",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        2,
+        3
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "admin_users_mobile390",
+      "route": "/app/admin/users",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "admin_organizations_mobile390",
+      "route": "/app/admin/organizations",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "profile_mobile390",
+      "route": "/app/profile",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": false,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "landing_reduced_desktop1440_reduced",
+      "route": "/",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2,
+        4,
+        4
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": true,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "dashboard_reduced_desktop1440_reduced",
+      "route": "/app/dashboard",
+      "viewport": "desktop1440",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": true,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "landing_reduced_mobile390_reduced",
+      "route": "/",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2,
+        4,
+        4
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": true,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    },
+    {
+      "label": "dashboard_reduced_mobile390_reduced",
+      "route": "/app/dashboard",
+      "viewport": "mobile390",
+      "lang": "en",
+      "h1Count": 1,
+      "expectedH1": true,
+      "unnamedInteractiveCount": 0,
+      "unnamedInteractive": [],
+      "imagesWithoutAlt": [],
+      "headingOrder": [
+        1,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2
+      ],
+      "firstInteractiveFocus": {
+        "activeElement": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "boxShadow": "present"
+      },
+      "reducedMotion": true,
+      "note": "Custom DOM-level checks; not a full axe-core or screen-reader audit."
+    }
+  ]
+}

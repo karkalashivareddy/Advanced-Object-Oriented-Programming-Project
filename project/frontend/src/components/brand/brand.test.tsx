@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { HeartPulse, Route } from 'lucide-react';
 import { BloodstreamVisual } from './BloodstreamVisual';
 import { JourneyVessel } from './JourneyVessel';
@@ -53,5 +53,18 @@ describe('bloodstream brand visuals', () => {
     expect(journey.querySelectorAll('li')).toHaveLength(2);
     expect(screen.getByRole('heading', { name: 'Donate' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Deliver' })).toBeInTheDocument();
+  });
+
+  it('reveals the selected journey stage for pointer and keyboard users', () => {
+    const { container } = render(<JourneyVessel stages={[
+      { label: 'Donate', detail: 'Record donor consent.', icon: HeartPulse },
+      { label: 'Deliver', detail: 'Confirm the handover.', icon: Route },
+    ]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show Deliver stage' }));
+
+    expect(screen.getByRole('button', { name: 'Show Deliver stage' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('02 · Deliver')).toBeInTheDocument();
+    expect(container.querySelector('.journey-vessel__selection')).toHaveTextContent('Confirm the handover.');
   });
 });

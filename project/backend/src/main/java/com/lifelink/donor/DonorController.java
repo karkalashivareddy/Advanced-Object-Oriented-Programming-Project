@@ -1,6 +1,8 @@
 package com.lifelink.donor;
 
 import com.lifelink.common.ApiResponse;
+import com.lifelink.common.PageResponse;
+import com.lifelink.common.BloodGroup;
 import com.lifelink.donor.dto.DonorDtos.AppointmentActionRequest;
 import com.lifelink.donor.dto.DonorDtos.AppointmentRequest;
 import com.lifelink.donor.dto.DonorDtos.AppointmentView;
@@ -13,17 +15,23 @@ import com.lifelink.donor.dto.DonorDtos.LocationPreferenceRequest;
 import com.lifelink.donor.dto.DonorDtos.LocationPreferenceView;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/donors")
 public class DonorController {
+    private static final int MAX_PAGE_SIZE = 100;
     private final DonorService service;
 
     public DonorController(DonorService service) {
@@ -31,8 +39,17 @@ public class DonorController {
     }
 
     @GetMapping
-    public ApiResponse<List<ProfileView>> list() {
-        return ApiResponse.ok(service.list());
+    public ApiResponse<PageResponse<ProfileView>> list(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) BloodGroup bloodGroup,
+            @RequestParam(required = false) DonorProfile.Availability availability,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String state,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Pageable bounded = PageRequest.of(pageable.getPageNumber(),
+                Math.max(1, Math.min(pageable.getPageSize(), MAX_PAGE_SIZE)),
+                Sort.by(Sort.Direction.ASC, "id"));
+        return ApiResponse.ok(service.list(search, bloodGroup, availability, city, state, bounded));
     }
 
     @GetMapping("/{id}")

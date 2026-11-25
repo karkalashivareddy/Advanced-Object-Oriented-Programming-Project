@@ -112,9 +112,10 @@ export function DonationsPage() {
 
   const donorsQuery = useQuery({
     queryKey: ['donors', 'list'],
-    queryFn: () => api.get<DonorView[]>('/donors'),
+    queryFn: () => api.get<PageResponse<DonorView>>('/donors', { query: { size: 100 } }),
     enabled: auth.hasPermission(PERMISSIONS.DONOR_READ),
   });
+  const donorOptions = donorsQuery.data?.content ?? [];
 
   const organizationsQuery = useQuery({
     queryKey: ['organizations', 'options', auth.organizationId],
@@ -480,7 +481,7 @@ export function DonationsPage() {
                   }}
                 >
                   <option value="">All donors</option>
-                  {(donorsQuery.data ?? []).map((donor) => (
+                  {donorOptions.map((donor) => (
                     <option key={donor.id} value={donor.id}>
                       {donor.fullName}
                     </option>
@@ -878,7 +879,7 @@ export function DonationsPage() {
               onChange={(event) => setRecordForm({ ...recordForm, donorId: event.target.value })}
             >
               <option value="">Select a donor…</option>
-              {(donorsQuery.data ?? []).map((donor) => (
+              {donorOptions.map((donor) => (
                 <option key={donor.id} value={donor.id}>
                   {donor.fullName} · {donor.email}
                 </option>
@@ -893,7 +894,7 @@ export function DonationsPage() {
               onRetry={() => void donorsQuery.refetch()}
             />
           )}
-          {donorsQuery.isSuccess && (donorsQuery.data ?? []).length === 0 && (
+          {donorsQuery.isSuccess && donorOptions.length === 0 && (
             <EmptyState
               title="No donor profiles available"
               description="Link an existing account from the donors page first."

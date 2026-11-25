@@ -75,3 +75,16 @@ Since then:
 - Fifty authenticated route screenshots were captured at desktop/tablet/mobile sizes with the synthetic platform-admin account after the documented bank demo credentials failed against the isolated seed server. The broad screenshot process was interrupted before its JSON summary was written. Do not treat the older identical login screenshots as page evidence or call this a complete DOM/accessibility audit.
 - Remaining findings: no production map/routing provider or mediated donor outreach; donor directory retrieval and analytics client-side aggregation remain bounded/limited as described above; this pass did not perform a full UI redesign of every operational page, penetration test, Lighthouse run or formal WCAG audit.
 - `git diff --check` passed. Work is still local; no push or merge occurred.
+
+## 9. Follow-up verification — 25 November 2026
+
+The follow-up implementation and final route capture supersede the earlier open items above:
+
+- Donor directory search/filtering/pagination now runs through a tenant-scoped, stable, bounded backend page query (maximum page size 100). The Donations workspace now consumes the paged response instead of treating it as an array.
+- Analytics no longer retrieves full inventory/request data to aggregate in the browser. Database aggregates cover available units by blood group, requests by status and expiring unit count. The duplicate chart presentation was removed.
+- Dashboard and analytics KPI grids now use 3 columns on desktop, 2 on tablet and 1 on narrow mobile. Journey stages are keyboard-operable and announce their selected stage explanation.
+- The final Playwright route audit inspected **61 route/viewport states** (desktop 1440, tablet 768, mobile 390, plus reduced-motion landing/dashboard). It found no horizontal overflow, no missing expected headings, no failed HTTP responses, and no missing optional route. Browser console output still includes a 404 resource warning and repeated Chromium unload-policy warnings; this is not represented as a zero-console-error run.
+- Final tests: backend **135 passed, 0 failed/error/skipped** with PostgreSQL 16 Testcontainers; frontend **48 passed** across 9 files; Playwright **24 passed** across Chrome and Edge; TypeScript/production build passed (2,280 modules, Analytics chunk 435.62 kB raw / 125.49 kB gzip).
+- Current residual scope remains: no production map/routing/geocoder or mediated donor outreach; no cold-chain telemetry/incident workflow; no historical/date-range analytics; no full redesign of every route; no formal axe/screen-reader/WCAG certification, penetration test, load test, or Lighthouse run. Existing authorization remains server-side, and synthetic availability is visibly labelled.
+
+Evidence: [`FINAL_BROWSER_AUDIT.json`](../evidence/FINAL_BROWSER_AUDIT.json), [`ACCESSIBILITY_EVIDENCE.json`](../evidence/ACCESSIBILITY_EVIDENCE.json), [`PERFORMANCE_EVIDENCE.json`](../evidence/PERFORMANCE_EVIDENCE.json), and [`PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json). The DOM checks are custom probes, not a formal conformance report.

@@ -1,16 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, Boxes, ClipboardList, Info, PieChart as PieChartIcon, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { BarChart3, Boxes, ClipboardList, Info, ShieldCheck } from 'lucide-react';
 import { api, getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { BLOOD_GROUPS, COMPONENT_TYPES, REQUEST_STATUSES, UNIT_STATUSES } from '@/lib/constants';
 import { PERMISSIONS } from '@/lib/permissions';
 import { formatNumber, humanize } from '@/lib/utils';
-import { BarChartView, LineChartView, PieChartView, type ChartDatum } from '@/components/ui/Charts';
+import { BarChartView, type ChartDatum } from '@/components/ui/Charts';
 import { EmptyState, ErrorState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { PageResponse } from '@/types/api';
-import type { AnalyticsOverview, BloodUnitView, EmergencyRequestView, OrganizationView } from '@/types/domain';
+import type { AnalyticsOverview, OrganizationView } from '@/types/domain';
 
 const NAME_KEYS = ['name', 'label', 'bloodGroup', 'componentType', 'status', 'type', 'urgency'];
 const VALUE_KEYS = ['value', 'count', 'total', 'quantity', 'units', 'amount'];
@@ -61,17 +60,6 @@ function toChartData(source: unknown): ChartDatum[] {
       .filter((entry): entry is ChartDatum => entry.value !== null);
   }
   return [];
-}
-
-function countBy<T>(items: T[], keyFor: (item: T) => string): ChartDatum[] {
-  const counts = new Map<string, number>();
-  items.forEach((item) => {
-    const name = humanize(keyFor(item));
-    counts.set(name, (counts.get(name) ?? 0) + 1);
-  });
-  return Array.from(counts, ([name, value]) => ({ name, value })).sort(
-    (a, b) => b.value - a.value || a.name.localeCompare(b.name),
-  );
 }
 
 function usePrefersReducedMotion(): boolean {
@@ -155,10 +143,6 @@ function ChartTable({ caption, data, valueLabel }: { caption: string; data: Char
 export function AnalyticsPage() {
   const auth = useAuth();
   const reducedMotion = usePrefersReducedMotion();
-  const [bloodGroup, setBloodGroup] = useState('ALL');
-  const [componentType, setComponentType] = useState('ALL');
-  const [unitStatus, setUnitStatus] = useState('ALL');
-  const [requestStatus, setRequestStatus] = useState('ALL');
   const [platformScope, setPlatformScope] = useState<number | null>(null);
 
   const canReadAnalytics = auth.hasPermission(PERMISSIONS.ANALYTICS_READ);
@@ -167,8 +151,6 @@ export function AnalyticsPage() {
   // `undefined` would make api.ts fall back to the stored active organization.
   // Passing null explicitly removes the header for the "All organizations" scope.
   const scopeOptions = { organizationId: analyticsScope };
-  const canReadInventory = auth.hasPermission(PERMISSIONS.INVENTORY_READ);
-  const canReadRequests = auth.hasPermission(PERMISSIONS.REQUEST_READ);
 
   const organizationOptions = useQuery({
     queryKey: ['organizations', 'analytics-scope-options'],
@@ -190,55 +172,9 @@ export function AnalyticsPage() {
     queryFn: () => api.get<unknown>('/analytics/requests', scopeOptions),
     enabled: canReadAnalytics,
   });
-  const inventoryUnits = useQuery({
-    queryKey: ['analytics', 'raw-inventory', analyticsScope],
-    queryFn: () => api.get<PageResponse<BloodUnitView>>('/inventory', {
-      ...scopeOptions,
-      query: { page: 0, size: 200 },
-    }),
-    enabled: canReadAnalytics && canReadInventory,
-  });
-  const requestRecords = useQuery({
-    queryKey: ['analytics', 'raw-requests', analyticsScope],
-    queryFn: () => api.get<EmergencyRequestView[]>('/emergency-requests', scopeOptions),
-    enabled: canReadAnalytics && canReadRequests,
-  });
-
   const metrics = overviewMetrics(overview.data, 6);
-  const groupedInventory = toChartData(inventoryMetrics.data);
-  const groupedRequests = toChartData(requestMetrics.data);
-
-  const rawUnits = inventoryUnits.data?.content ?? [];
-  const filteredUnits = rawUnits.filter(
-    (unit) =>
-      (bloodGroup === 'ALL' || unit.bloodGroup === bloodGroup) &&
-      (componentType === 'ALL' || unit.componentType === componentType) &&
-      (unitStatus === 'ALL' || unit.status === unitStatus),
-  );
-  const filteredRequests = (requestRecords.data ?? []).filter(
-    (request) => requestStatus === 'ALL' || request.status.toUpperCase() === requestStatus,
-  );
-
-  const inventoryChartData = useMemo(() => {
-    if (canReadInventory && inventoryUnits.isSuccess) return countBy(filteredUnits, (unit) => unit.bloodGroup);
-    return groupedInventory;
-  }, [canReadInventory, filteredUnits, groupedInventory, inventoryUnits.isSuccess]);
-
-  const requestChartData = useMemo(() => {
-    if (canReadRequests && requestRecords.isSuccess) return countBy(filteredRequests, (request) => request.status);
-    return groupedRequests;
-  }, [canReadRequests, filteredRequests, groupedRequests, requestRecords.isSuccess]);
-
-  const inventorySource = canReadInventory && inventoryUnits.isSuccess ? 'Client-side filters over returned inventory units' : 'API grouped inventory totals';
-  const requestSource = canReadRequests && requestRecords.isSuccess ? 'Client-side filters over returned request records' : 'API grouped request totals';
-  const hasFilters = bloodGroup !== 'ALL' || componentType !== 'ALL' || unitStatus !== 'ALL' || requestStatus !== 'ALL';
-
-  const resetFilters = () => {
-    setBloodGroup('ALL');
-    setComponentType('ALL');
-    setUnitStatus('ALL');
-    setRequestStatus('ALL');
-  };
+  const inventoryChartData = toChartData(inventoryMetrics.data);
+  const requestChartData = toChartData(requestMetrics.data);
 
   return (
     <div className="app-page page-enter">
@@ -293,7 +229,7 @@ export function AnalyticsPage() {
           </div>
         </div>
         {canReadAnalytics && overview.isPending && (
-          <div className="metric-grid">
+          <div className="metric-grid analytics-overview-metrics">
             {Array.from({ length: 4 }).map((_, index) => (
               <article className="metric-card" key={index}>
                 <Skeleton width="60%" />
@@ -310,7 +246,7 @@ export function AnalyticsPage() {
         )}
         {metrics.length > 0 && (
           <>
-            <div className="metric-grid">
+            <div className="metric-grid analytics-overview-metrics">
               {metrics.map((metric) => (
                 <AnimatedMetric key={metric.label} metric={metric} reduced={reducedMotion} />
               ))}
@@ -320,101 +256,12 @@ export function AnalyticsPage() {
         )}
       </section>
 
-      <section className="surface surface-raised stagger-2" aria-labelledby="analytics-filters-title">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow"><SlidersHorizontal size={14} aria-hidden="true" /> Client-side filters</span>
-            <h2 className="page-title" id="analytics-filters-title">Refine the returned records</h2>
-            <p className="page-subtitle">
-              These filters change the charts and tables below in your browser. They do not recalculate server analytics totals.
-            </p>
-          </div>
-          <div className="section-actions">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={resetFilters} disabled={!hasFilters}>
-              Reset filters
-            </button>
-          </div>
-        </div>
-        <div className="filter-grid">
-          <div className="filter-field">
-            <label htmlFor="analytics-blood-group">Blood group</label>
-            <select
-              id="analytics-blood-group"
-              className="input"
-              value={bloodGroup}
-              onChange={(event) => setBloodGroup(event.target.value)}
-              disabled={!inventoryUnits.isSuccess}
-            >
-              <option value="ALL">All returned groups</option>
-              {BLOOD_GROUPS.map((group) => (
-                <option key={group} value={group}>{humanize(group)}</option>
-              ))}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label htmlFor="analytics-component">Component</label>
-            <select
-              id="analytics-component"
-              className="input"
-              value={componentType}
-              onChange={(event) => setComponentType(event.target.value)}
-              disabled={!inventoryUnits.isSuccess}
-            >
-              <option value="ALL">All components</option>
-              {COMPONENT_TYPES.map((component) => (
-                <option key={component} value={component}>{humanize(component)}</option>
-              ))}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label htmlFor="analytics-unit-status">Unit status</label>
-            <select
-              id="analytics-unit-status"
-              className="input"
-              value={unitStatus}
-              onChange={(event) => setUnitStatus(event.target.value)}
-              disabled={!inventoryUnits.isSuccess}
-            >
-              <option value="ALL">All unit statuses</option>
-              {UNIT_STATUSES.map((status) => (
-                <option key={status} value={status}>{humanize(status)}</option>
-              ))}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label htmlFor="analytics-request-status">Request status</label>
-            <select
-              id="analytics-request-status"
-              className="input"
-              value={requestStatus}
-              onChange={(event) => setRequestStatus(event.target.value)}
-              disabled={!requestRecords.isSuccess}
-            >
-              <option value="ALL">All request statuses</option>
-              {REQUEST_STATUSES.map((status) => (
-                <option key={status} value={status}>{humanize(status)}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <p className="freshness">
-          {inventoryUnits.isSuccess
-            ? `${filteredUnits.length} of ${rawUnits.length} returned inventory units in view.`
-            : 'Raw inventory filtering requires INVENTORY_READ and a successful inventory response.'}
-          {' '}
-          {requestRecords.isSuccess
-            ? `${filteredRequests.length} of ${requestRecords.data?.length ?? 0} returned requests in view.`
-            : 'Request filtering requires REQUEST_READ and a successful request response.'}
-        </p>
-      </section>
-
-      <div className="split-layout">
-        <section className="chart-card surface" aria-labelledby="analytics-inventory-title">
+      <section className="chart-card surface" aria-labelledby="analytics-inventory-title">
           <div className="section-heading">
             <div>
               <span className="eyebrow"><Boxes size={14} aria-hidden="true" /> Inventory</span>
-              <h2 className="page-title" id="analytics-inventory-title">Inventory composition</h2>
-              <p className="page-subtitle">{inventorySource}</p>
+              <h2 className="page-title" id="analytics-inventory-title">Available units by blood group</h2>
+              <p className="page-subtitle">Complete organization-scoped totals are aggregated by the backend.</p>
             </div>
           </div>
           {canReadAnalytics && inventoryMetrics.isPending && <Skeleton height={180} />}
@@ -430,45 +277,22 @@ export function AnalyticsPage() {
               </div>
             </div>
           )}
-          {canReadAnalytics && canReadInventory && inventoryUnits.isPending && <Skeleton height={180} />}
-          {canReadAnalytics && canReadInventory && inventoryUnits.isError && (
-            <ErrorState error={inventoryUnits.error} onRetry={() => void inventoryUnits.refetch()} />
-          )}
           {inventoryChartData.length > 0 ? (
             <>
-              <BarChartView data={inventoryChartData} ariaLabel="Inventory composition chart" />
-              <ChartTable caption="Inventory composition values" data={inventoryChartData} valueLabel="Units" />
+              <BarChartView data={inventoryChartData} ariaLabel="Available units by blood group chart" />
+              <ChartTable caption="Available units by blood group" data={inventoryChartData} valueLabel="Units" />
             </>
           ) : (
-            <EmptyState title="No inventory values" description="No grouped or returned inventory records are available for this selection." />
+            <EmptyState title="No available inventory" description="The backend returned no available units for this authorized scope." />
           )}
-        </section>
-
-        <section className="chart-card surface" aria-labelledby="analytics-distribution-title">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow"><PieChartIcon size={14} aria-hidden="true" /> Share</span>
-              <h2 className="page-title" id="analytics-distribution-title">Distribution</h2>
-              <p className="page-subtitle">Share of the same grouped inventory values shown beside the chart.</p>
-            </div>
-          </div>
-          {inventoryChartData.length > 0 ? (
-            <>
-              <PieChartView data={inventoryChartData.slice(0, 6)} ariaLabel="Inventory group distribution chart" />
-              <ChartTable caption="Distribution values" data={inventoryChartData.slice(0, 6)} valueLabel="Units" />
-            </>
-          ) : (
-            <EmptyState title="No distribution to show" description="Grouped inventory data is required for this chart." />
-          )}
-        </section>
-      </div>
+      </section>
 
       <section className="chart-card surface stagger-3" aria-labelledby="analytics-requests-title">
         <div className="section-heading">
           <div>
             <span className="eyebrow"><ClipboardList size={14} aria-hidden="true" /> Requests</span>
-            <h2 className="page-title" id="analytics-requests-title">Request fulfilment metrics</h2>
-            <p className="page-subtitle">{requestSource}</p>
+            <h2 className="page-title" id="analytics-requests-title">Emergency requests by status</h2>
+            <p className="page-subtitle">Complete organization-scoped status counts from the backend.</p>
           </div>
         </div>
         {canReadAnalytics && requestMetrics.isPending && <Skeleton height={180} />}
@@ -484,22 +308,18 @@ export function AnalyticsPage() {
             </div>
           </div>
         )}
-        {canReadAnalytics && canReadRequests && requestRecords.isPending && <Skeleton height={180} />}
-        {canReadAnalytics && canReadRequests && requestRecords.isError && (
-          <ErrorState error={requestRecords.error} onRetry={() => void requestRecords.refetch()} />
-        )}
         {requestChartData.length > 0 ? (
           <>
-            <LineChartView data={requestChartData} ariaLabel="Request fulfilment chart" />
-            <ChartTable caption="Request fulfilment values" data={requestChartData} valueLabel="Requests" />
+            <BarChartView data={requestChartData} ariaLabel="Emergency requests by status chart" />
+            <ChartTable caption="Emergency request counts by status" data={requestChartData} valueLabel="Requests" />
           </>
         ) : (
-          <EmptyState title="No request metrics" description="No request fulfilment values are available for this selection." />
+          <EmptyState title="No emergency requests" description="The backend returned no requests for this authorized scope." />
         )}
       </section>
 
       <p className="freshness">
-        <ShieldCheck size={13} aria-hidden="true" /> Charts are visual aids; the adjacent tables carry the same exact values for screen readers and keyboard users.
+        <ShieldCheck size={13} aria-hidden="true" /> Each chart has one companion data table for exact values and keyboard access; separate views avoid repeating the same series.
       </p>
     </div>
   );

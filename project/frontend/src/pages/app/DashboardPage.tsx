@@ -485,7 +485,7 @@ export function DashboardPage() {
                 </Link>
               </div>
               {overview.isPending && (
-                <div className="metric-grid">
+                <div className="metric-grid operational-metrics">
                   {Array.from({ length: 4 }).map((_, index) => (
                     <article className="metric-card" key={index}>
                       <Skeleton width="60%" />
@@ -501,7 +501,7 @@ export function DashboardPage() {
                 <EmptyState title="No summary metrics" description="The overview endpoint returned no numeric values for your scope." />
               )}
               {metrics.length > 0 && (
-                <div className="metric-grid">
+                <div className="metric-grid operational-metrics">
                   {metrics.map((metric) => (
                     <article className="metric-card" key={metric.label}>
                       <span className="metric-label">{metric.label}</span>

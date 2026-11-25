@@ -1,26 +1,28 @@
 # LifeLink Verified Test Results
 
-## Final verification — 24 November 2026
+## Final verification — 25 November 2026
 
-Branch `feature/lifelink-bloodstream-experience`; starting HEAD was
-`5cf42191683adeebc9ca493c81b5d26254fcb3b3`. Changes remain local; nothing was
-pushed or merged. Existing unrelated edits, including `LAB-WORK/`, are not part
-of this verification scope.
+Branch `feature/lifelink-bloodstream-experience`; test baseline was
+`5cf42191683adeebc9ca493c81b5d26254fcb3b3`. These results record the local
+verification run; publication status is recorded in the final implementation
+report. Existing unrelated edits, including `LAB-WORK/`, are outside test scope.
 
 | Area | Command / evidence | Result |
 | --- | --- | --- |
-| Backend | Cached Maven 3.9.11 direct invocation: `mvn -B -ntp -Dmaven.repo.local=C:\\Users\\karka\\.m2\\repository test` from `project/backend` | **130 tests passed; 0 failures, 0 errors, 0 skipped.** Includes PostgreSQL 16 Testcontainers migration, nearby-search privacy and tenant tests, concurrency and idempotency tests. |
-| Frontend unit tests | `npm.cmd test` from `project/frontend` | **47 tests across 9 files passed.** |
-| Frontend production build/typecheck | `npm.cmd run build` | Passed; Vite transformed 2,280 modules. Analytics split chunk: 491.05 kB raw / 139.09 kB gzip. |
-| Browser E2E | `$env:VITE_API_PROXY_TARGET='http://127.0.0.1:18182'; npm.cmd run test:e2e` | **18 passed** across Chrome and Edge, including mobile navigation, analytics overflow, seeded dashboard/filter, authenticated STOMP, landing flow, keyboard skip link and reduced motion. |
+| Backend | Cached Maven 3.9.11 direct invocation: `mvn -B -ntp -Dmaven.repo.local=C:\\Users\\karka\\.m2\\repository test` from `project/backend` | **135 tests passed; 0 failures, 0 errors, 0 skipped.** Includes PostgreSQL 16 Testcontainers migration, donor paging, analytics aggregates, nearby-search privacy and tenant tests, concurrency and idempotency tests. |
+| Frontend unit tests | `npm.cmd test` from `project/frontend` | **48 tests across 9 files passed.** |
+| Frontend production build/typecheck | `npm.cmd run build` | Passed; Vite transformed 2,280 modules. Analytics split chunk: 435.62 kB raw / 125.49 kB gzip. |
+| Browser E2E | `$env:VITE_API_PROXY_TARGET='http://127.0.0.1:18182'; npm.cmd run test:e2e` | **24 passed** across Chrome and Edge, including bounded donor search, donations with paged donor options, balanced metrics, desktop/mobile overflow, authenticated STOMP, landing flow, keyboard skip link and reduced motion. |
 | Migration and nearby API | `PostgresAuditSearchTest` in the full Maven run | PostgreSQL 16 applied Flyway V1–V6; seeded nearby donor API returned a privacy-limited result; cross-organization request was denied. |
 | Git hygiene | `git diff --check` | Passed; no whitespace errors. A line-ending warning remains for the root README. |
 
 The browser result JSON is [PLAYWRIGHT_RESULTS.json](../evidence/PLAYWRIGHT_RESULTS.json).
-Authenticated route screenshots were captured at desktop, tablet and mobile
-sizes under `../evidence/screenshots/final_*.png`. The broader capture process
-was interrupted before its summary JSON could be written, so no complete
-route-level DOM, accessibility or timing audit is claimed.
+The custom route capture inspected 61 desktop, tablet, mobile and reduced-motion
+states; its summary and samples are in [FINAL_BROWSER_AUDIT.json](../evidence/FINAL_BROWSER_AUDIT.json),
+[ACCESSIBILITY_EVIDENCE.json](../evidence/ACCESSIBILITY_EVIDENCE.json), and
+[PERFORMANCE_EVIDENCE.json](../evidence/PERFORMANCE_EVIDENCE.json). The final
+capture recorded no overflow, missing expected headings or failed HTTP responses.
+It did record a 404 resource warning and Chromium unload-policy console notices.
 
 The custom DOM checks are not a full axe-core or screen-reader audit; browser
 timing samples are not Lighthouse or field Web Vitals. No penetration test,

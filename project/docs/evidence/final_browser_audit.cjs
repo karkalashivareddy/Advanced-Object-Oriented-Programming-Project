@@ -29,7 +29,7 @@ const VIEWPORTS = [
 ];
 
 const PUBLIC_ROUTES = [
-  { path: '/', name: 'landing', expectH1: /LifeLink|Blood|donor|network/i },
+  { path: '/', name: 'landing', expectH1: /Every drop has a journey/i },
   { path: '/login', name: 'login', expectH1: /Welcome back/i },
   { path: '/register', name: 'register', expectH1: /Create|Register|Join/i },
   { path: '/not-found-route', name: 'not_found', expectH1: /404|not found|page/i },
@@ -237,7 +237,7 @@ async function runViewport(browser, vp, reducedMotion) {
   });
 
   const routes = reducedMotion
-    ? [{ path: '/', name: 'landing_reduced', expectH1: /LifeLink|Blood|donor|network/i }, { path: '/app/dashboard', name: 'dashboard_reduced' }]
+    ? [{ path: '/', name: 'landing_reduced', expectH1: /Every drop has a journey/i }, { path: '/app/dashboard', name: 'dashboard_reduced' }]
     : [...PUBLIC_ROUTES, ...APP_ROUTES];
 
   let authenticated = false;

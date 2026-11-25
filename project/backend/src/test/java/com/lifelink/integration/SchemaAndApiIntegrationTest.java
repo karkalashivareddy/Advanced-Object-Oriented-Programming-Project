@@ -380,9 +380,11 @@ class SchemaAndApiIntegrationTest {
     @Order(10)
     void donorProfileIsNotExposedToAnUnrelatedOrganization() {
         String admin = adminToken();
-        JsonNode donors = get("/api/v1/donors", authHeaders(admin));
+        JsonNode donorPage = get("/api/v1/donors?page=0&size=100", authHeaders(admin));
+        JsonNode donors = donorPage.get("data").get("content");
+        assertEquals(17, donorPage.get("data").get("totalElements").asLong());
         long donorId = -1;
-        for (JsonNode donor : donors.get("data")) {
+        for (JsonNode donor : donors) {
             if ("donor@lifelink.local".equals(donor.get("email").asText())) {
                 donorId = donor.get("id").asLong();
             }
@@ -395,6 +397,8 @@ class SchemaAndApiIntegrationTest {
                 new HttpEntity<>(authHeaders(hospitalToken)), JsonNode.class).getStatusCode().value());
         JsonNode hospitalDonations = get("/api/v1/donations?donorId=" + donorId, authHeaders(hospitalToken));
         assertEquals(0, hospitalDonations.get("data").size());
+        JsonNode hospitalDonorPage = get("/api/v1/donors?page=0&size=100", authHeaders(hospitalToken));
+        assertEquals(0, hospitalDonorPage.get("data").get("content").size());
         for (String path : List.of("/api/v1/donors/" + donorId, "/api/v1/donors/" + donorId + "/consents",
                 "/api/v1/donors/" + donorId + "/appointments")) {
             ResponseEntity<JsonNode> response = rest.exchange(path, HttpMethod.GET,

@@ -6,6 +6,7 @@ import com.lifelink.common.exception.ResourceNotFoundException;
 import com.lifelink.common.exception.TenantAccessDeniedException;
 import com.lifelink.common.GeoPoint;
 import com.lifelink.common.exception.ValidationException;
+import com.lifelink.common.PageResponse;
 import com.lifelink.donor.dto.DonorDtos.AppointmentActionRequest;
 import com.lifelink.donor.dto.DonorDtos.AppointmentRequest;
 import com.lifelink.donor.dto.DonorDtos.AppointmentView;
@@ -25,11 +26,11 @@ import com.lifelink.identity.UserRepository;
 import com.lifelink.organization.Organization;
 import com.lifelink.organization.OrganizationRepository;
 import java.time.Instant;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,21 +63,33 @@ public class DonorService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProfileView> list() {
+    public PageResponse<ProfileView> list(String search, com.lifelink.common.BloodGroup bloodGroup,
+                                          DonorProfile.Availability availability,
+                                          String city, String state, Pageable pageable) {
         AuthenticatedUser user = tenantAccess.currentUser();
         tenantAccess.requirePermission(Permission.DONOR_READ);
+        String normalizedSearch = normalizeFilter(search);
+        String normalizedCity = normalizeFilter(city);
+        String normalizedState = normalizeFilter(state);
+        Page<DonorProfile> page;
         if (user.isPlatformAdmin()) {
-            return donorRepository.findAll().stream().map(ProfileView::of).toList();
+            page = donorRepository.searchAll(bloodGroup, availability, normalizedCity, normalizedState,
+                    normalizedSearch, pageable);
+        } else {
+            Set<Long> visibleOrganizations = user.organizationIds().stream()
+                    .filter(id -> user.hasPermissionForOrganization(Permission.DONOR_READ, id))
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+            page = visibleOrganizations.isEmpty()
+                    ? donorRepository.searchOwned(user.userId(), bloodGroup, availability, normalizedCity, normalizedState,
+                            normalizedSearch, pageable)
+                    : donorRepository.findVisibleToUser(user.userId(), visibleOrganizations, bloodGroup, availability,
+                            normalizedCity, normalizedState, normalizedSearch, pageable);
         }
-        Set<Long> donorIds = donationRepository.findAll().stream()
-                .filter(d -> user.belongsTo(d.getOrganization().getId())
-                        && user.hasPermissionForOrganization(Permission.DONOR_READ, d.getOrganization().getId()))
-                .map(d -> d.getDonor().getId())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        donorIds.addAll(donorRepository.findAll().stream()
-                .filter(d -> d.getUser().getId().equals(user.userId()))
-                .map(DonorProfile::getId).toList());
-        return donorRepository.findAllById(donorIds).stream().map(ProfileView::of).toList();
+        return PageResponse.from(page, ProfileView::of);
+    }
+
+    private String normalizeFilter(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     @Transactional(readOnly = true)

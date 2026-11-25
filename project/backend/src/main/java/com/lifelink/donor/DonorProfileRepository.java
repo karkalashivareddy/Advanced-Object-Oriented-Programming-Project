@@ -3,11 +3,79 @@ package com.lifelink.donor;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface DonorProfileRepository extends JpaRepository<DonorProfile, Long> {
     Optional<DonorProfile> findByUserId(Long userId);
+
+    @Query(value = """
+            select dp from DonorProfile dp
+            where (dp.user.id = :userId or exists (
+                    select d.id from Donation d where d.donor = dp and d.organization.id in :organizationIds
+                ))
+              and (:bloodGroup is null or dp.bloodGroup = :bloodGroup)
+              and (:availability is null or dp.availability = :availability)
+              and (:city is null or lower(dp.city) like lower(concat('%', :city, '%')))
+              and (:state is null or lower(dp.state) like lower(concat('%', :state, '%')))
+              and (:search is null or lower(dp.publicId) like lower(concat('%', :search, '%'))
+                   or lower(dp.user.fullName) like lower(concat('%', :search, '%')))
+            """,
+            countQuery = """
+            select count(dp) from DonorProfile dp
+            where (dp.user.id = :userId or exists (
+                    select d.id from Donation d where d.donor = dp and d.organization.id in :organizationIds
+                ))
+              and (:bloodGroup is null or dp.bloodGroup = :bloodGroup)
+              and (:availability is null or dp.availability = :availability)
+              and (:city is null or lower(dp.city) like lower(concat('%', :city, '%')))
+              and (:state is null or lower(dp.state) like lower(concat('%', :state, '%')))
+              and (:search is null or lower(dp.publicId) like lower(concat('%', :search, '%'))
+                   or lower(dp.user.fullName) like lower(concat('%', :search, '%')))
+            """)
+    Page<DonorProfile> findVisibleToUser(@Param("userId") Long userId,
+                                         @Param("organizationIds") java.util.Collection<Long> organizationIds,
+                                         @Param("bloodGroup") com.lifelink.common.BloodGroup bloodGroup,
+                                         @Param("availability") DonorProfile.Availability availability,
+                                         @Param("city") String city,
+                                         @Param("state") String state,
+                                         @Param("search") String search,
+                                         Pageable pageable);
+
+    @Query("""
+            select dp from DonorProfile dp
+            where (:bloodGroup is null or dp.bloodGroup = :bloodGroup)
+              and (:availability is null or dp.availability = :availability)
+              and (:city is null or lower(dp.city) like lower(concat('%', :city, '%')))
+              and (:state is null or lower(dp.state) like lower(concat('%', :state, '%')))
+              and (:search is null or lower(dp.publicId) like lower(concat('%', :search, '%'))
+                   or lower(dp.user.fullName) like lower(concat('%', :search, '%')))
+            """)
+    Page<DonorProfile> searchAll(@Param("bloodGroup") com.lifelink.common.BloodGroup bloodGroup,
+                                 @Param("availability") DonorProfile.Availability availability,
+                                 @Param("city") String city,
+                                 @Param("state") String state,
+                                 @Param("search") String search,
+                                 Pageable pageable);
+
+    @Query("""
+            select dp from DonorProfile dp
+            where dp.user.id = :userId
+              and (:bloodGroup is null or dp.bloodGroup = :bloodGroup)
+              and (:availability is null or dp.availability = :availability)
+              and (:city is null or lower(dp.city) like lower(concat('%', :city, '%')))
+              and (:state is null or lower(dp.state) like lower(concat('%', :state, '%')))
+              and (:search is null or lower(dp.publicId) like lower(concat('%', :search, '%'))
+                   or lower(dp.user.fullName) like lower(concat('%', :search, '%')))
+            """)
+    Page<DonorProfile> searchOwned(@Param("userId") Long userId,
+                                   @Param("bloodGroup") com.lifelink.common.BloodGroup bloodGroup,
+                                   @Param("availability") DonorProfile.Availability availability,
+                                   @Param("city") String city,
+                                   @Param("state") String state,
+                                   @Param("search") String search,
+                                   Pageable pageable);
 
     /**
      * Returns only opted-in available donors within the bounding box and exact radius.

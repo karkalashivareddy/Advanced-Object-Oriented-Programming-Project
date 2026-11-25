@@ -161,9 +161,9 @@ The values below distinguish the previously verified baseline from the current l
 
 | Gate | Recorded result |
 | :--- | :--- |
-| Backend current suite | **130 tests, 0 failures, 0 errors, 0 skipped**; includes PostgreSQL 16 Testcontainers, Flyway V1–V6, nearby-search privacy/tenant checks, and idempotency/concurrency coverage. |
-| Frontend current increment | **47 tests in 9 files passed**; TypeScript build and Vite production build passed. |
-| Playwright E2E | **18 tests passed** on Chrome and Edge; mobile analytics overflow, mobile navigation, landing story, keyboard skip link and reduced-motion checks included. |
+| Backend current suite | **135 tests, 0 failures, 0 errors, 0 skipped**; includes PostgreSQL 16 Testcontainers, Flyway V1–V6, nearby-search privacy/tenant checks, donor paging, analytics aggregates, and idempotency/concurrency coverage. |
+| Frontend current increment | **48 tests in 9 files passed**; TypeScript build and Vite production build passed. |
+| Playwright E2E | **24 executions passed** across Chrome and Edge; includes bounded donor search, donations with paged donor options, dashboard metric layout, desktop/mobile overflow checks, STOMP, landing story, keyboard skip link and reduced motion. |
 | Browser STOMP | Authenticated `CONNECT` with Bearer token, own-queue `SUBSCRIBE`, and `CONNECTED` frame observed; REST polling remains active |
 | Local verification stack | Isolated H2 dev server applied Flyway `V1`–`V6` and loaded development demo seed; PostgreSQL 16 migration and donor-search API verified through Testcontainers. |
 | Corrected abstract | 4-page PDF in the original black-and-white submission form layout, with all 9 form sections, a 187-word abstract, and no replacement characters; original submission files preserved |

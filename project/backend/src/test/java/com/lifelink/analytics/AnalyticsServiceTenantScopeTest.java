@@ -35,6 +35,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 /** Regression tests for organization selection in the analytics API. */
 class AnalyticsServiceTenantScopeTest {
     private final BloodUnitRepository units = mock(BloodUnitRepository.class);
+    private final AnalyticsReadRepository analyticsReadRepository = mock(AnalyticsReadRepository.class);
     private final EmergencyRequestRepository requests = mock(EmergencyRequestRepository.class);
     private final ReservationRepository reservations = mock(ReservationRepository.class);
     private final DispatchRepository dispatches = mock(DispatchRepository.class);
@@ -44,10 +45,11 @@ class AnalyticsServiceTenantScopeTest {
 
     @BeforeEach
     void setUp() {
-        service = new AnalyticsService(units, requests, reservations, dispatches, organizations, tenantAccess);
-        when(units.findExpiring(any(), any())).thenReturn(List.of());
-        when(units.findAll()).thenReturn(List.of());
-        when(requests.findAll()).thenReturn(List.of());
+        service = new AnalyticsService(units, analyticsReadRepository, requests,
+                reservations, dispatches, organizations, tenantAccess);
+        when(analyticsReadRepository.countExpiring(any(), any())).thenReturn(0L);
+        when(analyticsReadRepository.inventoryByBloodGroup(any())).thenReturn(List.of());
+        when(analyticsReadRepository.requestsByStatus(any())).thenReturn(List.of());
     }
 
     @AfterEach
@@ -64,6 +66,7 @@ class AnalyticsServiceTenantScopeTest {
         service.overview();
 
         verify(units).countByOrganizationIdAndStatus(20L, BloodUnit.Status.AVAILABLE);
+        verify(analyticsReadRepository).countExpiring(org.mockito.ArgumentMatchers.eq(20L), any());
         verify(requests).countByRequestingOrganizationIdAndStatus(
                 20L, EmergencyRequest.Status.PENDING_VERIFICATION);
         verify(reservations).countByOrganizationIdAndStatus(20L, Reservation.Status.ACTIVE);
@@ -103,8 +106,10 @@ class AnalyticsServiceTenantScopeTest {
         service.inventoryByGroup();
         service.requestsByStatus();
 
-        verify(units).findAll();
-        verify(requests).findAll();
+        verify(analyticsReadRepository).inventoryByBloodGroup(20L);
+        verify(analyticsReadRepository).requestsByStatus(20L);
+        verify(units, never()).findAll();
+        verify(requests, never()).findAll();
     }
 
     @Test

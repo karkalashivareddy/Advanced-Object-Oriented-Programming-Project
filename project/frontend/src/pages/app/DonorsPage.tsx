@@ -113,8 +113,17 @@ export function DonorsPage() {
     auth.user?.memberships[0];
 
   const donorsQuery = useQuery({
-    queryKey: ['donors', 'list'],
-    queryFn: () => api.get<DonorView[]>('/donors'),
+    queryKey: ['donors', 'list', page, PAGE_SIZE, debouncedSearch, bloodGroup, availability, city],
+    queryFn: () => api.get<PageResponse<DonorView>>('/donors', {
+      query: {
+        page,
+        size: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+        bloodGroup: bloodGroup || undefined,
+        availability: availability || undefined,
+        city: city.trim() || undefined,
+      },
+    }),
   });
 
   const usersQuery = useQuery({
@@ -320,20 +329,9 @@ export function DonorsPage() {
     setPage(0);
   };
 
-  const allDonors = donorsQuery.data ?? [];
-  const term = debouncedSearch.trim().toLowerCase();
-  const filteredDonors = allDonors.filter((donor) => {
-    const matchesTerm =
-      !term ||
-      `${donor.fullName} ${donor.email} ${donor.publicId} ${donor.city ?? ''}`.toLowerCase().includes(term);
-    const matchesBloodGroup = !bloodGroup || donor.bloodGroup === bloodGroup;
-    const matchesAvailability = !availability || (donor.availability ?? 'AVAILABLE') === availability;
-    const matchesCity = !city || (donor.city ?? '').toLowerCase().includes(city.trim().toLowerCase());
-    return matchesTerm && matchesBloodGroup && matchesAvailability && matchesCity;
-  });
-  const totalPages = Math.max(1, Math.ceil(filteredDonors.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages - 1);
-  const donors = filteredDonors.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const donors = donorsQuery.data?.content ?? [];
+  const totalElements = donorsQuery.data?.totalElements ?? 0;
+  const safePage = donorsQuery.data?.page ?? page;
 
   const accountResults = usersQuery.data?.content ?? [];
   const selectedUserId = Number(form.userId);
@@ -419,20 +417,20 @@ export function DonorsPage() {
       <section className="metric-grid page-enter stagger-1" aria-label="Donor summary">
         <article className="metric-card surface">
           <span className="metric-label">Profiles returned</span>
-          <strong className="metric-value">{allDonors.length}</strong>
-          <span className="metric-delta">From the donor API</span>
+          <strong className="metric-value">{donors.length}</strong>
+          <span className="metric-delta">On this page</span>
         </article>
         <article className="metric-card surface">
           <span className="metric-label">Available donors</span>
           <strong className="metric-value">
-            {allDonors.filter((donor) => (donor.availability ?? 'AVAILABLE') === 'AVAILABLE').length}
+            {donors.filter((donor) => (donor.availability ?? 'AVAILABLE') === 'AVAILABLE').length}
           </strong>
-          <span className="metric-delta">Ready to donate</span>
+          <span className="metric-delta">Available on this page</span>
         </article>
         <article className="metric-card surface">
           <span className="metric-label">Matching filters</span>
-          <strong className="metric-value">{filteredDonors.length}</strong>
-          <span className="metric-delta">Filtered locally</span>
+          <strong className="metric-value">{totalElements}</strong>
+          <span className="metric-delta">Matching records across pages</span>
         </article>
       </section>
 
@@ -446,7 +444,7 @@ export function DonorsPage() {
         loading={donorsQuery.isPending}
         page={safePage}
         size={PAGE_SIZE}
-        totalElements={filteredDonors.length}
+        totalElements={totalElements}
         onPageChange={setPage}
         onRowClick={(donor) => openDetail(donor.id)}
         emptyTitle="No donors found"
@@ -494,7 +492,7 @@ export function DonorsPage() {
                     className="input toolbar-search"
                     type="search"
                     aria-describedby="donor-filter-note"
-                    placeholder="Name, email or public ID…"
+                  placeholder="Name or public ID…"
                     value={search}
                     onChange={(event) => {
                       setSearch(event.target.value);
@@ -503,7 +501,7 @@ export function DonorsPage() {
                   />
                 </div>
                 <span className="text-xs text-subtle" id="donor-filter-note">
-                  The donor API has no query or paging parameters, so filters and paging apply to its result set.
+                  Search, filters and pagination run on the server within your authorized donor scope.
                 </span>
               </div>
               <div className="filter-field">

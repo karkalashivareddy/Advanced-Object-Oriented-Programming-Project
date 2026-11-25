@@ -1,0 +1,2215 @@
+{
+  "generatedAt": "2026-11-25T03:26:02.823Z",
+  "method": "Browser PerformanceTiming and resource timing samples from real routes",
+  "scope": "DOMContentLoaded, load, responseEnd, API request counts and slowest API requests, production asset sizes",
+  "limitations": "Not Lighthouse, not field Web Vitals, no throttling, samples vary by machine and network.",
+  "bundles": {
+    "available": true,
+    "files": [
+      {
+        "file": "AllocationsPage-CLwmk68i.js",
+        "bytes": 18059
+      },
+      {
+        "file": "AnalyticsPage-KaXLx9WU.js",
+        "bytes": 435622
+      },
+      {
+        "file": "AuditPage-Crk958e2.js",
+        "bytes": 12151
+      },
+      {
+        "file": "calendar-clock-DBx11rJ7.js",
+        "bytes": 374
+      },
+      {
+        "file": "circle-x-Cq_kEKhm.js",
+        "bytes": 203
+      },
+      {
+        "file": "constants-B3AGqN7f.js",
+        "bytes": 911
+      },
+      {
+        "file": "copy-DJqKAf7_.js",
+        "bytes": 232
+      },
+      {
+        "file": "DashboardPage-BqEIbhPT.js",
+        "bytes": 15665
+      },
+      {
+        "file": "DataTable-Ws19tj05.js",
+        "bytes": 4074
+      },
+      {
+        "file": "DispatchPage-BaSCr5rN.js",
+        "bytes": 22228
+      },
+      {
+        "file": "DonationsPage-DJfq-k0J.js",
+        "bytes": 21069
+      },
+      {
+        "file": "DonorsPage-DCRNmxL8.js",
+        "bytes": 24976
+      },
+      {
+        "file": "EmptyState-CQCmM49f.js",
+        "bytes": 1525
+      },
+      {
+        "file": "entry-BOSrpJKF.js",
+        "bytes": 47190
+      },
+      {
+        "file": "esm6-CyxalchI.js",
+        "bytes": 22181
+      },
+      {
+        "file": "external-link-BS9iQ5xK.js",
+        "bytes": 252
+      },
+      {
+        "file": "FreshnessIndicator-BTO412BP.js",
+        "bytes": 1930
+      },
+      {
+        "file": "index-D3014oaU.js",
+        "bytes": 390321
+      },
+      {
+        "file": "index-Db0xnbEh.css",
+        "bytes": 71652
+      },
+      {
+        "file": "InventoryPage-DD5P9yCG.js",
+        "bytes": 21528
+      },
+      {
+        "file": "key-round-C_3dzbCO.js",
+        "bytes": 351
+      },
+      {
+        "file": "locate-fixed-D41fwu_V.js",
+        "bytes": 404
+      },
+      {
+        "file": "Modal-OR5DMQUg.js",
+        "bytes": 2615
+      },
+      {
+        "file": "NearbyDonorsPage-DpOmiXcE.js",
+        "bytes": 7156
+      },
+      {
+        "file": "NotificationsPage-QOnkFnwt.js",
+        "bytes": 7562
+      },
+      {
+        "file": "OrganizationsAdminPage-BefzOBOt.js",
+        "bytes": 18865
+      },
+      {
+        "file": "PageHeader-DRgwwuMt.js",
+        "bytes": 526
+      },
+      {
+        "file": "pencil-DvAIzcmF.js",
+        "bytes": 277
+      },
+      {
+        "file": "plus-BF2OGrVg.js",
+        "bytes": 154
+      },
+      {
+        "file": "ProfilePage-1e3a4isg.js",
+        "bytes": 12663
+      },
+      {
+        "file": "queryCache-B1jc9IHs.js",
+        "bytes": 674
+      },
+      {
+        "file": "refresh-cw-W_yTNDKY.js",
+        "bytes": 322
+      },
+      {
+        "file": "RequestsPage-ry6HhCKf.js",
+        "bytes": 18709
+      },
+      {
+        "file": "ReservationsPage-DgtTtMIZ.js",
+        "bytes": 20045
+      },
+      {
+        "file": "StatusBadge-Chv4OuFM.js",
+        "bytes": 1195
+      },
+      {
+        "file": "useDebouncedValue-C7V_STG7.js",
+        "bytes": 206
+      },
+      {
+        "file": "UsersAdminPage-BMq3h5-B.js",
+        "bytes": 12928
+      }
+    ],
+    "totalBytes": 1216795,
+    "note": "Static asset sizes from the production build directory."
+  },
+  "records": [
+    {
+      "label": "landing_desktop1440",
+      "route": "/",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 8
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "login_desktop1440",
+      "route": "/login",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 10
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "register_desktop1440",
+      "route": "/register",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "not_found_desktop1440",
+      "route": "/not-found-route",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 9
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "dashboard_desktop1440",
+      "route": "/app/dashboard",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 15
+      },
+      "apiRequests": 9,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 62,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/donations",
+          "durationMs": 60,
+          "transferSize": 580,
+          "decodedBodySize": 362
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 53,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/analytics/overview",
+          "durationMs": 50,
+          "transferSize": 542,
+          "decodedBodySize": 307
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 43,
+          "transferSize": 453,
+          "decodedBodySize": 150
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "inventory_desktop1440",
+      "route": "/app/inventory",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 7
+      },
+      "apiRequests": 5,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/inventory/alerts",
+          "durationMs": 28,
+          "transferSize": 482,
+          "decodedBodySize": 195
+        },
+        {
+          "name": "/api/v1/inventory?page=0&size=20&sort=expiresAt%2Casc",
+          "durationMs": 21,
+          "transferSize": 1029,
+          "decodedBodySize": 3291
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 19,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 14,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 10,
+          "transferSize": 1186,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "donors_desktop1440",
+      "route": "/app/donors",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 5,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/donors?page=0&size=10",
+          "durationMs": 19,
+          "transferSize": 688,
+          "decodedBodySize": 503
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 17,
+          "transferSize": 1184,
+          "decodedBodySize": 1407
+        },
+        {
+          "name": "/api/v1/organizations?size=100",
+          "durationMs": 15,
+          "transferSize": 688,
+          "decodedBodySize": 518
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 14,
+          "transferSize": 450,
+          "decodedBodySize": 147
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 12,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "donors_nearby_desktop1440",
+      "route": "/app/donors/nearby",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 7
+      },
+      "apiRequests": 3,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 18,
+          "transferSize": 451,
+          "decodedBodySize": 147
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 16,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 8,
+          "transferSize": 1188,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "donations_desktop1440",
+      "route": "/app/donations",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 6,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/donors?size=100",
+          "durationMs": 18,
+          "transferSize": 689,
+          "decodedBodySize": 504
+        },
+        {
+          "name": "/api/v1/donations",
+          "durationMs": 15,
+          "transferSize": 580,
+          "decodedBodySize": 362
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 14,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/organizations?size=100",
+          "durationMs": 14,
+          "transferSize": 686,
+          "decodedBodySize": 518
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 12,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "requests_desktop1440",
+      "route": "/app/requests",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 15,
+          "transferSize": 450,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/emergency-requests",
+          "durationMs": 15,
+          "transferSize": 447,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 14,
+          "transferSize": 1183,
+          "decodedBodySize": 1407
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 14,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "allocations_desktop1440",
+      "route": "/app/allocations",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 26,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/emergency-requests",
+          "durationMs": 23,
+          "transferSize": 447,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 21,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 7,
+          "transferSize": 1183,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "reservations_desktop1440",
+      "route": "/app/reservations",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 28,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 25,
+          "transferSize": 447,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 21,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 9,
+          "transferSize": 1186,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "dispatch_desktop1440",
+      "route": "/app/dispatch",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 7,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/organizations?size=100",
+          "durationMs": 28,
+          "transferSize": 688,
+          "decodedBodySize": 518
+        },
+        {
+          "name": "/api/v1/emergency-requests",
+          "durationMs": 25,
+          "transferSize": 449,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 23,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 19,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/dispatches",
+          "durationMs": 18,
+          "transferSize": 447,
+          "decodedBodySize": 141
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "notifications_desktop1440",
+      "route": "/app/notifications",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications?page=0&size=12",
+          "durationMs": 24,
+          "transferSize": 639,
+          "decodedBodySize": 445
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 22,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 17,
+          "transferSize": 459,
+          "decodedBodySize": 160
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 8,
+          "transferSize": 1182,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "audit_desktop1440",
+      "route": "/app/audit",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/audit-logs?page=0&size=20",
+          "durationMs": 20,
+          "transferSize": 485,
+          "decodedBodySize": 205
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 17,
+          "transferSize": 449,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 15,
+          "transferSize": 463,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 7,
+          "transferSize": 1186,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "analytics_desktop1440",
+      "route": "/app/analytics",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 10
+      },
+      "apiRequests": 6,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/analytics/overview",
+          "durationMs": 35,
+          "transferSize": 543,
+          "decodedBodySize": 307
+        },
+        {
+          "name": "/api/v1/analytics/requests",
+          "durationMs": 25,
+          "transferSize": 447,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 24,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 23,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/analytics/inventory",
+          "durationMs": 22,
+          "transferSize": 496,
+          "decodedBodySize": 262
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "admin_users_desktop1440",
+      "route": "/app/admin/users",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 9
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/users?page=0&size=20",
+          "durationMs": 22,
+          "transferSize": 970,
+          "decodedBodySize": 1551
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 15,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 12,
+          "transferSize": 1187,
+          "decodedBodySize": 1407
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 12,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "admin_organizations_desktop1440",
+      "route": "/app/admin/organizations",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 21,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/organizations?page=0&size=20",
+          "durationMs": 20,
+          "transferSize": 687,
+          "decodedBodySize": 517
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 16,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 12,
+          "transferSize": 1183,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "profile_desktop1440",
+      "route": "/app/profile",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 3,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 15,
+          "transferSize": 450,
+          "decodedBodySize": 147
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 12,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 10,
+          "transferSize": 1184,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "landing_tablet768",
+      "route": "/",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "login_tablet768",
+      "route": "/login",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 8
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "register_tablet768",
+      "route": "/register",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 9
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "not_found_tablet768",
+      "route": "/not-found-route",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "dashboard_tablet768",
+      "route": "/app/dashboard",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 14
+      },
+      "apiRequests": 9,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/emergency-requests?status=PENDING_VERIFICATION",
+          "durationMs": 47,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/analytics/overview",
+          "durationMs": 44,
+          "transferSize": 543,
+          "decodedBodySize": 307
+        },
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 39,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/donations",
+          "durationMs": 39,
+          "transferSize": 580,
+          "decodedBodySize": 362
+        },
+        {
+          "name": "/api/v1/dispatches",
+          "durationMs": 38,
+          "transferSize": 447,
+          "decodedBodySize": 141
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "inventory_tablet768",
+      "route": "/app/inventory",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 5,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/inventory/alerts",
+          "durationMs": 28,
+          "transferSize": 482,
+          "decodedBodySize": 195
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 21,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/inventory?page=0&size=20&sort=expiresAt%2Casc",
+          "durationMs": 20,
+          "transferSize": 1028,
+          "decodedBodySize": 3291
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 19,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 9,
+          "transferSize": 1186,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "donors_tablet768",
+      "route": "/app/donors",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 7
+      },
+      "apiRequests": 5,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/donors?page=0&size=10",
+          "durationMs": 20,
+          "transferSize": 689,
+          "decodedBodySize": 503
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 19,
+          "transferSize": 1186,
+          "decodedBodySize": 1407
+        },
+        {
+          "name": "/api/v1/organizations?size=100",
+          "durationMs": 18,
+          "transferSize": 688,
+          "decodedBodySize": 518
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 16,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 14,
+          "transferSize": 461,
+          "decodedBodySize": 160
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "donors_nearby_tablet768",
+      "route": "/app/donors/nearby",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 3,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 13,
+          "transferSize": 1185,
+          "decodedBodySize": 1407
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 9,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 7,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "donations_tablet768",
+      "route": "/app/donations",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 21
+      },
+      "apiRequests": 6,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/donors?size=100",
+          "durationMs": 33,
+          "transferSize": 689,
+          "decodedBodySize": 504
+        },
+        {
+          "name": "/api/v1/donations",
+          "durationMs": 26,
+          "transferSize": 580,
+          "decodedBodySize": 362
+        },
+        {
+          "name": "/api/v1/organizations?size=100",
+          "durationMs": 25,
+          "transferSize": 687,
+          "decodedBodySize": 515
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 19,
+          "transferSize": 460,
+          "decodedBodySize": 160
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 18,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "requests_tablet768",
+      "route": "/app/requests",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 18,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 17,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/emergency-requests",
+          "durationMs": 16,
+          "transferSize": 447,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 10,
+          "transferSize": 1184,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "allocations_tablet768",
+      "route": "/app/allocations",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 16,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 15,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/emergency-requests",
+          "durationMs": 14,
+          "transferSize": 449,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 7,
+          "transferSize": 1184,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "reservations_tablet768",
+      "route": "/app/reservations",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 23,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 22,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 15,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 7,
+          "transferSize": 1187,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "dispatch_tablet768",
+      "route": "/app/dispatch",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 7,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/organizations?size=100",
+          "durationMs": 24,
+          "transferSize": 687,
+          "decodedBodySize": 518
+        },
+        {
+          "name": "/api/v1/emergency-requests",
+          "durationMs": 22,
+          "transferSize": 447,
+          "decodedBodySize": 138
+        },
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 20,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 19,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/dispatches",
+          "durationMs": 17,
+          "transferSize": 449,
+          "decodedBodySize": 141
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "notifications_tablet768",
+      "route": "/app/notifications",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications?page=0&size=12",
+          "durationMs": 18,
+          "transferSize": 639,
+          "decodedBodySize": 445
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 17,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 16,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 9,
+          "transferSize": 1186,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "audit_tablet768",
+      "route": "/app/audit",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 11
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 17,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/audit-logs?page=0&size=20",
+          "durationMs": 15,
+          "transferSize": 483,
+          "decodedBodySize": 205
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 14,
+          "transferSize": 461,
+          "decodedBodySize": 160
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 12,
+          "transferSize": 1184,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "analytics_tablet768",
+      "route": "/app/analytics",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 7
+      },
+      "apiRequests": 6,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/analytics/overview",
+          "durationMs": 35,
+          "transferSize": 543,
+          "decodedBodySize": 307
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 24,
+          "transferSize": 450,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/analytics/inventory",
+          "durationMs": 24,
+          "transferSize": 495,
+          "decodedBodySize": 262
+        },
+        {
+          "name": "/api/v1/analytics/requests",
+          "durationMs": 23,
+          "transferSize": 447,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 19,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "admin_users_tablet768",
+      "route": "/app/admin/users",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 8
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/users?page=0&size=20",
+          "durationMs": 21,
+          "transferSize": 969,
+          "decodedBodySize": 1551
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 16,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 14,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 13,
+          "transferSize": 1186,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "admin_organizations_tablet768",
+      "route": "/app/admin/organizations",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 12
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 16,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 14,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/organizations?page=0&size=20",
+          "durationMs": 14,
+          "transferSize": 687,
+          "decodedBodySize": 517
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 8,
+          "transferSize": 1184,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "profile_tablet768",
+      "route": "/app/profile",
+      "viewport": "tablet768",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 8
+      },
+      "apiRequests": 3,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 15,
+          "transferSize": 450,
+          "decodedBodySize": 147
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 12,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 10,
+          "transferSize": 1184,
+          "decodedBodySize": 1404
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "landing_mobile390",
+      "route": "/",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "login_mobile390",
+      "route": "/login",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 7
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "register_mobile390",
+      "route": "/register",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 7
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "not_found_mobile390",
+      "route": "/not-found-route",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "dashboard_mobile390",
+      "route": "/app/dashboard",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 7
+      },
+      "apiRequests": 9,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/donations",
+          "durationMs": 32,
+          "transferSize": 579,
+          "decodedBodySize": 359
+        },
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 19,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/analytics/overview",
+          "durationMs": 16,
+          "transferSize": 544,
+          "decodedBodySize": 307
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 15,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 13,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "inventory_mobile390",
+      "route": "/app/inventory",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 5,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/inventory/alerts",
+          "durationMs": 34,
+          "transferSize": 483,
+          "decodedBodySize": 195
+        },
+        {
+          "name": "/api/v1/inventory?page=0&size=20&sort=expiresAt%2Casc",
+          "durationMs": 28,
+          "transferSize": 1028,
+          "decodedBodySize": 3291
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 26,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 21,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 11,
+          "transferSize": 1184,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "donors_mobile390",
+      "route": "/app/donors",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 5,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/donors?page=0&size=10",
+          "durationMs": 32,
+          "transferSize": 688,
+          "decodedBodySize": 503
+        },
+        {
+          "name": "/api/v1/organizations?size=100",
+          "durationMs": 25,
+          "transferSize": 688,
+          "decodedBodySize": 518
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 22,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 21,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 10,
+          "transferSize": 1188,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "donors_nearby_mobile390",
+      "route": "/app/donors/nearby",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 3,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 12,
+          "transferSize": 1184,
+          "decodedBodySize": 1407
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 11,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 10,
+          "transferSize": 463,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "donations_mobile390",
+      "route": "/app/donations",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 6,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/donors?size=100",
+          "durationMs": 27,
+          "transferSize": 689,
+          "decodedBodySize": 504
+        },
+        {
+          "name": "/api/v1/donations",
+          "durationMs": 27,
+          "transferSize": 578,
+          "decodedBodySize": 359
+        },
+        {
+          "name": "/api/v1/organizations?size=100",
+          "durationMs": 16,
+          "transferSize": 688,
+          "decodedBodySize": 518
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 15,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 13,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "requests_mobile390",
+      "route": "/app/requests",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 13,
+          "transferSize": 450,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/emergency-requests",
+          "durationMs": 13,
+          "transferSize": 449,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 12,
+          "transferSize": 1183,
+          "decodedBodySize": 1404
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 12,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "allocations_mobile390",
+      "route": "/app/allocations",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 17,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 17,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/emergency-requests",
+          "durationMs": 16,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 7,
+          "transferSize": 1185,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "reservations_mobile390",
+      "route": "/app/reservations",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 18,
+          "transferSize": 451,
+          "decodedBodySize": 147
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 17,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 16,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 7,
+          "transferSize": 1185,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "dispatch_mobile390",
+      "route": "/app/dispatch",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 7
+      },
+      "apiRequests": 7,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/organizations?size=100",
+          "durationMs": 47,
+          "transferSize": 688,
+          "decodedBodySize": 518
+        },
+        {
+          "name": "/api/v1/emergency-requests",
+          "durationMs": 43,
+          "transferSize": 449,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 34,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/dispatches",
+          "durationMs": 33,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 32,
+          "transferSize": 460,
+          "decodedBodySize": 160
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "notifications_mobile390",
+      "route": "/app/notifications",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 23,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/notifications?page=0&size=12",
+          "durationMs": 23,
+          "transferSize": 640,
+          "decodedBodySize": 445
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 20,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 9,
+          "transferSize": 1185,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "audit_mobile390",
+      "route": "/app/audit",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 14,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/audit-logs?page=0&size=20",
+          "durationMs": 14,
+          "transferSize": 485,
+          "decodedBodySize": 205
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 13,
+          "transferSize": 460,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 7,
+          "transferSize": 1186,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "analytics_mobile390",
+      "route": "/app/analytics",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 3
+      },
+      "apiRequests": 6,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/analytics/overview",
+          "durationMs": 27,
+          "transferSize": 541,
+          "decodedBodySize": 307
+        },
+        {
+          "name": "/api/v1/analytics/requests",
+          "durationMs": 21,
+          "transferSize": 447,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 17,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/analytics/inventory",
+          "durationMs": 16,
+          "transferSize": 492,
+          "decodedBodySize": 259
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 14,
+          "transferSize": 1183,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "admin_users_mobile390",
+      "route": "/app/admin/users",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/users?page=0&size=20",
+          "durationMs": 23,
+          "transferSize": 969,
+          "decodedBodySize": 1551
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 18,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 14,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 8,
+          "transferSize": 1187,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "admin_organizations_mobile390",
+      "route": "/app/admin/organizations",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 7
+      },
+      "apiRequests": 4,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/organizations?page=0&size=20",
+          "durationMs": 22,
+          "transferSize": 686,
+          "decodedBodySize": 517
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 18,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 14,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 9,
+          "transferSize": 1182,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "profile_mobile390",
+      "route": "/app/profile",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 4
+      },
+      "apiRequests": 3,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 15,
+          "transferSize": 462,
+          "decodedBodySize": 163
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 14,
+          "transferSize": 451,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/auth/refresh",
+          "durationMs": 6,
+          "transferSize": 1185,
+          "decodedBodySize": 1407
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "landing_reduced_desktop1440_reduced",
+      "route": "/",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 6
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "dashboard_reduced_desktop1440_reduced",
+      "route": "/app/dashboard",
+      "viewport": "desktop1440",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 8
+      },
+      "apiRequests": 9,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/analytics/overview",
+          "durationMs": 27,
+          "transferSize": 542,
+          "decodedBodySize": 307
+        },
+        {
+          "name": "/api/v1/emergency-requests?status=PENDING_VERIFICATION",
+          "durationMs": 23,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/notifications/unread-count",
+          "durationMs": 22,
+          "transferSize": 452,
+          "decodedBodySize": 150
+        },
+        {
+          "name": "/api/v1/inventory?expiringWithinDays=7&page=0&size=5&sort=expiresAt%2Casc",
+          "durationMs": 22,
+          "transferSize": 485,
+          "decodedBodySize": 204
+        },
+        {
+          "name": "/api/v1/runtime/mode",
+          "durationMs": 19,
+          "transferSize": 461,
+          "decodedBodySize": 163
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "landing_reduced_mobile390_reduced",
+      "route": "/",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 5
+      },
+      "apiRequests": 0,
+      "slowestApiRequests": [],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    },
+    {
+      "label": "dashboard_reduced_mobile390_reduced",
+      "route": "/app/dashboard",
+      "viewport": "mobile390",
+      "navigation": {
+        "domContentLoadedMs": null,
+        "loadMs": null,
+        "responseEndMs": 9
+      },
+      "apiRequests": 9,
+      "slowestApiRequests": [
+        {
+          "name": "/api/v1/donations",
+          "durationMs": 38,
+          "transferSize": 582,
+          "decodedBodySize": 362
+        },
+        {
+          "name": "/api/v1/reservations",
+          "durationMs": 34,
+          "transferSize": 449,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/analytics/overview",
+          "durationMs": 32,
+          "transferSize": 542,
+          "decodedBodySize": 307
+        },
+        {
+          "name": "/api/v1/dispatches",
+          "durationMs": 25,
+          "transferSize": 448,
+          "decodedBodySize": 141
+        },
+        {
+          "name": "/api/v1/emergency-requests?status=PENDING_VERIFICATION",
+          "durationMs": 22,
+          "transferSize": 449,
+          "decodedBodySize": 141
+        }
+      ],
+      "note": "Browser PerformanceTiming/resource timings only; not Lighthouse or field Web Vitals."
+    }
+  ]
+}
