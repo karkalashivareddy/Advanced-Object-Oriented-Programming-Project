@@ -78,6 +78,8 @@ Since then:
 
 ## 9. Follow-up verification — 25 November 2026
 
+**Publication update:** the verified commits were pushed to GitHub `main` using a non-force fast-forward after explicit user authorization. The working branch remains `feature/lifelink-bloodstream-experience`; preserved unrelated workspace edits were excluded.
+
 The follow-up implementation and final route capture supersede the earlier open items above:
 
 - Donor directory search/filtering/pagination now runs through a tenant-scoped, stable, bounded backend page query (maximum page size 100). The Donations workspace now consumes the paged response instead of treating it as an array.

@@ -72,4 +72,6 @@ See [`LIFELINK_FINAL_ENGINEERING_AUDIT.md`](LIFELINK_FINAL_ENGINEERING_AUDIT.md)
 
 ## Git and preservation
 
+**Publication update, 25 November 2026:** after explicit authorization, the verified feature history was fast-forward-pushed to GitHub `main` using a non-force push. No history was rewritten. The pre-existing abstract/evidence edits, `LAB-WORK/PRACTICAL-4/` files and baseline audit captures remain outside the published commits.
+
 The original tree was already dirty before implementation, including user changes to the abstract documents/evidence and untracked `LAB-WORK/PRACTICAL-4/` files. Those files were preserved and excluded from the LifeLink commit. No reset, clean, history rewrite, push, merge or database-volume deletion was performed. The remaining uncommitted files are the preserved abstract/evidence edits, `LAB-WORK/` files and unselected screenshot captures.
