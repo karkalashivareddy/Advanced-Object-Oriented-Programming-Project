@@ -5,6 +5,8 @@
 **Baseline HEAD:** `5cf42191683adeebc9ca493c81b5d26254fcb3b3`  
 **Delivery status:** verified local increment; this is not a claim that the full requested product transformation is complete.
 
+**Local commit:** `47b462d` (`Add privacy-aware nearby donor discovery`). Nothing was pushed or merged.
+
 ## Summary
 
 This increment adds privacy-aware nearby donor discovery, synthetic demo-data labelling, responsive interaction fixes, research and AOOP documentation, and verification evidence. The existing Java/Spring modular monolith, React/TypeScript SPA, REST contract, authentication, tenant scope, PostgreSQL/Flyway and STOMP notification approach remain in place.
@@ -67,4 +69,4 @@ See [`LIFELINK_FINAL_ENGINEERING_AUDIT.md`](LIFELINK_FINAL_ENGINEERING_AUDIT.md)
 
 ## Git and preservation
 
-The original tree was already dirty before implementation, including user changes to the abstract documents/evidence and untracked `LAB-WORK/PRACTICAL-4/` files. Those files were preserved and are excluded from the LifeLink delivery scope. No reset, clean, history rewrite, push, merge or database-volume deletion was performed. Local commit status is recorded in the final delivery note after scoped review.
+The original tree was already dirty before implementation, including user changes to the abstract documents/evidence and untracked `LAB-WORK/PRACTICAL-4/` files. Those files were preserved and excluded from the LifeLink commit. No reset, clean, history rewrite, push, merge or database-volume deletion was performed. The remaining uncommitted files are the preserved abstract/evidence edits, `LAB-WORK/` files and unselected screenshot captures.
