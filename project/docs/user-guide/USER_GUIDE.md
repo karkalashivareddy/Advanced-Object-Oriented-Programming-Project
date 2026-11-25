@@ -22,8 +22,7 @@ Run the local stack with the commands in [`../deployment/DEPLOYMENT_GUIDE.md`](.
 
 Seeded organizations: **Central Blood Bank** (`BLOOD_BANK`) and **LifeCare General Hospital** (`HOSPITAL`). All seeded users have `Status.ACTIVE`; no seeded account is `PENDING_VERIFICATION`.
 
-These credentials are used by the integration suite. The final Compose run verified login through the nginx proxy (HTTP 200) and recorded seed counts organizations=2, users=6, blood_units=9
-([`../evidence/COMPOSE_VERIFICATION.json`](../evidence/COMPOSE_VERIFICATION.json)). The seeder runs under `postgres` only when `SEED_DEMO_DATA=true`; standalone PostgreSQL defaults to no demo seed.
+These credentials are used by the integration suite. The current development seeder source defines synthetic nearby-discovery profiles and 17 donors across 22 users, alongside nine blood units. The linked Compose evidence is the earlier V1–V5 run; a fresh Compose verification for V6 and the expanded seed remains pending. The seeder runs under `postgres` only when `SEED_DEMO_DATA=true`; standalone PostgreSQL defaults to no demo seed.
 
 ---
 

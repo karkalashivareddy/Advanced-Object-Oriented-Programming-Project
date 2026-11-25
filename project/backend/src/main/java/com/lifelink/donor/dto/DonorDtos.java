@@ -5,6 +5,7 @@ import com.lifelink.donor.Appointment;
 import com.lifelink.donor.ConsentRecord;
 import com.lifelink.donor.DonorProfile;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.AssertTrue;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -18,6 +19,18 @@ public final class DonorDtos {
 
     public record UpdateProfileRequest(String address, String city, String state, String preferredContact,
                                        DonorProfile.Availability availability) {
+    }
+
+    /** Coordinates are required only when location discovery is enabled. */
+    public record LocationPreferenceRequest(@NotNull Boolean enabled, Double latitude, Double longitude) {
+        @AssertTrue(message = "Both valid coordinates are required when enabled; omit them when disabled")
+        public boolean isCoordinateConsentConsistent() {
+            if (Boolean.TRUE.equals(enabled)) return latitude != null && longitude != null;
+            return latitude == null && longitude == null;
+        }
+    }
+
+    public record LocationPreferenceView(boolean consentGranted, Instant locationUpdatedAt) {
     }
 
     public record ProfileView(Long id, String publicId, Long userId, String fullName, String email,

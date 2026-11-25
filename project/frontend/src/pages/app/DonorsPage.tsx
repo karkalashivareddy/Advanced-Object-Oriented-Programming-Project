@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CalendarDays,
   HeartHandshake,
+  LocateFixed,
   Pencil,
   Plus,
   RotateCcw,
@@ -97,6 +98,8 @@ export function DonorsPage() {
   const [form, setForm] = useState<DonorForm>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState({ type: 'GENERAL', granted: true });
+  const [locationCoordinates, setLocationCoordinates] = useState({ latitude: '', longitude: '' });
+  const [locationError, setLocationError] = useState('');
   const [appointment, setAppointment] = useState<AppointmentForm>({
     organizationId: auth.organizationId ? String(auth.organizationId) : '',
     scheduledAt: '',
@@ -214,6 +217,35 @@ export function DonorsPage() {
     },
     onError: (error) => toast.error('Could not withdraw consent', getErrorMessage(error)),
   });
+
+  const locationPreference = useMutation({
+    mutationFn: (enabled: boolean) => api.patch<{ consentGranted: boolean; locationUpdatedAt: string | null }>(
+      `/donors/${selectedId}/location-preference`,
+      enabled
+        ? { enabled, latitude: Number(locationCoordinates.latitude), longitude: Number(locationCoordinates.longitude) }
+        : { enabled },
+    ),
+    onSuccess: (result) => {
+      toast.success(result.consentGranted ? 'Location sharing enabled' : 'Location consent withdrawn');
+      setLocationError('');
+      setLocationCoordinates({ latitude: '', longitude: '' });
+      invalidate();
+    },
+    onError: (error) => toast.error('Could not update location preference', getErrorMessage(error)),
+  });
+
+  const captureLocation = () => {
+    setLocationError('');
+    if (!navigator.geolocation) {
+      setLocationError('Location access is unavailable in this browser.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => setLocationCoordinates({ latitude: String(coords.latitude), longitude: String(coords.longitude) }),
+      () => setLocationError('Location was not shared. You can enter coordinates manually.'),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+    );
+  };
 
   const addAppointment = useMutation({
     mutationFn: () =>
@@ -600,6 +632,47 @@ export function DonorsPage() {
               </div>
             </dl>
 
+            {detail.userId === auth.user?.id && (
+              <section className="surface surface-raised donor-location-consent" aria-labelledby="location-consent-heading">
+                <div className="section-heading">
+                  <div>
+                    <h3 id="location-consent-heading">Location discovery consent</h3>
+                    <p className="text-xs text-muted">Optional. Your exact coordinates are used for matching and never shown in search results.</p>
+                  </div>
+                  <StatusBadge
+                    status={consents.some((item) => item.type === 'LOCATION_DISCOVERY' && item.granted && !item.withdrawnAt) ? 'APPROVED' : 'UNAVAILABLE'}
+                    label={consents.some((item) => item.type === 'LOCATION_DISCOVERY' && item.granted && !item.withdrawnAt) ? 'Sharing on' : 'Sharing off'}
+                  />
+                </div>
+                <div className="donor-location-controls">
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={captureLocation}>
+                    <LocateFixed size={15} aria-hidden="true" /> Use current device location
+                  </button>
+                  <FormField label="Latitude">
+                    <input className="input" inputMode="decimal" value={locationCoordinates.latitude}
+                      onChange={(event) => setLocationCoordinates({ ...locationCoordinates, latitude: event.target.value })} placeholder="12.9716" />
+                  </FormField>
+                  <FormField label="Longitude">
+                    <input className="input" inputMode="decimal" value={locationCoordinates.longitude}
+                      onChange={(event) => setLocationCoordinates({ ...locationCoordinates, longitude: event.target.value })} placeholder="77.5946" />
+                  </FormField>
+                </div>
+                {locationError && <p role="alert" className="field-error">{locationError}</p>}
+                {locationPreference.isError && <p role="alert" className="field-error">{getErrorMessage(locationPreference.error)}</p>}
+                <div className="form-actions">
+                  <button type="button" className="btn btn-primary btn-sm"
+                    disabled={locationPreference.isPending || !locationCoordinates.latitude.trim() || !locationCoordinates.longitude.trim()}
+                    onClick={() => locationPreference.mutate(true)}>
+                    {locationPreference.isPending ? 'Saving…' : 'Opt in and share location'}
+                  </button>
+                  <button type="button" className="btn btn-danger btn-sm" disabled={locationPreference.isPending}
+                    onClick={() => locationPreference.mutate(false)}>
+                    Withdraw consent and clear location
+                  </button>
+                </div>
+              </section>
+            )}
+
             <section className="surface surface-raised" style={{ marginTop: 16 }}>
               <div className="section-heading">
                 <h3>Consents</h3>
@@ -660,7 +733,7 @@ export function DonorsPage() {
               )}
               {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
                 <div className="form-grid" style={{ marginTop: 12 }}>
-                  <FormField label="Consent type" required full>
+                  <FormField label="Consent type" required full hint="Location discovery consent can only be managed by the donor in the dedicated privacy section above.">
                     <input
                       className="input"
                       value={consent.type}
@@ -692,7 +765,7 @@ export function DonorsPage() {
                     <button
                       type="button"
                       className="btn btn-secondary"
-                      disabled={addConsent.isPending || !consent.type.trim()}
+                      disabled={addConsent.isPending || !consent.type.trim() || consent.type.trim().toUpperCase() === 'LOCATION_DISCOVERY'}
                       onClick={() => {
                         addConsent.reset();
                         addConsent.mutate();

@@ -35,9 +35,10 @@ Cross-aggregate references use `Long` ids and JPA `ManyToOne` associations. For 
 | `BaseEntity` | mapped superclass | `id`, `publicId`, `createdAt`, `updatedAt`, `@Version version` | Abstract; all main aggregates except `AuditEvent` extend it. |
 | `User` | `users`, `Long id` | `email`, `passwordHash`, `fullName`, `phone`, `Status`, `Set<Role>` | `UserView` exposes id, publicId, email, fullName, status, roles, permissions, memberships. |
 | `OrganizationMembership` | membership table, `Long id` | `User`, `Organization`, `Role` | Source of `TenantAccessService` membership validation. |
-| `Organization` | `organizations`, `Long id` | `name`, `Type`, `registrationCode`, `city`, `state`, `contactEmail`, `phone`, `verified`, `active`, `serviceArea` | Mirrors `OrganizationView`. |
-| `DonorProfile` | donor profiles table, `Long id` | `userId`, `donorNumber`, `bloodGroup`, `dateOfBirth`, address/contact | Owned by a user or scoped staff. |
-| `ConsentRecord` | consents table, `Long id` | `DonorProfile`, type, granted/revoked state | Withdrawal is an update on the record. |
+| `Organization` | `organizations`, `Long id` | `name`, `Type`, `registrationCode`, `city`, `state`, `contactEmail`, `phone`, `verified`, `active`, `serviceArea`, optional location + freshness | Coordinates are internal search origin data; no current organization DTO returns them. |
+| `DonorProfile` | donor profiles table, `Long id` | `userId`, `bloodGroup`, `dateOfBirth`, address/contact, optional `GeoPoint`, `locationUpdatedAt` | Coordinates are populated only by the donor's explicit location-discovery preference and never projected in donor DTOs. |
+| `GeoPoint` | immutable record value | WGS84 latitude/longitude, finite/range validation, Haversine and bounding-box helpers | Exact coordinates remain backend-only. |
+| `ConsentRecord` | consents table, `Long id` | `DonorProfile`, type, granted/revoked state | `LOCATION_DISCOVERY` may only be changed by the donor owner; withdrawal clears location in the same transaction. |
 | `Appointment` | `appointments`, `Long id` | `DonorProfile`, `Organization`, `scheduledAt`, `Status`, `notes` | Status transitions in §6.6. |
 | `Donation` | `donations`, `Long id` | `DonorProfile`, `Organization`, optional `Appointment`, `donatedAt`, `Status`, `notes` | Screening evidence is a separate entity. |
 | `ScreeningRecord` | `screening_records`, `Long id` | `Donation`, `passed`, `notes`, `screenedBy`, `screenedAt` | A passing record is required before approval. |

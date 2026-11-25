@@ -2,6 +2,9 @@ export function humanize(value?: string | null): string {
   if (!value) return '—';
   return value
     .replace(/[_-]+/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Za-z])([0-9])/g, '$1 $2')
+    .replace(/([0-9])([A-Za-z])/g, '$1 $2')
     .toLowerCase()
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }

@@ -4,6 +4,8 @@ import com.lifelink.donor.Donation;
 import com.lifelink.donor.DonorProfile;
 import com.lifelink.donor.DonorProfileRepository;
 import com.lifelink.donor.DonationRepository;
+import com.lifelink.donor.ConsentRecord;
+import com.lifelink.donor.ConsentRepository;
 import com.lifelink.donor.ScreeningRecord;
 import com.lifelink.donor.ScreeningRepository;
 import com.lifelink.emergency.EmergencyRequest;
@@ -46,6 +48,7 @@ public class DevelopmentDataSeeder implements ApplicationRunner {
     private final UserRepository userRepository;
     private final OrganizationMembershipRepository membershipRepository;
     private final DonorProfileRepository donorRepository;
+    private final ConsentRepository consentRepository;
     private final DonationRepository donationRepository;
     private final ScreeningRepository screeningRepository;
     private final BloodUnitRepository unitRepository;
@@ -58,6 +61,7 @@ public class DevelopmentDataSeeder implements ApplicationRunner {
                                  UserRepository userRepository,
                                  OrganizationMembershipRepository membershipRepository,
                                  DonorProfileRepository donorRepository,
+                                 ConsentRepository consentRepository,
                                  DonationRepository donationRepository,
                                  ScreeningRepository screeningRepository,
                                  BloodUnitRepository unitRepository,
@@ -69,6 +73,7 @@ public class DevelopmentDataSeeder implements ApplicationRunner {
         this.userRepository = userRepository;
         this.membershipRepository = membershipRepository;
         this.donorRepository = donorRepository;
+        this.consentRepository = consentRepository;
         this.donationRepository = donationRepository;
         this.screeningRepository = screeningRepository;
         this.unitRepository = unitRepository;
@@ -112,6 +117,33 @@ public class DevelopmentDataSeeder implements ApplicationRunner {
         DonorProfile donor = donorRepository.save(new DonorProfile(donorUser,
                 com.lifelink.common.BloodGroup.O_POSITIVE,
                 java.time.LocalDate.of(1995, 5, 14), "12 Demo Street", "Hyderabad", "Telangana", "IN_APP"));
+        // Synthetic city-centre demo point, not the real donor's home or the hospital address.
+        GeoPoint demoOrigin = new GeoPoint(17.3850, 78.4867);
+        donor.updateLocation(demoOrigin, Instant.now());
+        consentRepository.save(new ConsentRecord(donor, "LOCATION_DISCOVERY", true));
+
+        // Reproducible synthetic candidates: fictitious accounts, varied blood groups,
+        // availability states and coordinates within a small demo area. These run only
+        // when the development/demo seed property is explicitly enabled.
+        BloodGroup[] groups = BloodGroup.values();
+        for (int index = 0; index < 16; index++) {
+            String email = "demo-donor-%02d@lifelink.local".formatted(index + 1);
+            User candidateUser = user(email, "Donor@123!", "Synthetic Donor %02d".formatted(index + 1),
+                    Set.of(Role.DONOR));
+            DonorProfile candidate = new DonorProfile(candidateUser, groups[index % groups.length],
+                    java.time.LocalDate.of(1990 + index % 10, 3, 12), null,
+                    "Demo City", "Demo State", "IN_APP");
+            int state = index % 6;
+            if (state == 4) candidate.setAvailability(DonorProfile.Availability.TEMPORARILY_UNAVAILABLE);
+            if (state == 5) candidate.setAvailability(DonorProfile.Availability.UNAVAILABLE);
+            double latitude = 17.3850 + ((index % 4) - 1.5) * 0.018;
+            double longitude = 78.4867 + ((index / 4) - 1.5) * 0.018;
+            candidate.updateLocation(new GeoPoint(latitude, longitude), Instant.now());
+            candidate = donorRepository.save(candidate);
+            if (index % 2 == 0) {
+                consentRepository.save(new ConsentRecord(candidate, "LOCATION_DISCOVERY", true));
+            }
+        }
         Donation donation = donationRepository.save(new Donation(donor, bank, null,
                 Instant.now().minus(2, ChronoUnit.DAYS), "Demo donation"));
         donation.screen(true);
@@ -153,7 +185,7 @@ public class DevelopmentDataSeeder implements ApplicationRunner {
                 "Development demo data has been loaded", "SYSTEM", Notification.Channel.IN_APP));
         notificationRepository.save(new Notification(hospitalAdmin, "Request ready",
                 "LL-ER-DEMO-0001 is awaiting allocation review", "REQUEST_CREATED", Notification.Channel.IN_APP));
-        log.info("Development seed data created: 2 organizations, 6 users, 9 blood units, 1 request");
+        log.info("Development demo data created: 2 organizations, 22 users, 17 donors, 9 blood units, 1 request");
     }
 
     private User user(String email, String password, String fullName, Set<Role> roles) {

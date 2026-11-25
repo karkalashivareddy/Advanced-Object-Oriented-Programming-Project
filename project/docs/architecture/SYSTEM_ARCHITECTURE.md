@@ -1,14 +1,15 @@
 # LifeLink System Architecture
 
 Date: 24 November 2026
-Status: current-state working document for `feature/lifelink-bloodstream-experience` (base HEAD `59401d45e511183ede59e7d55073f07e2cf5eacd`, changes uncommitted, nothing pushed). Historical Phase 2 records remain under [`../reviews/`](../reviews/) and are not rewritten. The authoritative reconciliation is [`../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md).
+Status: current working document for `feature/lifelink-bloodstream-experience` at baseline HEAD `5cf42191683adeebc9ca493c81b5d26254fcb3b3`; current geo-discovery and visual corrections are uncommitted, nothing pushed. Historical Phase 2 records remain under [`../reviews/`](../reviews/) and are not rewritten. The current deep review is [`../reviews/LIFELINK_FINAL_ENGINEERING_AUDIT.md`](../reviews/LIFELINK_FINAL_ENGINEERING_AUDIT.md).
 **Source of truth for external behaviour:** [`API_CONTRACTS.md`](API_CONTRACTS.md). Companion documents: [`DOMAIN_MODEL.md`](DOMAIN_MODEL.md), [`UML.md`](UML.md), [`../academic/AOOP_CONCEPT_MAPPING.md`](../academic/AOOP_CONCEPT_MAPPING.md).
 
 This document replaces the earlier "planned design / no implementation claimed" version.
 It describes the code and configuration now in `project/`, specifically Spring Boot
-`3.5.16` with Java 21 bytecode target, Maven Wrapper `3.9.11`, Flyway `V1`–`V5`, and the
+`3.5.16` with Java 21 bytecode target, Maven Wrapper `3.9.11`, Flyway `V1`–`V6`, and the
 React/TypeScript SPA. `V5` adds `users.token_version` for persistent, monotonic access-token
-revocation. Nothing here is a production-readiness claim; this is a local-development /
+revocation; `V6` adds nullable donor/organization coordinates, all-or-none checks and
+prefilter indexes for opt-in proximity discovery. Nothing here is a production-readiness claim; this is a local-development /
 supervised-demo architecture.
 
 ---
@@ -24,8 +25,10 @@ The SPA is served by an nginx-based container that reverse-proxies `/api/`, `/ws
 ```mermaid
 flowchart LR
     UI[React + TypeScript SPA] -->|same-origin /api/v1 proxy| API[Spring Boot modular monolith]
+    UI -->|nearby search request, selected origin only| API
     UI -->|/ws, /sockjs STOMP| API
-    API --> PG[(PostgreSQL 16 + Flyway V1-V5)]
+    API --> PG[(PostgreSQL 16 + Flyway V1-V6)]
+    API -->|consent + freshness + bounded Haversine query| PG
     API --> AUDIT[(audit_events in same DB)]
     API --> OUT[(outbox_events in same DB)]
     S[LifecycleScheduler every 5 min] --> OUT
@@ -212,11 +215,11 @@ See [`ADR/ADR-004-outbox-notifications.md`](ADR/ADR-004-outbox-notifications.md)
 - **Logging:** lifecycle jobs log counts; unexpected failures are logged centrally. Do not
   assume structured JSON logging in deployed profiles — that was a design intent, not a
   verified configuration in this phase.
-- **Health:** `application.yml` exposes actuator `health,info,metrics,prometheus`. The final
-  Compose probe on `18080/15173/15432` recorded healthy services, backend
+- **Health:** `application.yml` exposes actuator `health,info,metrics,prometheus`. The last
+  recorded Compose probe on `18080/15173/15432` (before V6 and the expanded seed) recorded healthy services, backend
   `/actuator/health` HTTP 200 with `liveness`/`readiness` groups, frontend `/healthz` HTTP
   200 `ok`, SPA root HTTP 200, and login through the nginx proxy HTTP 200; Flyway V1–V5 all
-  succeeded and seeding produced organizations=2, users=6, blood_units=9
+  succeeded through V5 and seeding produced organizations=2, users=6, blood_units=9
   ([`../evidence/COMPOSE_VERIFICATION.json`](../evidence/COMPOSE_VERIFICATION.json)).
 - **Audit:** queryable through `/api/v1/audit-logs` with organization, actor, action,
   time-range, and outcome filters. It is not a replacement for technical logs and has no

@@ -21,6 +21,11 @@ describe('route guard', () => {
     expect(evaluateRouteAccess({ ...base, roles: ['DONOR'] }, '/app/inventory')).toBe('forbidden');
   });
 
+  it('requires donor discovery permission for the nearby search route', () => {
+    expect(evaluateRouteAccess({ ...base, roles: ['HOSPITAL_ADMIN'] }, '/app/donors/nearby')).toBe('allow');
+    expect(evaluateRouteAccess({ ...base, roles: ['DONOR'] }, '/app/donors/nearby')).toBe('forbidden');
+  });
+
   it('allows role-derived permissions and explicit permissions', () => {
     expect(evaluateRouteAccess({ ...base, roles: ['INVENTORY_MANAGER'] }, '/app/inventory')).toBe('allow');
     expect(evaluateRouteAccess({ ...base, permissions: ['AUDIT_READ'] }, '/app/audit')).toBe('allow');

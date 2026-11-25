@@ -1,11 +1,13 @@
 package com.lifelink.organization;
 
 import com.lifelink.common.BaseEntity;
+import com.lifelink.common.GeoPoint;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import java.time.Instant;
 
 @Entity
 @Table(name = "organizations")
@@ -43,6 +45,17 @@ public class Organization extends BaseEntity {
 
     @Column(length = 200)
     private String serviceArea;
+
+    // Provider geography is stored for demo seeding and future area analytics only;
+    // OrganizationDtos never projects these columns.
+    @Column
+    private Double latitude;
+
+    @Column
+    private Double longitude;
+
+    @Column(name = "location_updated_at")
+    private Instant locationUpdatedAt;
 
     protected Organization() {
     }
@@ -83,6 +96,28 @@ public class Organization extends BaseEntity {
         this.phone = phone;
         this.serviceArea = serviceArea;
     }
+
+    /** Sets provider geography atomically; all coordinates are validated by {@link GeoPoint}. */
+    public void updateLocation(GeoPoint point, Instant updatedAt) {
+        if (point == null || updatedAt == null) {
+            throw new IllegalArgumentException("Location and timestamp are required");
+        }
+        this.latitude = point.latitude();
+        this.longitude = point.longitude();
+        this.locationUpdatedAt = updatedAt;
+    }
+
+    public void clearLocation() {
+        this.latitude = null;
+        this.longitude = null;
+        this.locationUpdatedAt = null;
+    }
+
+    public GeoPoint location() {
+        return latitude == null || longitude == null ? null : new GeoPoint(latitude, longitude);
+    }
+
+    public Instant getLocationUpdatedAt() { return locationUpdatedAt; }
 
     private void setName(String value) {
         if (value == null || value.isBlank()) {

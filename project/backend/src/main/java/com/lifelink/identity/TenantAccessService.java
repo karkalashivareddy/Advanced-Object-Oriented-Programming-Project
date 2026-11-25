@@ -96,6 +96,21 @@ public class TenantAccessService {
         return organizationId;
     }
 
+    /**
+     * Stricter selection for privacy-sensitive reads: the header must be present even for
+     * platform administrators and single-membership users. The value is still validated
+     * by {@link #currentOrganizationId()} (membership/platform-admin check and numeric
+     * format) before it is returned.
+     */
+    public Long requireExplicitCurrentOrganization() {
+        HttpServletRequest request = currentRequest();
+        String header = request == null ? null : request.getHeader(ORGANIZATION_HEADER);
+        if (header == null || header.isBlank()) {
+            throw new UnauthorizedOperationException("X-Organization-Id header is required");
+        }
+        return requireCurrentOrganization();
+    }
+
     public Long requireActiveOrganization(Long requestedOrganizationId) {
         AuthenticatedUser user = currentUser();
         Long organizationId = requestedOrganizationId != null ? requestedOrganizationId : currentOrganizationId();

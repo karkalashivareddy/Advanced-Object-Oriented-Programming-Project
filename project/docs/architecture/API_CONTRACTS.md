@@ -221,6 +221,25 @@ type OrganizationView = {
 | PATCH | `/donors/{id}/consents/{consentId}` | owner or scoped staff | withdraw |
 | GET/POST | `/donors/{id}/appointments` | owner or scoped staff | `AppointmentView[]` / `{organizationId,scheduledAt,notes?}` |
 | PATCH | `/donors/appointments/{id}` | scoped staff | `{action,notes?}` |
+| PATCH | `/donors/{id}/location-preference` | donor owner only | `{enabled:true,latitude,longitude}` or `{enabled:false}`; consent and coordinates update atomically, withdrawal clears coordinates |
+| GET | `/donors/nearby?bloodGroup=O_POSITIVE&latitude=17.385&longitude=78.4867&radiusKm=10` | selected active organization + `DONOR_DISCOVERY_READ` | at most 50 consenting, available, fresh candidates with opaque public ID, blood group, availability, distance band and update time |
+
+Nearby search requires an explicit `X-Organization-Id` for an active, verified
+organization. It searches only donors with current `LOCATION_DISCOVERY` consent,
+`AVAILABLE` status and a location updated in the preceding 30 days. Radius is
+bounded to 50 km; the database applies a coordinate bounding box and Haversine
+radius/order before a 51-row cap. The response contains no donor coordinates,
+name, phone, email or consent record. Distance bands are approximate straight-line
+distances, not road distance or travel time. The origin is rounded to a coarse
+cell in audit metadata; exact donor coordinates are never logged by this workflow.
+The current per-user search throttle is process-local (20 requests/minute); a
+multi-instance deployment must add an API-gateway/shared limiter before public use.
+The feature does not decide clinical eligibility or initiate donor contact.
+
+`LOCATION_DISCOVERY` cannot be granted through the generic consent endpoint. It
+must use the owner-only location-preference operation so consent and coordinates
+cannot be updated separately. Withdrawal revokes active location consent and clears
+the stored point within the same transaction.
 | GET | `/donations` | scoped `DONATION_READ` | `?donorId=&organizationId=` → `DonationView[]` |
 | POST | `/donations` | scoped `DONATION_RECORD` | `{donorId,organizationId,appointmentId?,donatedAt?,notes?}` |
 | GET | `/donations/{id}` | scoped `DONATION_READ` | `DonationView` |

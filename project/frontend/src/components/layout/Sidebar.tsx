@@ -111,6 +111,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
                   <NavLink
                     key={item.to}
                     to={item.to}
+                      end={item.to === '/app/donors'}
                     title={item.label}
                     className={({ isActive }) => cx('nav-link', isActive && 'active')}
                     onClick={onCloseMobile}

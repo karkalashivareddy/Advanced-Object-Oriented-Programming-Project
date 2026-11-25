@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ConsentRepository extends JpaRepository<ConsentRecord, Long> {
     List<ConsentRecord> findByDonorId(Long donorId);
+    List<ConsentRecord> findByDonorIdAndTypeAndGrantedTrueAndWithdrawnAtIsNull(Long donorId, String type);
+    boolean existsByDonorIdAndTypeAndGrantedTrueAndWithdrawnAtIsNull(Long donorId, String type);
 }

@@ -50,7 +50,10 @@ test('analytics has no horizontal page overflow on mobile', async ({ page }) => 
   await page.getByRole('button', { name: 'Open navigation menu' }).click();
   const dialog = page.getByRole('dialog', { name: 'Navigation menu' });
   await dialog.getByRole('link', { name: 'Analytics' }).click();
+  await expect(page).toHaveURL(/\/app\/analytics/);
   await expect(page.getByRole('heading', { name: /Analytics/i }).first()).toBeVisible();
+  await expect(page.locator('.sidebar')).toHaveCSS('transform', /matrix\(1, 0, 0, 1, -?\d+/);
+  await page.waitForTimeout(350);
 
   const widths = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,

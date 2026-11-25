@@ -14,6 +14,20 @@ Items describe residual limitations even where the related feature is Verified.
 
 ## Runtime and security
 
+### Nearby donor discovery (new, local/demo scope)
+
+- Search is consent-gated and tenant-permission checked. It returns distance bands
+  and freshness only; exact donor coordinates and contact fields are withheld.
+- Radius search is straight-line Haversine with a database bounding-box prefilter;
+  no road routing, travel-time estimate, public map tiles, geocoding or donor-contact
+  mediation is implemented.
+- Results are capped at 50 and locations older than 30 days are excluded.
+- The 20 requests/minute guard is process-local. A multi-instance or public deployment
+  needs a shared gateway limiter and operational monitoring.
+- Synthetic discovery profiles use clearly fake `.local` accounts and demo coordinates
+  only when the development seed property is enabled. The UI displays a runtime demo-data
+  banner from the backend configuration flag.
+
 1. **No MFA.** (N) Login accepts email + password only; no second factor.
 2. **No breach-password check.** (N) Basic password validation only; no screening
    against known-compromised password lists.

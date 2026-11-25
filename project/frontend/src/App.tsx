@@ -13,6 +13,7 @@ import { NotFoundPage } from '@/pages/public/NotFoundPage';
 const DashboardPage = lazy(async () => ({ default: (await import('@/pages/app/DashboardPage')).DashboardPage }));
 const InventoryPage = lazy(async () => ({ default: (await import('@/pages/app/InventoryPage')).InventoryPage }));
 const DonorsPage = lazy(async () => ({ default: (await import('@/pages/app/DonorsPage')).DonorsPage }));
+const NearbyDonorsPage = lazy(async () => ({ default: (await import('@/pages/app/NearbyDonorsPage')).NearbyDonorsPage }));
 const DonationsPage = lazy(async () => ({ default: (await import('@/pages/app/DonationsPage')).DonationsPage }));
 const RequestsPage = lazy(async () => ({ default: (await import('@/pages/app/RequestsPage')).RequestsPage }));
 const AllocationsPage = lazy(async () => ({ default: (await import('@/pages/app/AllocationsPage')).AllocationsPage }));
@@ -66,6 +67,7 @@ export function App() {
                     <Route path="dashboard" element={<DashboardPage />} />
                     <Route path="inventory" element={<InventoryPage />} />
                     <Route path="donors" element={<DonorsPage />} />
+                    <Route path="donors/nearby" element={<NearbyDonorsPage />} />
                     <Route path="donations" element={<DonationsPage />} />
                     <Route path="requests" element={<RequestsPage />} />
                     <Route path="allocations" element={<AllocationsPage />} />

@@ -1,6 +1,33 @@
 # LifeLink Verified Test Results
 
-**Current verification: 24 November 2026.** Branch:
+## Final verification — 24 November 2026
+
+Branch `feature/lifelink-bloodstream-experience`; starting HEAD was
+`5cf42191683adeebc9ca493c81b5d26254fcb3b3`. Changes remain local; nothing was
+pushed or merged. Existing unrelated edits, including `LAB-WORK/`, are not part
+of this verification scope.
+
+| Area | Command / evidence | Result |
+| --- | --- | --- |
+| Backend | Cached Maven 3.9.11 direct invocation: `mvn -B -ntp -Dmaven.repo.local=C:\\Users\\karka\\.m2\\repository test` from `project/backend` | **130 tests passed; 0 failures, 0 errors, 0 skipped.** Includes PostgreSQL 16 Testcontainers migration, nearby-search privacy and tenant tests, concurrency and idempotency tests. |
+| Frontend unit tests | `npm.cmd test` from `project/frontend` | **47 tests across 9 files passed.** |
+| Frontend production build/typecheck | `npm.cmd run build` | Passed; Vite transformed 2,280 modules. Analytics split chunk: 491.05 kB raw / 139.09 kB gzip. |
+| Browser E2E | `$env:VITE_API_PROXY_TARGET='http://127.0.0.1:18182'; npm.cmd run test:e2e` | **18 passed** across Chrome and Edge, including mobile navigation, analytics overflow, seeded dashboard/filter, authenticated STOMP, landing flow, keyboard skip link and reduced motion. |
+| Migration and nearby API | `PostgresAuditSearchTest` in the full Maven run | PostgreSQL 16 applied Flyway V1–V6; seeded nearby donor API returned a privacy-limited result; cross-organization request was denied. |
+| Git hygiene | `git diff --check` | Passed; no whitespace errors. A line-ending warning remains for the root README. |
+
+The browser result JSON is [PLAYWRIGHT_RESULTS.json](../evidence/PLAYWRIGHT_RESULTS.json).
+Authenticated route screenshots were captured at desktop, tablet and mobile
+sizes under `../evidence/screenshots/final_*.png`. The broader capture process
+was interrupted before its summary JSON could be written, so no complete
+route-level DOM, accessibility or timing audit is claimed.
+
+The custom DOM checks are not a full axe-core or screen-reader audit; browser
+timing samples are not Lighthouse or field Web Vitals. No penetration test,
+load test, production routing-provider test, or formal WCAG conformance audit
+was run. The historical verification snapshot below is retained for context.
+
+**Superseded snapshot from before donor discovery.** Branch:
 `feature/lifelink-bloodstream-experience`, base HEAD
 `59401d45e511183ede59e7d55073f07e2cf5eacd`. Changes are **uncommitted**;
 **nothing was pushed or merged**. Current scope is `project/` plus the root

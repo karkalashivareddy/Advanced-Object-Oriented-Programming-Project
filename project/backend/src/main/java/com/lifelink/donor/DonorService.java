@@ -4,6 +4,8 @@ import com.lifelink.audit.AuditService;
 import com.lifelink.common.exception.BusinessRuleViolationException;
 import com.lifelink.common.exception.ResourceNotFoundException;
 import com.lifelink.common.exception.TenantAccessDeniedException;
+import com.lifelink.common.GeoPoint;
+import com.lifelink.common.exception.ValidationException;
 import com.lifelink.donor.dto.DonorDtos.AppointmentActionRequest;
 import com.lifelink.donor.dto.DonorDtos.AppointmentRequest;
 import com.lifelink.donor.dto.DonorDtos.AppointmentView;
@@ -12,6 +14,8 @@ import com.lifelink.donor.dto.DonorDtos.ConsentView;
 import com.lifelink.donor.dto.DonorDtos.CreateProfileRequest;
 import com.lifelink.donor.dto.DonorDtos.ProfileView;
 import com.lifelink.donor.dto.DonorDtos.UpdateProfileRequest;
+import com.lifelink.donor.dto.DonorDtos.LocationPreferenceRequest;
+import com.lifelink.donor.dto.DonorDtos.LocationPreferenceView;
 import com.lifelink.identity.AuthenticatedUser;
 import com.lifelink.identity.OrganizationMembershipRepository;
 import com.lifelink.identity.Permission;
@@ -117,6 +121,9 @@ public class DonorService {
     public ConsentView addConsent(Long donorId, ConsentRequest request) {
         DonorProfile profile = find(donorId);
         requireDonorAccess(profile, Permission.DONOR_MANAGE);
+        if (request.type() != null && "LOCATION_DISCOVERY".equalsIgnoreCase(request.type().trim())) {
+            throw new BusinessRuleViolationException("Use the location preference workflow for location consent");
+        }
         ConsentRecord consent = new ConsentRecord(profile, request.type(), request.granted());
         consentRepository.save(consent);
         auditService.record("CONSENT_RECORD", "DONOR", profile.getPublicId(), null, "SUCCESS",
@@ -133,14 +140,51 @@ public class DonorService {
     @Transactional
     public void withdrawConsent(Long donorId, Long consentId) {
         DonorProfile profile = find(donorId);
-        requireDonorAccess(profile, Permission.DONOR_MANAGE);
         ConsentRecord consent = consentRepository.findById(consentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Consent", consentId));
         if (!consent.getDonor().getId().equals(donorId)) {
             throw new ResourceNotFoundException("Consent", consentId);
         }
+        if ("LOCATION_DISCOVERY".equalsIgnoreCase(consent.getType())) {
+            requireDonorOwner(profile);
+            profile.clearLocation();
+        } else {
+            requireDonorAccess(profile, Permission.DONOR_MANAGE);
+        }
         consent.withdraw(Instant.now());
         auditService.record("CONSENT_WITHDRAW", "DONOR", profile.getPublicId(), null, "SUCCESS", Map.of());
+    }
+
+    /**
+     * Updates explicit opt-in and coordinates atomically. Only the donor can grant or
+     * revoke this consent; revocation clears the stored point in the same transaction.
+     */
+    @Transactional
+    public LocationPreferenceView updateLocationPreference(Long donorId, LocationPreferenceRequest request) {
+        DonorProfile profile = find(donorId);
+        requireDonorOwner(profile);
+        Instant now = Instant.now();
+        boolean enabled = Boolean.TRUE.equals(request.enabled());
+        if (enabled) {
+            GeoPoint point;
+            try {
+                point = new GeoPoint(request.latitude(), request.longitude());
+            } catch (IllegalArgumentException invalidPoint) {
+                throw new ValidationException(invalidPoint.getMessage());
+            }
+            if (!consentRepository.existsByDonorIdAndTypeAndGrantedTrueAndWithdrawnAtIsNull(
+                    donorId, "LOCATION_DISCOVERY")) {
+                consentRepository.save(new ConsentRecord(profile, "LOCATION_DISCOVERY", true));
+            }
+            profile.updateLocation(point, now);
+        } else {
+            consentRepository.findByDonorIdAndTypeAndGrantedTrueAndWithdrawnAtIsNull(
+                    donorId, "LOCATION_DISCOVERY").forEach(consent -> consent.withdraw(now));
+            profile.clearLocation();
+        }
+        auditService.record("DONOR_LOCATION_CONSENT_" + (enabled ? "GRANT" : "WITHDRAW"),
+                "DONOR", profile.getPublicId(), null, "SUCCESS", Map.of("enabled", Boolean.toString(enabled)));
+        return new LocationPreferenceView(enabled, enabled ? profile.getLocationUpdatedAt() : null);
     }
 
     @Transactional
@@ -209,6 +253,12 @@ public class DonorService {
                 .anyMatch(donation -> user.belongsTo(donation.getOrganization().getId())
                         && user.hasPermissionForOrganization(permission, donation.getOrganization().getId()));
         if (!allowed) {
+            throw new TenantAccessDeniedException(profile.getId());
+        }
+    }
+
+    private void requireDonorOwner(DonorProfile profile) {
+        if (!profile.getUser().getId().equals(tenantAccess.currentUser().userId())) {
             throw new TenantAccessDeniedException(profile.getId());
         }
     }

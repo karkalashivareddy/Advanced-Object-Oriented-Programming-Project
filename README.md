@@ -39,7 +39,7 @@ The application is a **modular Java monolith with a separate static web client**
 
 - **Java 21 / Spring Boot 3.5.16** owns every business rule, entity invariant, validation, transaction, authorization decision, repository query, and analytics calculation.
 - **React 19 / TypeScript 5.9 / Vite 7** provides the presentation layer: responsive pages, forms, tables, charts, role-aware navigation, loading/error/empty states, and reduced-motion support.
-- **PostgreSQL 16** is the development/demo database, managed by Flyway migrations `V1`–`V5`.
+- **PostgreSQL 16** is the development/demo database, managed by Flyway migrations `V1`–`V6`.
 - **REST `/api/v1`** is the client/server contract. Authenticated **SockJS/STOMP over `/ws`** supplies notification-cache invalidation; the REST inbox remains the authoritative notification path.
 
 Java is the primary implementation language for the AOOP assessment. React/TypeScript is retained by explicit project decision for the web interface; the application is **not** described as Java-only or Vaadin-based. No C/C++ or Python module is part of the application.
@@ -54,7 +54,7 @@ Java is the primary implementation language for the AOOP assessment. React/TypeS
 | Backend framework | Spring Boot 3.5.16: Web MVC, Security, Data JPA/Hibernate, Validation, WebSocket/STOMP, Actuator, springdoc OpenAPI |
 | Frontend | React 19.2, TypeScript 5.9, Vite 7.3, React Router 7.9, TanStack Query 5, Recharts 3, SockJS + STOMP.js |
 | Database | PostgreSQL 16 (Docker Compose); H2 PostgreSQL mode and Testcontainers PostgreSQL in tests |
-| Migrations | Flyway `V1`–`V5` with Hibernate `ddl-auto=validate` |
+| Migrations | Flyway `V1`–`V6` with Hibernate `ddl-auto=validate` |
 | Build | Maven Wrapper 3.9.11 (`project/backend`), npm (`project/frontend`) |
 | Tests | JUnit 5, Mockito, Spring Boot Test, Testcontainers, Vitest, Playwright |
 | Local runtime | Docker Compose with PostgreSQL, Spring Boot backend, and nginx-served SPA |
@@ -155,15 +155,17 @@ npm run test:e2e
 
 ---
 
-## Verified Results Summary
+## Verification evidence
+
+The values below distinguish the previously verified baseline from the current local engineering increment. They are not a production-readiness claim.
 
 | Gate | Recorded result |
 | :--- | :--- |
-| Backend full suite | **119 tests, 0 failures, 0 errors, 0 skipped** across 28 Surefire reports |
-| Frontend typecheck / units / build / audit | Passed / **39 tests in 7 files** / passed / **0 high-or-critical vulnerabilities** |
-| Playwright E2E | **18 tests passed** on Chrome and Edge, retries 0, flaky 0 |
+| Backend current suite | **130 tests, 0 failures, 0 errors, 0 skipped**; includes PostgreSQL 16 Testcontainers, Flyway V1–V6, nearby-search privacy/tenant checks, and idempotency/concurrency coverage. |
+| Frontend current increment | **47 tests in 9 files passed**; TypeScript build and Vite production build passed. |
+| Playwright E2E | **18 tests passed** on Chrome and Edge; mobile analytics overflow, mobile navigation, landing story, keyboard skip link and reduced-motion checks included. |
 | Browser STOMP | Authenticated `CONNECT` with Bearer token, own-queue `SUBSCRIBE`, and `CONNECTED` frame observed; REST polling remains active |
-| Live stack | Backend `/actuator/health` UP, frontend `/healthz` 200, Flyway `V1`–`V5` success |
+| Local verification stack | Isolated H2 dev server applied Flyway `V1`–`V6` and loaded development demo seed; PostgreSQL 16 migration and donor-search API verified through Testcontainers. |
 | Corrected abstract | 4-page PDF in the original black-and-white submission form layout, with all 9 form sections, a 187-word abstract, and no replacement characters; original submission files preserved |
 
 Full commands, evidence links, and limitations are in

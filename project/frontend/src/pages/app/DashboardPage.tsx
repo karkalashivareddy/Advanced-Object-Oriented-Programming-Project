@@ -299,7 +299,7 @@ export function DashboardPage() {
     quickLinks.push({ label: 'Account settings', to: '/app/profile', icon: UserRound });
   }
 
-  const firstName = auth.user?.fullName.split(' ')[0] ?? 'there';
+  const displayName = auth.user?.fullName?.trim() || auth.user?.email.split('@')[0] || 'there';
   const organizationName = organizationNameForScope(auth.user?.memberships, auth.organizationId);
 
   return (
@@ -307,7 +307,7 @@ export function DashboardPage() {
       <header className="page-intro">
         <div>
           <span className="eyebrow"><LayoutDashboard size={14} aria-hidden="true" /> Workspace overview</span>
-          <h1 className="page-title">Good to see you, {firstName}</h1>
+          <h1 className="page-title">Good to see you, {displayName}</h1>
           <p className="page-subtitle">
             {organizationName
               ? `Current picture for ${organizationName}. All values below come from the API.`

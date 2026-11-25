@@ -146,6 +146,14 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Account',
     description: 'Your identity, memberships, and password.',
   },
+  {
+    label: 'Nearby donor finder',
+    to: '/app/donors/nearby',
+    icon: Activity,
+    group: 'Operations',
+    rule: { permissions: [PERMISSIONS.DONOR_DISCOVERY_READ] },
+    description: 'Search for consenting donors by approximate distance.',
+  },
 ];
 
 export const NAV_GROUPS: NavGroup[] = [
@@ -163,5 +171,7 @@ export const QUICK_ACTIONS = [
 ];
 
 export function ruleForPath(pathname: string): AccessRule | undefined {
-  return NAV_ITEMS.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))?.rule;
+  return NAV_ITEMS
+    .filter((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
+    .sort((left, right) => right.to.length - left.to.length)[0]?.rule;
 }

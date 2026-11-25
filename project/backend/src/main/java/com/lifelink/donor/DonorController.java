@@ -9,6 +9,8 @@ import com.lifelink.donor.dto.DonorDtos.ConsentView;
 import com.lifelink.donor.dto.DonorDtos.CreateProfileRequest;
 import com.lifelink.donor.dto.DonorDtos.ProfileView;
 import com.lifelink.donor.dto.DonorDtos.UpdateProfileRequest;
+import com.lifelink.donor.dto.DonorDtos.LocationPreferenceRequest;
+import com.lifelink.donor.dto.DonorDtos.LocationPreferenceView;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,6 +48,12 @@ public class DonorController {
     @PatchMapping("/{id}")
     public ApiResponse<ProfileView> update(@PathVariable Long id, @Valid @RequestBody UpdateProfileRequest request) {
         return ApiResponse.ok(service.update(id, request), "Donor profile updated");
+    }
+
+    @PatchMapping("/{id}/location-preference")
+    public ApiResponse<LocationPreferenceView> updateLocationPreference(
+            @PathVariable Long id, @Valid @RequestBody LocationPreferenceRequest request) {
+        return ApiResponse.ok(service.updateLocationPreference(id, request), "Location preference updated");
     }
 
     @GetMapping("/{id}/consents")

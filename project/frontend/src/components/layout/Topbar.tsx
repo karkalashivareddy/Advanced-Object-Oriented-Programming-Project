@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, LogOut, Menu, Search, Settings2, UserRound } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { NAV_ITEMS } from '@/lib/navigation';
 import { initials } from '@/lib/utils';
+import { api } from '@/lib/api';
 import { NotificationCenter } from './NotificationCenter';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 
@@ -15,6 +17,12 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const runtimeMode = useQuery({
+    queryKey: ['runtime', 'mode'],
+    queryFn: () => api.get<{ demoDataEnabled: boolean }>('/runtime/mode'),
+    staleTime: 60_000,
+    retry: false,
+  });
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
@@ -65,7 +73,9 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
     }
   };
 
-  const currentSection = NAV_ITEMS.find((item) => location.pathname.startsWith(item.to));
+  const currentSection = NAV_ITEMS
+    .filter((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))
+    .sort((left, right) => right.to.length - left.to.length)[0];
 
   return (
     <header className="topbar">
@@ -135,6 +145,12 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
       </div>
 
       <div className="topbar-actions">
+        {runtimeMode.data?.demoDataEnabled && (
+          <span className="demo-data-flag" role="status" aria-label="DEMO DATA — NOT LIVE BLOOD AVAILABILITY">
+            <span className="demo-data-flag__full">DEMO DATA · NOT LIVE BLOOD AVAILABILITY</span>
+            <span className="demo-data-flag__compact" aria-hidden="true">DEMO · NOT LIVE</span>
+          </span>
+        )}
         <OrganizationSwitcher />
         <span className="topbar-divider" aria-hidden="true" />
         <NotificationCenter />

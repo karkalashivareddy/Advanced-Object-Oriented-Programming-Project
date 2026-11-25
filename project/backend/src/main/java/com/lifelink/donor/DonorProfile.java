@@ -2,6 +2,7 @@ package com.lifelink.donor;
 
 import com.lifelink.common.BaseEntity;
 import com.lifelink.common.BloodGroup;
+import com.lifelink.common.GeoPoint;
 import com.lifelink.identity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +12,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -46,6 +48,17 @@ public class DonorProfile extends BaseEntity {
     @Column(nullable = false, length = 24)
     private Availability availability = Availability.AVAILABLE;
 
+    // Scalar columns keep JPA validation simple; the value object is built on demand.
+    // These fields are deliberately absent from every existing donor DTO.
+    @Column
+    private Double latitude;
+
+    @Column
+    private Double longitude;
+
+    @Column(name = "location_updated_at")
+    private Instant locationUpdatedAt;
+
     protected DonorProfile() {
     }
 
@@ -76,6 +89,29 @@ public class DonorProfile extends BaseEntity {
         }
         this.availability = availability;
     }
+
+    /** Sets a validated coarse-discovery location and its freshness timestamp atomically. */
+    public void updateLocation(GeoPoint point, Instant updatedAt) {
+        if (point == null || updatedAt == null) {
+            throw new IllegalArgumentException("Location and timestamp are required");
+        }
+        this.latitude = point.latitude();
+        this.longitude = point.longitude();
+        this.locationUpdatedAt = updatedAt;
+    }
+
+    /** Clears all three location columns together, preserving the all-or-none DB invariant. */
+    public void clearLocation() {
+        this.latitude = null;
+        this.longitude = null;
+        this.locationUpdatedAt = null;
+    }
+
+    public GeoPoint location() {
+        return latitude == null || longitude == null ? null : new GeoPoint(latitude, longitude);
+    }
+
+    public Instant getLocationUpdatedAt() { return locationUpdatedAt; }
 
     public User getUser() { return user; }
     public BloodGroup getBloodGroup() { return bloodGroup; }

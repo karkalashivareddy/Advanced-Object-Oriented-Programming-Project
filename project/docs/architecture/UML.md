@@ -538,7 +538,29 @@ Actual literals: `Dispatch.Status` = `PREPARING`, `IN_TRANSIT`, `DELIVERED`, `IN
 
 ---
 
-## 10. Deployment view
+## 10. Nearby donor search sequence
+
+```mermaid
+sequenceDiagram
+    actor Staff
+    participant UI as React Donor Finder
+    participant API as DonorDiscoveryService
+    participant Auth as TenantAccessService
+    participant DB as DonorProfileRepository / PostgreSQL
+    participant Audit as AuditService
+    Staff->>UI: Select blood group, origin, radius
+    UI->>API: GET /donors/nearby + X-Organization-Id
+    API->>Auth: require explicit org + DISCOVERY_READ
+    Auth-->>API: authorized organization scope
+    API->>DB: consent + availability + freshness + radius query
+    DB-->>API: up to 51 nearest candidates
+    API->>API: return at most 50 opaque distance-band results
+    API->>Audit: record scoped search + coarse origin cell
+    API-->>UI: matches, count, truncation, distance meaning
+    UI-->>Staff: list; no donor point or contact details
+```
+
+## 11. Deployment view
 
 Local Compose deployment is implemented: backend and frontend images
 `lifelink/backend:dev` and `lifelink/frontend:dev` were built successfully. Compose binds
