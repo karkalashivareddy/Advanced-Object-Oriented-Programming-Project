@@ -1,0 +1,79 @@
+$ cd C:\Users\karka\Advanced-Object-Oriented-Programming-Project\LAB-WORK\PRACTICAL-4
+$ javac -encoding UTF-8 -d out src\Practical4Demo.java
+[exit code 0; stdout was empty]
+$ java -cp out Practical4Demo
+[exit code 0]
+
+============================================================
+PRACTICAL-4 - CASE STUDIES M3
+============================================================
+
+============================================================
+CASE STUDY 1 - SMART PARKING / DESIGN BY CONTRACT
+============================================================
+[PASS] FirstFitAllocator satisfies contract
+[PASS] LowestOccupancyZoneAllocator satisfies contract
+[PASS] NearestEntryAllocator satisfies contract
+[PASS] SaboteurAllocator satisfies contract
+  SaboteurAllocator violations: [null vehicle accepted, blank plate accepted, occupied spot returned, incompatible spot returned]
+  Caller violations: null/blank vehicle, null list, null element.
+  Implementer violations: occupied/incompatible spot, mutation, non-determinism.
+
+============================================================
+CASE STUDY 2 - ONLINE BANKING / LSP
+============================================================
+[PASS] substitution works for SB-1
+  SB-1 paid=true balance=9300
+[PASS] substitution works for CA-1
+  CA-1 paid=true balance=4300
+[PASS] substitution works for FD-1
+  FD-1 paid=true balance=19300
+[PASS] substitution works for FD-2
+  FD-2 paid=false balance=20500
+[PASS] immature FD declines instead of throwing
+  Violation signals: unexpected exception, empty override, stronger precondition, instanceof branching.
+  Redesign: final BankAccount protocol + injected WithdrawalPolicy keeps all subclasses substitutable.
+
+============================================================
+CASE STUDY 3 - COURSE REGISTRATION / ROLE INTERFACES + SEALED TYPES
+============================================================
+[PASS] register CS101
+[PASS] grade CS101
+  regular:CS101
+[PASS] register CS102L
+[PASS] grade CS102L
+  lab:CS102L
+[PASS] register CS301E
+[PASS] grade CS301E
+  elective:CS301E
+[PASS] register CS499R
+[PASS] grade CS499R
+  research:CS499R
+[PASS] no instanceof in courseKind switch
+  Interfaces = roles; abstract class = shared identity/state; sealed interface = closed hierarchy.
+
+============================================================
+CASE STUDY 4 - E-COMMERCE / CONTRACT TESTING + DEBUGGING
+============================================================
+[PASS] CreditCardProcessor passes shared suite
+[PASS] UpiProcessor passes shared suite
+[PASS] NetBankingProcessor passes shared suite
+[PASS] DefectiveProcessor passes shared suite
+  Detected: [negative amount accepted, unexpected exception for zero amount: IllegalStateException, over-limit amount accepted, blank receipt id, amount not preserved]
+  Diagnosis: zero crash = unexpected exception (implementer); blank id = postcondition violation (implementer).
+  Diagnosis: negative amount accepted = caller-side precondition failure not enforced (implementer defect).
+
+============================================================
+CASE STUDY 5 - HOSPITAL / COST OF CHANGE + SOLID
+============================================================
+[PASS] registration service
+[PASS] diagnostic service
+[PASS] new scan service added without editing workflow
+[PASS] observer recorded all three events
+  SOLID: SRP split services/billing/audit; OCP registry; LSP via MedicalService; ISP via narrow interfaces; DIP via constructor injection.
+  Patterns: Strategy (billing), Factory/Registry (services), Observer (audit events).
+
+============================================================
+SUMMARY
+============================================================
+Checks run: 26 | Failed: 0 | Result: PASS

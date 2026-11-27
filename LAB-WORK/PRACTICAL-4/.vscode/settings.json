@@ -1,0 +1,11 @@
+{
+  "workbench.startupEditor": "none",
+  "security.workspace.trust.enabled": false,
+  "task.allowAutomaticTasks": "on",
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+  "terminal.integrated.fontSize": 16,
+  "terminal.integrated.fontFamily": "Courier New",
+  "editor.fontSize": 14,
+  "editor.minimap.enabled": false,
+  "workbench.panel.opensMaximized": "always"
+}
