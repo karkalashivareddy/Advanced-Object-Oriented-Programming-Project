@@ -58,8 +58,12 @@ cd project/frontend && npm ci && CI=true npm run build && CI=true npm test
 ```
 
 Additional local checks recorded for the current branch (not part of the CI
-template): backend 119 tests with 0 failures/errors/skips, frontend 39 unit tests,
-Playwright 18 passed on Chrome and Edge with retries 0
+template): a 24 November run recorded backend 119 tests with 0
+failures/errors/skips, frontend 39 unit tests, and Playwright 18 passes on Chrome
+and Edge with retries 0. The current 27 November gates are backend **135 tests
+run, 0 failures, 0 errors, 8 skipped** (Docker-dependent PostgreSQL
+Testcontainers), frontend **54 tests in 11 files**, and **46 Playwright
+executions**; see [`../quality/TEST_RESULTS.md`](../quality/TEST_RESULTS.md).
 ([`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json)),
 the standalone SockJS/STOMP smoke test (`npm run test:stomp`,
 [`../evidence/STOMP_SMOKE_RESULT.json`](../evidence/STOMP_SMOKE_RESULT.json)), and

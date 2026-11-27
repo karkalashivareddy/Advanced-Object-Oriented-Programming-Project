@@ -1,0 +1,159 @@
+/* Motion primitives. Only transform, opacity and filter are animated here.
+   Every looping effect is paused when the document is hidden. */
+
+@keyframes ll-rise-in {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ll-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ll-wipe-in {
+  from { transform: translate3d(-101%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ll-wipe-out {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(101%, 0, 0); }
+}
+
+@keyframes ll-progress-sweep {
+  from { transform: translate3d(-100%, 0, 0); }
+  to { transform: translate3d(260%, 0, 0); }
+}
+
+@keyframes ll-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.92); }
+}
+
+@keyframes ll-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ll-shimmer {
+  from { transform: translate3d(-100%, 0, 0); }
+  to { transform: translate3d(100%, 0, 0); }
+}
+
+@keyframes ll-cell-drift {
+  0% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -18px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ll-flow {
+  to { transform: translate3d(0, -18px, 0); }
+}
+
+.ll-enter {
+  animation: ll-rise-in var(--motion-base) var(--ease-enter) both;
+}
+
+.ll-fade {
+  animation: ll-fade-in var(--motion-base) var(--ease-out) both;
+}
+
+.ll-wipe-in {
+  animation: ll-wipe-in 420ms var(--ease-enter) both;
+}
+
+.ll-wipe-out {
+  animation: ll-wipe-out 420ms var(--ease-enter) both;
+}
+
+.ll-progress::after {
+  animation: ll-progress-sweep 1.2s var(--ease-flow) infinite;
+}
+
+.ll-pulse {
+  animation: ll-pulse var(--motion-pulse) var(--ease-in-out) infinite;
+}
+
+.ll-spin {
+  animation: ll-spin 900ms linear infinite;
+}
+
+.ll-shimmer::after {
+  animation: ll-shimmer 1.6s var(--ease-flow) infinite;
+}
+
+.ll-cell {
+  animation: ll-cell-drift var(--motion-flow) var(--ease-in-out) infinite;
+}
+
+.ll-flow {
+  animation: ll-flow var(--motion-flow) linear infinite;
+}
+
+.ll-parallax {
+  will-change: transform;
+}
+
+.ll-magnetic {
+  transform: translate3d(var(--magnetic-x, 0), var(--magnetic-y, 0), 0);
+  transition: transform 220ms var(--ease-out);
+}
+
+.ll-press:active {
+  transform: scale(0.97);
+}
+
+.ll-tilt {
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 260ms var(--ease-out);
+}
+
+/* Pause every loop when the tab is hidden; IntersectionObserver pause is
+   applied component-by-component through [data-motion-paused]. */
+body[data-page-hidden='true'] .ll-progress::after,
+body[data-page-hidden='true'] .ll-pulse,
+body[data-page-hidden='true'] .ll-spin,
+body[data-page-hidden='true'] .ll-shimmer::after,
+body[data-page-hidden='true'] .ll-cell,
+body[data-page-hidden='true'] .ll-flow,
+body[data-page-hidden='true'] .cell-field__cell,
+body[data-page-hidden='true'] .bloodstream-visual__flow,
+body[data-page-hidden='true'] .top-progress__bar,
+[data-motion-paused='true'] .ll-progress::after,
+[data-motion-paused='true'] .ll-pulse,
+[data-motion-paused='true'] .ll-spin,
+[data-motion-paused='true'] .ll-shimmer::after,
+[data-motion-paused='true'] .ll-cell,
+[data-motion-paused='true'] .ll-flow,
+[data-motion-paused='true'] .cell-field__cell,
+[data-motion-paused='true'] .bloodstream-visual__flow,
+[data-motion-paused='true'] .top-progress__bar {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .ll-enter,
+  .ll-fade,
+  .ll-wipe-in,
+  .ll-wipe-out {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+
+  .ll-magnetic,
+  .ll-tilt,
+  .ll-parallax {
+    transform: none !important;
+  }
+}

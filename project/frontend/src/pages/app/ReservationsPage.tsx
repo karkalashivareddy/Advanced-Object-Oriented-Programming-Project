@@ -25,10 +25,15 @@ import {
   Drawer,
   ErrorState,
   FormField,
+  Grid,
+  Input,
   Modal,
   PageHeader,
+  Select,
   Skeleton,
+  StatCard,
   StatusBadge,
+  Surface,
   useToast,
   type DataTableColumn,
   type SortState,
@@ -386,25 +391,13 @@ export function ReservationsPage() {
         }
       />
 
-      <div className="metric-grid">
-        <div className="metric-card surface stagger-1">
-          <span className="metric-label">Active holds</span>
-          <span className="metric-value">{activeCount}</span>
-          <span className="metric-delta">{allReservations.length} total in view</span>
-        </div>
-        <div className="metric-card surface stagger-2">
-          <span className="metric-label">Expiring within 10 min</span>
-          <span className="metric-value">{urgentCount}</span>
-          <span className="metric-delta">Live countdown</span>
-        </div>
-        <div className="metric-card surface stagger-3">
-          <span className="metric-label">Confirmed</span>
-          <span className="metric-value">{confirmedCount}</span>
-          <span className="metric-delta">Ready for dispatch</span>
-        </div>
-      </div>
+      <Grid columns="stats">
+        <StatCard label="Active holds" value={activeCount} hint={`${allReservations.length} total in view`} />
+        <StatCard label="Expiring within 10 min" value={urgentCount} hint="Live countdown" />
+        <StatCard label="Confirmed" value={confirmedCount} hint="Ready for dispatch" />
+      </Grid>
 
-      <div className="surface premium-table" style={{ marginTop: 18 }}>
+      <div style={{ marginTop: 18 }}>
         <DataTable
           ariaLabel="Reservation list"
           rowKey={(row) => row.id}
@@ -420,8 +413,7 @@ export function ReservationsPage() {
             <div className="toolbar">
               <div className="toolbar-search">
                 <Search size={15} aria-hidden="true" />
-                <input
-                  className="input"
+                <Input
                   type="search"
                   aria-label="Search reservations"
                   placeholder="Search reservations…"
@@ -432,9 +424,8 @@ export function ReservationsPage() {
               <div className="filter-grid">
                 <div className="filter-field">
                   <label className="sr-only" htmlFor="reservation-status">Reservation status</label>
-                  <select
+                  <Select
                     id="reservation-status"
-                    className="select"
                     value={status}
                     onChange={(event) => setStatus(event.target.value)}
                   >
@@ -442,13 +433,12 @@ export function ReservationsPage() {
                     {RESERVATION_STATUSES.map((item) => (
                       <option key={item} value={item}>{humanize(item)}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="filter-field">
                   <label className="sr-only" htmlFor="reservation-organization">Organization</label>
-                  <select
+                  <Select
                     id="reservation-organization"
-                    className="select"
                     value={organizationFilter}
                     onChange={(event) => setOrganizationFilter(event.target.value)}
                   >
@@ -456,13 +446,12 @@ export function ReservationsPage() {
                     {organizationOptions.map((item) => (
                       <option key={item.id} value={item.id}>{item.label}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="filter-field">
                   <label className="sr-only" htmlFor="reservation-unit-filter">Unit ID</label>
-                  <input
+                  <Input
                     id="reservation-unit-filter"
-                    className="input"
                     inputMode="numeric"
                     placeholder="Unit ID"
                     value={unitFilter}
@@ -471,9 +460,8 @@ export function ReservationsPage() {
                 </div>
                 <div className="filter-field">
                   <label className="sr-only" htmlFor="reservation-request-filter">Request ID</label>
-                  <input
+                  <Input
                     id="reservation-request-filter"
-                    className="input"
                     inputMode="numeric"
                     placeholder="Request ID"
                     value={requestFilter}
@@ -498,9 +486,9 @@ export function ReservationsPage() {
         />
       </div>
       {reservationsQuery.isError && (
-        <div className="surface" style={{ marginTop: 16 }}>
+        <Surface padding="md" style={{ marginTop: 16 }}>
           <ErrorState error={reservationsQuery.error} onRetry={() => void reservationsQuery.refetch()} />
-        </div>
+        </Surface>
       )}
 
       <Drawer

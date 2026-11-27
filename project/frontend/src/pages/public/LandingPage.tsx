@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Lenis from 'lenis';
 import {
   ArrowRight,
-  BellRing,
   Boxes,
   Check,
   ClipboardCheck,
   Clock3,
   Droplets,
+  EyeOff,
   HeartHandshake,
   HeartPulse,
   LockKeyhole,
+  MapPin,
   Menu,
   Route,
   ScanLine,
@@ -20,8 +22,38 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
-import { BloodstreamVisual } from '@/components/brand/BloodstreamVisual';
-import { JourneyVessel, type JourneyStage } from '@/components/brand/JourneyVessel';
+import {
+  BloodstreamVisual,
+  CellField,
+  JourneyVessel,
+  LifelinePath,
+  Wordmark,
+  type JourneyStage,
+} from '@/components/brand';
+import { Picture } from '@/components/ui';
+import {
+  Counter,
+  CursorHalo,
+  Magnetic,
+  OffscreenMotionPause,
+  Reveal,
+  ScrollProgress,
+  SplitText,
+  Stagger,
+} from '@/components/motion';
+import {
+  formatBloodGroup,
+  getCompatibleDonorCount,
+  getRbcCompatibility,
+  getRbcMatrix,
+  RBC_COMPATIBILITY_NOTE,
+  type RbcGroup,
+} from '@/lib/bloodCompatibility';
+import { BLOOD_GROUPS } from '@/lib/constants';
+import { prefersReducedMotion } from '@/lib/motion';
+
+const NEARBY_DISCOVERY_NOTE =
+  'Nearby donor discovery is an operational assistance feature. Final donor eligibility, blood compatibility and clinical decisions require authorized clinical verification.';
 
 const journeyStages: JourneyStage[] = [
   {
@@ -98,26 +130,10 @@ const trustFeatures = [
 ];
 
 const trustDimensions = [
-  {
-    label: 'Authorization',
-    value: 'Server-side',
-    detail: 'The API enforces access on every request.',
-  },
-  {
-    label: 'Data scope',
-    value: 'Organization',
-    detail: 'Memberships define what a user can see.',
-  },
-  {
-    label: 'Critical actions',
-    value: 'Idempotent',
-    detail: 'Keys reduce duplicate reservations and dispatches.',
-  },
-  {
-    label: 'Investigation',
-    value: 'Auditable',
-    detail: 'Correlation IDs connect actions to records.',
-  },
+  { label: 'Authorization', value: 'Server-side', detail: 'The API enforces access on every request.' },
+  { label: 'Data scope', value: 'Organization', detail: 'Memberships define what a user can see.' },
+  { label: 'Critical actions', value: 'Idempotent', detail: 'Keys reduce duplicate reservations and dispatches.' },
+  { label: 'Investigation', value: 'Auditable', detail: 'Correlation IDs connect actions to records.' },
 ];
 
 const heroAssurances = [
@@ -125,6 +141,24 @@ const heroAssurances = [
   { icon: ScanLine, text: 'Unit-level traceability' },
   { icon: Route, text: 'Idempotent handoffs' },
   { icon: ClipboardCheck, text: 'Auditable actions' },
+];
+
+const privacyPoints = [
+  {
+    icon: EyeOff,
+    title: 'No exact donor coordinates',
+    text: 'The API returns a coarse distance band, never a donor’s precise location.',
+  },
+  {
+    icon: LockKeyhole,
+    title: 'Consent and recency are required',
+    text: 'Search only considers available donors with current consent and a recent location update.',
+  },
+  {
+    icon: MapPin,
+    title: 'Your origin stays with the request',
+    text: 'The coordinates you enter are sent to the LifeLink API for the search and are not published on this page.',
+  },
 ];
 
 const faqs = [
@@ -157,14 +191,35 @@ const faqs = [
 
 const marketingLinks = [
   { label: 'Journey', href: '#journey' },
+  { label: 'Atlas', href: '#compatibility' },
   { label: 'Platform', href: '#platform' },
-  { label: 'Security', href: '#security' },
+  { label: 'Community', href: '#community' },
+  { label: 'Safety', href: '#security' },
   { label: 'FAQ', href: '#faq' },
 ];
 
 export function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [recipient, setRecipient] = useState<RbcGroup>('O_POSITIVE');
+  const [selectedDonor, setSelectedDonor] = useState<RbcGroup>('O_POSITIVE');
   const closeMenu = () => setMobileOpen(false);
+  const matrix = useMemo(() => getRbcMatrix(recipient), [recipient]);
+  const compatibleCount = getCompatibleDonorCount(recipient);
+
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const lenis = new Lenis({ duration: 1.05, smoothWheel: true, wheelMultiplier: 0.9 });
+    let frame = 0;
+    const raf = (time: number) => {
+      lenis.raf(time);
+      frame = requestAnimationFrame(raf);
+    };
+    frame = requestAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(frame);
+      lenis.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -177,19 +232,19 @@ export function LandingPage() {
 
   return (
     <div className="marketing bloodstream-page">
+      <ScrollProgress />
+      <CursorHalo />
+      <div className="landing-ambient" aria-hidden="true">
+        <span className="landing-ambient__wash" />
+        <span className="landing-ambient__thread" />
+      </div>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
 
       <header className="marketing-header">
         <div className="marketing-header-inner">
-          <Link to="/" className="brand" aria-label="LifeLink home">
-            <span className="brand-mark">
-              <HeartPulse size={19} aria-hidden="true" />
-            </span>
-            <span className="brand-name">LifeLink</span>
-            <span className="brand-tagline">BLOOD NETWORK</span>
-          </Link>
+          <Wordmark to="/" inverse />
           <nav className="marketing-nav" aria-label="Primary navigation">
             {marketingLinks.map((link) => (
               <a href={link.href} key={link.label}>
@@ -213,7 +268,7 @@ export function LandingPage() {
           </button>
         </div>
         {mobileOpen && (
-          <nav className="cluster marketing-container" id="marketing-mobile-nav" aria-label="Mobile navigation">
+          <nav className="marketing-mobile-nav cluster" id="marketing-mobile-nav" aria-label="Mobile navigation">
             {marketingLinks.map((link) => (
               <a href={link.href} key={link.label} onClick={closeMenu}>
                 {link.label}
@@ -231,88 +286,221 @@ export function LandingPage() {
 
       <main id="main-content">
         <section className="marketing-hero bloodstream-hero" aria-labelledby="hero-title">
-          <div className="marketing-container">
-            <div className="page-enter">
-              <span className="eyebrow">
-                <Droplets size={14} aria-hidden="true" /> Donor to delivery, one record
+          <div className="marketing-container hero-grid">
+            <div className="hero-copy ll-enter">
+              <span className="hero-kicker">
+                <span className="hero-kicker__dot" aria-hidden="true" />
+                The living blood network
               </span>
-              <h1 id="hero-title">
-                Every drop has a <span>journey.</span>
+              <h1 className="hero-title" id="hero-title">
+                <SplitText text="Every Drop Has a Destination." accentWord="Destination." />
               </h1>
               <p className="hero-lede">
-                LifeLink connects donor records, blood inventory, emergency requests, and dispatch in one
-                permission-aware workspace. Every handoff stays attached to the same unit, the same request,
-                and the same accountable team.
+                Connecting donors, hospitals and blood banks through one intelligent lifeline. Because when
+                every second matters, every connection counts.
               </p>
               <div className="hero-actions">
-                <Link className="btn btn-primary btn-lg" to="/register">
-                  Create donor account <ArrowRight size={17} aria-hidden="true" />
-                </Link>
-                <Link className="btn btn-secondary btn-lg" to="/login">
-                  Sign in to workspace
+                <Magnetic>
+                  <Link className="btn btn-primary btn-lg" to="/login">
+                    Find Blood <ArrowRight size={17} aria-hidden="true" />
+                  </Link>
+                </Magnetic>
+                <Link className="btn btn-secondary btn-lg" to="/register">
+                  Become a Donor
                 </Link>
               </div>
-              <p className="hero-note">
-                Donors self-register. Staff access is provisioned by an organization administrator.
-              </p>
-              <ul className="hero-assurances" aria-label="Platform safeguards">
+              <Stagger className="hero-proof" itemClassName="hero-proof__item" gap="tight">
                 {heroAssurances.map(({ icon: Icon, text }) => (
-                  <li key={text}>
-                    <Icon size={14} aria-hidden="true" /> {text}
-                  </li>
+                  <span key={text}>
+                    <Icon size={13} aria-hidden="true" /> {text}
+                  </span>
                 ))}
-              </ul>
+              </Stagger>
             </div>
 
-            <div className="hero-vessel-card page-enter stagger-1" id="product">
-              <BloodstreamVisual label="Illustrative animated blood vessel with red blood cells moving from donor to delivery" />
-              <div className="hero-vessel-card__top">
-                <span className="vessel-pill">
-                  <span className="live-dot" aria-hidden="true" /> Journey in motion
-                </span>
-                <span className="vessel-pill vessel-pill--muted">Illustrative</span>
-              </div>
-              <div className="hero-vessel-card__panel">
-                <span className="metric-label">One continuous thread</span>
-                <div className="vessel-milestones" aria-label="Illustrative journey milestones">
-                  <span>Donor</span>
-                  <i aria-hidden="true" />
-                  <span>Screened</span>
-                  <i aria-hidden="true" />
-                  <span>Reserved</span>
-                  <i aria-hidden="true" />
-                  <span>Delivered</span>
+            <div className="hero-visual ll-enter" style={{ animationDelay: '90ms' }}>
+              <OffscreenMotionPause className="hero-motion-boundary">
+                <div className="hero-vessel-card" id="product">
+                <BloodstreamVisual label="Illustrative animated blood vessel with red blood cells moving from donor to delivery" />
+                <CellField dense />
+                <LifelinePath variant="hero" />
+                <span className="hero-visual-index" aria-hidden="true">LL / 001 — donor to delivery</span>
+                <div className="hero-vessel-card__top">
+                  <span className="vessel-pill">
+                    <span className="live-dot" aria-hidden="true" /> Journey in motion
+                  </span>
+                  <span className="vessel-pill vessel-pill--muted">Illustrative</span>
                 </div>
-                <p className="freshness">Visual story only · not live supply data</p>
-              </div>
+                <div className="hero-vessel-card__panel">
+                  <span className="metric-label">One continuous thread</span>
+                  <div className="vessel-milestones" aria-label="Illustrative journey milestones">
+                    <span>Donor</span>
+                    <i aria-hidden="true" />
+                    <span>Screened</span>
+                    <i aria-hidden="true" />
+                    <span>Reserved</span>
+                    <i aria-hidden="true" />
+                    <span>Delivered</span>
+                  </div>
+                  <p className="freshness">Visual story only · not live supply data</p>
+                </div>
+                </div>
+              </OffscreenMotionPause>
             </div>
+          </div>
+        </section>
+
+        <section className="network-signal" aria-label="Illustrative continuous donor-to-delivery lifeline">
+          <div className="network-signal__inner">
+            <span className="network-signal__label">One record · one thread</span>
+            <LifelinePath variant="divider" className="network-signal__path" />
+            <span className="network-signal__code">Illustrative · not live supply data</span>
           </div>
         </section>
 
         <section className="marketing-section journey-section" id="journey" aria-labelledby="journey-title">
           <div className="marketing-container">
-            <div className="section-heading">
-              <span className="eyebrow">The donor-to-delivery journey</span>
-              <h2 id="journey-title">From one generous decision to one careful delivery.</h2>
-              <p>
-                Each stage creates the evidence the next stage needs. Teams see the same history instead of
-                reconstructing it from separate systems.
+            <Reveal>
+              <div className="chapter-rail">01 / The continuum</div>
+              <div className="section-heading">
+                <span className="eyebrow"><HeartPulse size={13} aria-hidden="true" /> Donor to delivery</span>
+                <h2 id="journey-title">From one generous decision to one careful delivery.</h2>
+                <p>
+                  Each stage creates the evidence the next stage needs. Teams see the same history instead of
+                  reconstructing it from separate systems.
+                </p>
+              </div>
+            </Reveal>
+            <JourneyVessel stages={journeyStages} />
+          </div>
+        </section>
+
+        <section className="marketing-section compat-section" id="compatibility" aria-labelledby="compatibility-title">
+          <div className="marketing-container">
+            <Reveal>
+              <div className="chapter-rail">02 / Compatibility atlas</div>
+              <div className="section-heading">
+                <span className="eyebrow"><Droplets size={13} aria-hidden="true" /> Red-cell teaching matrix</span>
+                <h2 id="compatibility-title">See the boundaries before you make the decision.</h2>
+                <p>
+                  Explore all 64 red-cell recipient and donor combinations. This is an educational view of one
+                  rule set, not a compatibility check and not a substitute for clinical crossmatching.
+                </p>
+              </div>
+            </Reveal>
+
+            <div className="blood-explorer">
+              <div className="blood-explorer__toolbar">
+                <div>
+                  <span className="field-label">Recipient red-cell group</span>
+                  <div className="orb-row" role="group" aria-label="Choose a recipient blood group">
+                    {BLOOD_GROUPS.map((group) => (
+                      <button
+                        key={group}
+                        type="button"
+                        className="blood-orb blood-orb--select"
+                        data-selected={group === recipient}
+                        aria-pressed={group === recipient}
+                        onClick={() => setRecipient(group)}
+                      >
+                        <span className="blood-orb__core" aria-hidden="true" />
+                        <span className="blood-orb__label">{formatBloodGroup(group)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="compat-summary" role="status">
+                  <Counter value={compatibleCount} />
+                  <span>compatible donor groups for {formatBloodGroup(recipient)} recipients</span>
+                </div>
+              </div>
+
+              <div className="blood-explorer__stage">
+                <div>
+                  <span className="field-label">Donor groups · illustrative</span>
+                  <div className="orb-row orb-row--donors" aria-label="Illustrative donor compatibility">
+                    {matrix.map((row) => {
+                      const selected = row.donor === selectedDonor;
+                      return (
+                        <button
+                          key={row.donor}
+                          type="button"
+                          className="blood-orb blood-orb--donor"
+                          data-compatible={row.compatibility.compatible}
+                          data-selected={selected}
+                          aria-pressed={selected}
+                          onClick={() => setSelectedDonor(row.donor)}
+                        >
+                          <span className="blood-orb__core" aria-hidden="true" />
+                          <span className="blood-orb__label">{formatBloodGroup(row.donor)}</span>
+                          <span className="blood-orb__status">
+                            {row.compatibility.compatible ? <Check size={12} aria-hidden="true" /> : <X size={12} aria-hidden="true" />}
+                            {row.compatibility.compatible ? 'Compatible' : 'Not compatible'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <aside className="blood-explorer__detail" aria-live="polite">
+                  <span className="eyebrow eyebrow--chip">Selected pair</span>
+                  <h3>{formatBloodGroup(recipient)} ← {formatBloodGroup(selectedDonor)}</h3>
+                  <p>{getRbcCompatibility(recipient, selectedDonor).explanation}</p>
+                  <p className="freshness">Illustrative · not a clinical compatibility check</p>
+                </aside>
+              </div>
+
+              <details className="compat-table-fallback">
+                <summary>View all eight donor results as a text table</summary>
+                <div className="compat-matrix-wrap">
+                  <table className="compat-table">
+                    <caption>
+                      Illustrative red-cell donor groups for {formatBloodGroup(recipient)} recipients. Change the
+                      recipient group to explore every pair in the matrix.
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Donor group</th>
+                        <th scope="col">Compatibility</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {matrix.map((row) => (
+                        <tr key={row.donor}>
+                          <th scope="row">{formatBloodGroup(row.donor)}</th>
+                          <td>
+                            <span className={row.compatibility.compatible ? 'compat-cell compat-cell--yes' : 'compat-cell compat-cell--no'}>
+                              {row.compatibility.compatible ? <Check size={14} aria-hidden="true" /> : <X size={14} aria-hidden="true" />}
+                              {row.compatibility.compatible ? 'Compatible' : 'Not compatible'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+              <p className="clinical-note">
+                <ClipboardCheck size={17} aria-hidden="true" />
+                <span>{RBC_COMPATIBILITY_NOTE}</span>
               </p>
             </div>
-            <JourneyVessel stages={journeyStages} />
           </div>
         </section>
 
         <section className="marketing-section soft" id="platform" aria-labelledby="platform-title">
           <div className="marketing-container">
-            <div className="section-heading">
-              <span className="eyebrow">Inventory with memory</span>
-              <h2 id="platform-title">Know what you have, where it is, and when it expires.</h2>
-              <p>
-                A unit is never just a number. Its blood group, component, storage location, status changes,
-                and linked donation remain connected throughout its life.
-              </p>
-            </div>
+            <Reveal>
+              <div className="chapter-rail">03 / Inventory with memory</div>
+              <div className="section-heading">
+                <span className="eyebrow"><Boxes size={13} aria-hidden="true" /> The platform</span>
+                <h2 id="platform-title">Know what you have, where it is, and when it expires.</h2>
+                <p>
+                  A unit is never just a number. Its blood group, component, storage location, status changes,
+                  and linked donation remain connected throughout its life.
+                </p>
+              </div>
+            </Reveal>
             <div className="feature-grid">
               {inventoryFeatures.map((feature) => (
                 <article className="feature-card surface" key={feature.title}>
@@ -327,9 +515,10 @@ export function LandingPage() {
 
         <section className="marketing-section" aria-labelledby="emergency-title">
           <div className="marketing-container split-section split-layout">
-            <div>
-              <span className="eyebrow">Emergency coordination</span>
-              <h2 id="emergency-title">Respond with shared context.</h2>
+            <Reveal>
+              <div className="chapter-rail">04 / Emergency coordination</div>
+              <span className="eyebrow"><Siren size={13} aria-hidden="true" /> Shared context</span>
+              <h2 id="emergency-title">Respond with the same record, not a different spreadsheet.</h2>
               <p className="page-subtitle">
                 Emergency requests carry their required items, approval state, and event history. Authorized
                 staff review candidate units, confirm allocations with an idempotency key, and move
@@ -340,55 +529,87 @@ export function LandingPage() {
                 <li><Check size={16} aria-hidden="true" /> Clearly labelled non-clinical suggestions</li>
                 <li><Check size={16} aria-hidden="true" /> Reservation-to-dispatch traceability</li>
               </ul>
-            </div>
-            <div className="feature-card surface-raised">
-              <div className="task-icon"><Siren size={20} aria-hidden="true" /></div>
-              <h3>Coordinated response</h3>
-              <p>
-                Requests, allocations, reservations, and dispatch are distinct steps with explicit
-                permissions. Each action stays attached to the same operational record.
-              </p>
-              <div className="alert alert-info">
-                <ShieldCheck size={17} aria-hidden="true" />
-                <div><strong>Decision support only</strong>Suggestions never replace clinical verification.</div>
+            </Reveal>
+            <Reveal delay={80}>
+              <div className="feature-card surface-raised">
+                <div className="task-icon"><Siren size={20} aria-hidden="true" /></div>
+                <h3>Coordinated response</h3>
+                <p>
+                  Requests, allocations, reservations, and dispatch are distinct steps with explicit
+                  permissions. Each action stays attached to the same operational record.
+                </p>
+                <Picture
+                  asset="emergency-handoff"
+                  decorative
+                  sizes="(max-width: 640px) 100vw, 360px"
+                  pictureClassName="responsive-picture--inset"
+                />
+                <div className="alert alert-info">
+                  <ShieldCheck size={17} aria-hidden="true" />
+                  <div><strong>Decision support only</strong>Suggestions never replace clinical verification.</div>
+                </div>
               </div>
-            </div>
+            </Reveal>
           </div>
         </section>
 
-        <section className="marketing-section soft" aria-labelledby="donor-title">
-          <div className="marketing-container split-section split-layout">
-            <div className="feature-card surface">
-              <div className="task-icon"><HeartHandshake size={20} aria-hidden="true" /></div>
-              <h3>Donor participation</h3>
-              <p>
-                Donor profiles, consent records, and appointment requests live beside the donations and
-                units they produce. Staff review screening and approve eligible donations before units
-                enter inventory.
+        <section className="marketing-section privacy-section" aria-labelledby="privacy-title">
+          <div className="marketing-container privacy-grid">
+            <Reveal>
+              <div className="privacy-visual">
+                <Picture
+                  asset="privacy-rings"
+                  decorative
+                  sizes="(max-width: 720px) 100vw, 480px"
+                  pictureClassName="responsive-picture--cover"
+                />
+                <span className="privacy-ring privacy-ring--outer" aria-hidden="true" />
+                <span className="privacy-ring privacy-ring--middle" aria-hidden="true" />
+                <span className="privacy-ring privacy-ring--inner" aria-hidden="true" />
+                <span className="privacy-cell privacy-cell--one" aria-hidden="true" />
+                <span className="privacy-cell privacy-cell--two" aria-hidden="true" />
+                <span className="privacy-cell privacy-cell--three" aria-hidden="true" />
+                <span className="privacy-origin" aria-hidden="true"><MapPin size={18} /></span>
+                <span className="privacy-visual-label">Approximate bands · exact coordinates withheld</span>
+              </div>
+            </Reveal>
+            <Reveal delay={80}>
+              <div className="chapter-rail">05 / Privacy by boundary</div>
+              <span className="eyebrow"><EyeOff size={13} aria-hidden="true" /> Donor discovery</span>
+              <h2 id="privacy-title">Find a lead without exposing a person.</h2>
+              <p className="page-subtitle">
+                Nearby donor discovery returns consenting, available donors as distance bands. It never returns
+                exact coordinates or contact details, and every result remains an operational lead.
               </p>
-            </div>
-            <div>
-              <span className="eyebrow">For donors and staff</span>
-              <h2 id="donor-title">Consent and continuity, built in.</h2>
-              <ul className="check-list">
-                <li><UsersRound size={16} aria-hidden="true" /> Donor profiles with contact details and blood group</li>
-                <li><ClipboardCheck size={16} aria-hidden="true" /> Consent records attached to each donor</li>
-                <li><BellRing size={16} aria-hidden="true" /> Appointment requests with staff review</li>
+              <ul className="privacy-list">
+                {privacyPoints.map(({ icon: Icon, title, text }) => (
+                  <li key={title}>
+                    <Icon size={17} aria-hidden="true" />
+                    <span><strong>{title}</strong>{text}</span>
+                  </li>
+                ))}
               </ul>
-            </div>
+              <p className="clinical-note">
+                <ShieldCheck size={17} aria-hidden="true" />
+                <span>{NEARBY_DISCOVERY_NOTE}</span>
+              </p>
+            </Reveal>
           </div>
         </section>
 
         <section className="marketing-section" id="security" aria-labelledby="security-title">
           <div className="marketing-container">
-            <div className="section-heading">
-              <span className="eyebrow">Trust and security</span>
-              <h2 id="security-title">Safety is enforced in the system, not just the interface.</h2>
-              <p>
-                The SPA hides actions you cannot perform, but the API independently enforces authorization
-                and organization scope on every request.
-              </p>
-            </div>
+            <Reveal>
+              <div className="chapter-rail">06 / Trust enforced in the system</div>
+              <div className="section-heading">
+                <span className="eyebrow"><LockKeyhole size={13} aria-hidden="true" /> Safety by design</span>
+                <h2 id="security-title">The interface guides you. The API decides.</h2>
+                <p>
+                  The SPA hides actions you cannot perform, but the API independently enforces authorization
+                  and organization scope on every request.
+                </p>
+              </div>
+            </Reveal>
             <div className="metric-grid">
               {trustDimensions.map((dimension) => (
                 <article className="metric-card surface" key={dimension.label}>
@@ -410,17 +631,54 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section className="marketing-section community-section" id="community" aria-labelledby="community-title">
+          <div className="marketing-container">
+            <Reveal>
+              <div className="chapter-rail">07 / One network, clear roles</div>
+              <div className="section-heading">
+                <span className="eyebrow"><HeartHandshake size={13} aria-hidden="true" /> Community of care</span>
+                <h2 id="community-title">Donors, banks and hospitals on the same thread.</h2>
+                <p>
+                  Each participant joins through a deliberate path. Donors create their own accounts.
+                  Administrators create organization profiles and memberships. The API applies the resulting
+                  permissions and organization scope on every request.
+                </p>
+              </div>
+            </Reveal>
+            <Stagger className="feature-grid" itemClassName="feature-card surface" gap="base">
+              <div>
+                <span className="task-icon"><HeartHandshake size={20} aria-hidden="true" /></span>
+                <h3>Donors register themselves</h3>
+                <p>Registration creates a donor account through the same API used by the application.</p>
+              </div>
+              <div>
+                <span className="task-icon"><UsersRound size={20} aria-hidden="true" /></span>
+                <h3>Organizations are provisioned</h3>
+                <p>An administrator creates the blood bank or hospital profile, then adds staff memberships and roles.</p>
+              </div>
+              <div>
+                <span className="task-icon"><ShieldCheck size={20} aria-hidden="true" /></span>
+                <h3>Access stays scoped</h3>
+                <p>The interface reflects permissions, while the API independently enforces them on every request.</p>
+              </div>
+            </Stagger>
+          </div>
+        </section>
+
         <section className="marketing-section soft" aria-labelledby="onboarding-title">
           <div className="marketing-container">
-            <div className="section-heading">
-              <span className="eyebrow">Organization onboarding</span>
-              <h2 id="onboarding-title">Built for blood banks and hospitals.</h2>
-              <p>
-                Administrators create each organization profile with its registration code, service area,
-                and memberships. Verification and staff access are managed separately from donor
-                self-registration.
-              </p>
-            </div>
+            <Reveal>
+              <div className="chapter-rail">08 / Organization onboarding</div>
+              <div className="section-heading">
+                <span className="eyebrow"><UsersRound size={13} aria-hidden="true" /> Built for teams</span>
+                <h2 id="onboarding-title">Built for blood banks and hospitals.</h2>
+                <p>
+                  Administrators create each organization profile with its registration code, service area,
+                  and memberships. Verification and staff access are managed separately from donor
+                  self-registration.
+                </p>
+              </div>
+            </Reveal>
             <div className="feature-grid">
               <article className="feature-card surface">
                 <div className="task-icon"><ShieldCheck size={20} aria-hidden="true" /></div>
@@ -443,10 +701,13 @@ export function LandingPage() {
 
         <section className="marketing-section" id="faq" aria-labelledby="faq-title">
           <div className="marketing-container">
-            <div className="section-heading">
-              <span className="eyebrow">FAQ</span>
-              <h2 id="faq-title">Common questions</h2>
-            </div>
+            <Reveal>
+              <div className="chapter-rail">09 / Common questions</div>
+              <div className="section-heading">
+                <span className="eyebrow"><HeartHandshake size={13} aria-hidden="true" /> FAQ</span>
+                <h2 id="faq-title">Clear answers before you begin.</h2>
+              </div>
+            </Reveal>
             <div className="faq-list">
               {faqs.map((faq) => (
                 <details key={faq.question}>
@@ -459,20 +720,23 @@ export function LandingPage() {
         </section>
 
         <section className="marketing-cta bloodstream-cta" aria-labelledby="cta-title">
-          <BloodstreamVisual />
+          <OffscreenMotionPause className="cta-motion-boundary">
+            <CellField />
+            <LifelinePath variant="hero" />
+          </OffscreenMotionPause>
           <div className="marketing-container">
-            <span className="eyebrow">Get started</span>
+            <span className="eyebrow">10 / Get started</span>
             <h2 id="cta-title">Keep every drop connected to a decision.</h2>
             <p>
               Sign in to your organization workspace or create a donor account through the API-backed
               registration flow.
             </p>
             <div className="hero-actions">
-              <Link className="btn btn-primary btn-lg" to="/register">
-                Create donor account <ArrowRight size={17} aria-hidden="true" />
+              <Link className="btn btn-primary btn-lg" to="/login">
+                Find Blood <ArrowRight size={17} aria-hidden="true" />
               </Link>
-              <Link className="btn btn-secondary btn-lg" to="/login">
-                Sign in
+              <Link className="btn btn-secondary btn-lg" to="/register">
+                Become a Donor
               </Link>
             </div>
           </div>
@@ -483,14 +747,16 @@ export function LandingPage() {
         <div className="marketing-container">
           <div className="marketing-footer-grid">
             <div>
-              <span className="brand-name">LifeLink</span>
+              <Wordmark inverse />
               <p>Coordinated blood inventory and emergency response for healthcare organizations.</p>
             </div>
             <div>
               <h4>Product</h4>
               <ul>
                 <li><a href="#journey">Journey</a></li>
+                <li><a href="#compatibility">Atlas</a></li>
                 <li><a href="#platform">Platform</a></li>
+                <li><a href="#community">Community</a></li>
                 <li><a href="#security">Security</a></li>
               </ul>
             </div>

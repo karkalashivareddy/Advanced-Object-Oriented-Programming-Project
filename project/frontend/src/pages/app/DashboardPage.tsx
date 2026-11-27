@@ -8,7 +8,6 @@ import {
   ClipboardCheck,
   ClipboardList,
   HeartHandshake,
-  LayoutDashboard,
   PackageCheck,
   RefreshCw,
   ScrollText,
@@ -24,9 +23,16 @@ import { PERMISSIONS } from '@/lib/permissions';
 import { organizationNameForScope } from '@/lib/organization';
 import { QUICK_ACTIONS } from '@/lib/navigation';
 import { daysUntil, formatDate, formatDateTime, formatNumber, humanize } from '@/lib/utils';
-import { EmptyState, ErrorState } from '@/components/ui/EmptyState';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import {
+  EmptyState,
+  ErrorState,
+  Grid,
+  PageHeader,
+  SectionCard,
+  Skeleton,
+  StatCard,
+  StatusBadge,
+} from '@/components/ui';
 import type { PageResponse } from '@/types/api';
 import type {
   AnalyticsOverview,
@@ -200,19 +206,23 @@ export function DashboardPage() {
 
   const reviewDonations = useQuery({
     queryKey: ['dashboard', 'donations', 'review', auth.organizationId],
-    queryFn: () => api.get<DonationView[]>('/donations'),
-    enabled: showStaffHome && canReviewDonations,
+    queryFn: () =>
+      api.get<DonationView[]>('/donations', {
+        query: { organizationId: auth.organizationId ?? undefined },
+      }),
+    enabled: showStaffHome && canReviewDonations && auth.organizationId !== null,
   });
 
   const donorProfiles = useQuery({
     queryKey: ['dashboard', 'donors', 'self', auth.user?.id],
-    queryFn: () => api.get<DonorView[]>('/donors'),
+    queryFn: () => api.get<PageResponse<DonorView>>('/donors', { query: { page: 0, size: 100 } }),
     enabled: showDonorHome && canDonors,
   });
+  const donorProfileList = donorProfiles.data?.content ?? [];
 
   // Never fall back to an unrelated donor profile: that would request another
   // person's appointments and donations for this signed-in user.
-  const donorId = donorProfiles.data?.find((profile) => profile.userId === auth.user?.id)?.id ?? null;
+  const donorId = donorProfileList.find((profile) => profile.userId === auth.user?.id)?.id ?? null;
 
   const donorAppointments = useQuery({
     queryKey: ['dashboard', 'donors', donorId, 'appointments'],
@@ -232,7 +242,7 @@ export function DashboardPage() {
   if (showStaffHome && canRequests) refreshTargets.push(pendingRequests);
   if (showStaffHome && canDispatch) refreshTargets.push(dispatches);
   if (showStaffHome && canReservations) refreshTargets.push(reservations);
-  if (showStaffHome && canReviewDonations) refreshTargets.push(reviewDonations);
+  if (showStaffHome && canReviewDonations && auth.organizationId !== null) refreshTargets.push(reviewDonations);
   if (showDonorHome && canDonors) refreshTargets.push(donorProfiles);
   if (showDonorHome && donorId !== null) refreshTargets.push(donorAppointments, donorDonations);
 
@@ -304,55 +314,53 @@ export function DashboardPage() {
 
   return (
     <div className="app-page page-enter">
-      <header className="page-intro">
-        <div>
-          <span className="eyebrow"><LayoutDashboard size={14} aria-hidden="true" /> Workspace overview</span>
-          <h1 className="page-title">Good to see you, {displayName}</h1>
-          <p className="page-subtitle">
-            {organizationName
-              ? `Current picture for ${organizationName}. All values below come from the API.`
-              : 'Current picture for your account. All values below come from the API.'}
-          </p>
-        </div>
-        <div className="section-actions">
-          <StatusBadge
-            status={auth.user?.status}
-            label={auth.user?.status === 'ACTIVE' ? 'Account active' : humanize(auth.user?.status)}
-          />
-          <span className="live-pill">
-            <span className="live-dot" aria-hidden="true" />
-            {isRefreshing ? 'Syncing' : hasLoadError ? 'Partial data' : 'Live view'}
-          </span>
-          <span className="freshness" aria-live="polite">
-            {isRefreshing
-              ? 'Refreshing now…'
-              : lastUpdated > 0
-                ? `Updated ${formatRelative(lastUpdated, now)}`
-                : 'Waiting for first update'}
-          </span>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={refreshAll}
-            disabled={isRefreshing || refreshTargets.length === 0}
-            aria-busy={isRefreshing}
-          >
-            <RefreshCw size={14} aria-hidden="true" /> {isRefreshing ? 'Refreshing…' : 'Refresh'}
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Workspace overview"
+        title={`Good to see you, ${displayName}`}
+        description={
+          organizationName
+            ? `Current picture for ${organizationName}. All values below come from the API.`
+            : 'Current picture for your account. All values below come from the API.'
+        }
+        actions={
+          <>
+            <StatusBadge
+              status={auth.user?.status}
+              label={auth.user?.status === 'ACTIVE' ? 'Account active' : humanize(auth.user?.status)}
+            />
+            <span className="live-pill">
+              <span className="live-dot" aria-hidden="true" />
+              {isRefreshing ? 'Syncing' : hasLoadError ? 'Partial data' : 'Live view'}
+            </span>
+            <span className="freshness" aria-live="polite">
+              {isRefreshing
+                ? 'Refreshing now…'
+                : lastUpdated > 0
+                  ? `Updated ${formatRelative(lastUpdated, now)}`
+                  : 'Waiting for first update'}
+            </span>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={refreshAll}
+              disabled={isRefreshing || refreshTargets.length === 0}
+              aria-busy={isRefreshing}
+            >
+              <RefreshCw size={14} aria-hidden="true" /> {isRefreshing ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </>
+        }
+      />
 
       {showDonorHome && (
-        <section className="surface surface-glass stagger-1" aria-labelledby="donor-home-title">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">Your donation journey</span>
-              <h2 className="page-title" id="donor-home-title">Your donor workspace</h2>
-              <p className="page-subtitle">
-                Your own appointments and donation records, loaded from the API. No staff-wide records are shown here.
-              </p>
-            </div>
-            <div className="section-actions">
+        <SectionCard
+          className="stagger-1"
+          variant="glass"
+          eyebrow="Your donation journey"
+          title="Your donor workspace"
+          description="Your own appointments and donation records, loaded from the API. No staff-wide records are shown here."
+          actions={
+            <>
               {canDonors && (
                 <Link className="btn btn-primary btn-sm" to="/app/donors">
                   Profile & consents
@@ -364,12 +372,12 @@ export function DashboardPage() {
               <Link className="btn btn-ghost btn-sm" to="/app/profile">
                 Account
               </Link>
-            </div>
-          </div>
-
+            </>
+          }
+        >
           {canDonors && donorProfiles.isPending && <Skeleton width="60%" />}
           {canDonors && donorProfiles.isError && (
-            <div className="surface">
+            <div>
               <ErrorState error={donorProfiles.error} onRetry={() => void donorProfiles.refetch()} />
             </div>
           )}
@@ -381,31 +389,31 @@ export function DashboardPage() {
           )}
 
           {donorId !== null && (
-            <>
-              <div className="metric-grid">
-                <article className="metric-card">
-                  <span className="metric-label">Upcoming appointments</span>
-                  <strong className="metric-value">{formatNumber(upcomingAppointments.length)}</strong>
-                  <span className="metric-delta">From your donor record</span>
-                </article>
-                <article className="metric-card">
-                  <span className="metric-label">Recorded donations</span>
-                  <strong className="metric-value">{formatNumber(donorDonations.data?.length ?? 0)}</strong>
-                  <span className="metric-delta">Your own donation history</span>
-                </article>
-                <article className="metric-card">
-                  <span className="metric-label">Blood group on file</span>
-                  <strong className="metric-value">
-                    {donorProfiles.data?.find((profile) => profile.id === donorId)?.bloodGroup
-                      ? humanize(donorProfiles.data?.find((profile) => profile.id === donorId)?.bloodGroup)
-                      : '—'}
-                  </strong>
-                  <span className="metric-delta">From your profile</span>
-                </article>
-              </div>
+            <div className="stack">
+              <Grid columns="stats" className="metric-grid">
+                <StatCard
+                  label="Upcoming appointments"
+                  value={formatNumber(upcomingAppointments.length)}
+                  hint="From your donor record"
+                />
+                <StatCard
+                  label="Recorded donations"
+                  value={formatNumber(donorDonations.data?.length ?? 0)}
+                  hint="Your own donation history"
+                />
+                <StatCard
+                  label="Blood group on file"
+                  value={
+                    donorProfileList.find((profile) => profile.id === donorId)?.bloodGroup
+                      ? humanize(donorProfileList.find((profile) => profile.id === donorId)?.bloodGroup)
+                      : '—'
+                  }
+                  hint="From your profile"
+                />
+              </Grid>
 
               <div className="split-layout">
-                <section className="surface surface-raised" aria-labelledby="donor-appointments-title">
+                <section aria-labelledby="donor-appointments-title">
                   <div className="section-heading">
                     <div>
                       <h3 className="task-title" id="donor-appointments-title">Upcoming appointments</h3>
@@ -435,7 +443,7 @@ export function DashboardPage() {
                   )}
                 </section>
 
-                <section className="surface surface-raised" aria-labelledby="donor-donations-title">
+                <section aria-labelledby="donor-donations-title">
                   <div className="section-heading">
                     <div>
                       <h3 className="task-title" id="donor-donations-title">Recent donations</h3>
@@ -465,34 +473,35 @@ export function DashboardPage() {
                   )}
                 </section>
               </div>
-            </>
+            </div>
           )}
-        </section>
+        </SectionCard>
       )}
 
       {showStaffHome && (
         <>
           {canAnalytics && (
-            <section className="surface surface-glass stagger-2" aria-labelledby="staff-metrics-title">
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">Operational pulse</span>
-                  <h2 className="page-title" id="staff-metrics-title">Live counts from the analytics API</h2>
-                  <p className="page-subtitle">Metrics are fetched only when your account has ANALYTICS_READ.</p>
-                </div>
+            <SectionCard
+              className="stagger-2"
+              variant="glass"
+              eyebrow="Operational pulse"
+              title="Live counts from the analytics API"
+              description="Metrics are fetched only when your account has ANALYTICS_READ."
+              actions={
                 <Link className="btn btn-ghost btn-sm" to="/app/analytics">
                   Open analytics <ArrowUpRight size={14} aria-hidden="true" />
                 </Link>
-              </div>
+              }
+            >
               {overview.isPending && (
-                <div className="metric-grid operational-metrics">
+                <Grid columns="auto" className="metric-grid operational-metrics">
                   {Array.from({ length: 4 }).map((_, index) => (
-                    <article className="metric-card" key={index}>
+                    <div className="metric-card" key={index}>
                       <Skeleton width="60%" />
                       <Skeleton width="40%" height={28} />
-                    </article>
+                    </div>
                   ))}
-                </div>
+                </Grid>
               )}
               {overview.isError && (
                 <ErrorState error={overview.error} onRetry={() => void overview.refetch()} />
@@ -501,17 +510,19 @@ export function DashboardPage() {
                 <EmptyState title="No summary metrics" description="The overview endpoint returned no numeric values for your scope." />
               )}
               {metrics.length > 0 && (
-                <div className="metric-grid operational-metrics">
+                <Grid columns="auto" className="metric-grid operational-metrics">
                   {metrics.map((metric) => (
-                    <article className="metric-card" key={metric.label}>
-                      <span className="metric-label">{metric.label}</span>
-                      <strong className="metric-value">{formatNumber(metric.value)}</strong>
-                      <span className="metric-delta">Analytics API</span>
-                    </article>
+                    <StatCard
+                      className="metric-card"
+                      key={metric.label}
+                      label={metric.label}
+                      value={formatNumber(metric.value)}
+                      hint="Analytics API"
+                    />
                   ))}
-                </div>
+                </Grid>
               )}
-            </section>
+            </SectionCard>
           )}
 
           <section className="stagger-2" aria-labelledby="task-queue-title">
@@ -522,7 +533,7 @@ export function DashboardPage() {
                 <p className="page-subtitle">Queues are shown only where your permissions allow them.</p>
               </div>
             </div>
-            <div className="task-grid">
+            <Grid columns="auto" className="task-grid task-queue-grid">
               {canRequests && canApproveRequests && (
                 <TaskCard
                   icon={ClipboardList}
@@ -583,7 +594,7 @@ export function DashboardPage() {
                   onRetry={() => void reservations.refetch()}
                 />
               )}
-              {canReviewDonations && (
+              {canReviewDonations && auth.organizationId !== null && (
                 <TaskCard
                   icon={HeartHandshake}
                   title="Donation review"
@@ -598,27 +609,26 @@ export function DashboardPage() {
                   onRetry={() => void reviewDonations.refetch()}
                 />
               )}
-            </div>
+            </Grid>
           </section>
 
-          <section className="surface surface-raised stagger-3" aria-labelledby="quick-actions-title">
-            <div className="section-heading">
-              <div>
-                <span className="eyebrow">Shortcuts</span>
-                <h2 className="page-title" id="quick-actions-title">Quick actions</h2>
-                <p className="page-subtitle">Only actions available to your role are shown.</p>
-              </div>
-            </div>
-            <div className="task-grid">
+          <SectionCard
+            className="stagger-3"
+            variant="raised"
+            eyebrow="Shortcuts"
+            title="Quick actions"
+            description="Only actions available to your role are shown."
+          >
+            <Grid columns="auto" className="task-grid">
               {quickLinks.map((link) => (
-                <Link className="task-card surface-interactive" key={`${link.label}-${link.to}`} to={link.to}>
+                <Link className="task-card" key={`${link.label}-${link.to}`} to={link.to}>
                   <span className="task-icon"><link.icon size={18} aria-hidden="true" /></span>
                   <strong className="task-title">{link.label}</strong>
                   <span className="task-cta">Open workspace <ArrowUpRight size={14} aria-hidden="true" /></span>
                 </Link>
               ))}
-            </div>
-          </section>
+            </Grid>
+          </SectionCard>
 
           <p className="freshness">
             <ShieldCheck size={13} aria-hidden="true" /> The server independently enforces every permission shown here.

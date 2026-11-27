@@ -1,0 +1,963 @@
+/* =========================================================================
+   Landing — final identity layer.
+   Loaded after all legacy marketing CSS so the A1–A4 contract wins without
+   rewriting the historical sheets. Only transform/opacity/filter animate.
+   ========================================================================= */
+
+.marketing.bloodstream-page {
+  --marketing-header-height: 64px;
+  min-height: 100dvh;
+  background: var(--grad-hero);
+  color: var(--text-on-dark-body);
+}
+
+.marketing.bloodstream-page :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--ring-dark);
+  outline-offset: 3px;
+}
+
+.marketing.bloodstream-page :is(header, main, footer) {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ambient field ---------------------------------------------------------- */
+.landing-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.landing-ambient__wash,
+.landing-ambient__thread {
+  position: absolute;
+  display: block;
+  will-change: transform, opacity;
+}
+
+.landing-ambient__wash {
+  inset: -20% -10% auto auto;
+  width: 70vw;
+  height: 70vw;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(200 16 46 / 18%), transparent 68%);
+  animation: ll-cell-drift var(--motion-flow) var(--ease-in-out) infinite;
+}
+
+.landing-ambient__thread {
+  top: 12%;
+  bottom: 12%;
+  left: 8%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgb(255 82 99 / 34%), transparent);
+  transform: translate3d(0, -12px, 0);
+  animation: ll-flow 12s var(--ease-in-out) infinite alternate;
+}
+
+.cursor-halo {
+  position: fixed;
+  top: var(--halo-y, -999px);
+  left: var(--halo-x, -999px);
+  z-index: 3;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 82 99 / 12%), transparent 68%);
+  opacity: var(--halo-visible, 0);
+  transform: translate3d(-50%, -50%, 0);
+  transition: opacity var(--motion-base) var(--ease-out);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .cursor-halo { display: none; }
+}
+
+/* Header ----------------------------------------------------------------- */
+.marketing.bloodstream-page .marketing-header-inner {
+  width: min(calc(100% - 2 * var(--page-gutter)), var(--content-max));
+  min-height: var(--marketing-header-height);
+}
+
+.marketing.bloodstream-page .marketing-nav {
+  gap: var(--space-4);
+}
+
+.marketing.bloodstream-page .marketing-nav > a:not(.btn) {
+  color: var(--text-on-dark-body);
+  font-size: 0.78rem;
+}
+
+.marketing.bloodstream-page .marketing-nav > a:not(.btn):hover {
+  color: var(--text-on-dark);
+}
+
+/* Hero — short-screen contract ------------------------------------------ */
+.marketing.bloodstream-page .bloodstream-hero {
+  display: grid;
+  min-height: calc(100svh - var(--marketing-header-height));
+  padding-block: clamp(24px, 4vh, 52px);
+  border-bottom-color: var(--hairline-dark);
+}
+
+.bloodstream-hero .marketing-container {
+  grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 64px);
+  padding-block: 0;
+}
+
+.hero-copy {
+  min-width: 0;
+}
+
+.hero-kicker {
+  padding: 6px 12px;
+  border-color: var(--hairline-dark);
+  color: var(--text-on-dark-body);
+  font-size: 0.6rem;
+}
+
+.hero-title {
+  max-width: 12ch;
+  margin-top: var(--space-4);
+  font-size: clamp(2.5rem, 4.6vw, 4.6rem);
+  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
+  font-weight: 560;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+}
+
+.split-text {
+  display: block;
+}
+
+.split-text__word {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.split-text__word--accent {
+  color: var(--lifeline);
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 1;
+}
+
+.bloodstream-hero .hero-lede {
+  max-width: 52ch;
+  margin-top: var(--space-4);
+  color: var(--text-on-dark-body);
+  font-size: clamp(0.94rem, 1.1vw, 1.04rem);
+  line-height: 1.62;
+}
+
+.hero-actions {
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.hero-actions .btn {
+  min-height: 48px;
+  padding-inline: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.hero-actions .btn-primary {
+  border-color: var(--lifeline);
+  background: var(--lifeline);
+  color: var(--ink-950);
+}
+
+.hero-actions .btn-primary:hover {
+  border-color: #ff7c89;
+  background: #ff7c89;
+  color: var(--ink-950);
+}
+
+.hero-actions .btn-secondary {
+  border-color: var(--hairline-dark);
+  background: rgb(255 255 255 / 6%);
+  color: var(--text-on-dark);
+}
+
+.hero-actions .btn-secondary:hover {
+  border-color: rgb(255 255 255 / 68%);
+  background: rgb(255 255 255 / 12%);
+  color: var(--text-on-dark);
+}
+
+.hero-proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  max-width: 52ch;
+  margin: var(--space-5) 0 0;
+  padding: var(--space-4) 0 0;
+  border-top: 1px solid var(--hairline-dark);
+}
+
+.hero-proof__item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.hero-proof__item > span,
+.hero-proof li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-on-dark-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.hero-proof svg {
+  flex: none;
+  color: var(--lifeline);
+}
+
+.hero-motion-boundary {
+  position: relative;
+  min-width: 0;
+}
+
+.hero-vessel-card {
+  min-height: 300px;
+  max-height: min(58svh, 470px);
+  aspect-ratio: 760 / 460;
+  border-radius: 24px;
+  border-color: var(--hairline-dark);
+  background: var(--surface-dark-0);
+  box-shadow: var(--shadow-dark);
+}
+
+.hero-vessel-card__top {
+  inset: var(--space-4) var(--space-4) auto;
+}
+
+.vessel-pill {
+  border-color: var(--hairline-dark);
+  background: rgb(16 7 12 / 78%);
+  color: var(--text-on-dark);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+}
+
+.vessel-pill--muted {
+  color: var(--text-on-dark-muted);
+}
+
+.hero-vessel-card__panel {
+  inset: auto var(--space-4) var(--space-4);
+  border-color: var(--hairline-dark);
+  background: rgb(16 7 12 / 84%);
+}
+
+.hero-vessel-card__panel .metric-label,
+.hero-vessel-card__panel .freshness {
+  color: var(--text-on-dark-muted);
+}
+
+.vessel-milestones {
+  gap: var(--space-2);
+  color: var(--text-on-dark);
+  font-size: clamp(0.74rem, 1vw, 0.92rem);
+}
+
+.vessel-milestones i {
+  background: linear-gradient(90deg, var(--lifeline), rgb(255 255 255 / 24%));
+}
+
+/* Continuous signal ------------------------------------------------------ */
+.network-signal__inner {
+  width: min(calc(100% - 2 * var(--page-gutter)), var(--content-max));
+  min-height: 82px;
+}
+
+.network-signal__label,
+.network-signal__code {
+  color: var(--text-on-dark-muted);
+  font-size: 0.58rem;
+}
+
+.network-signal__code {
+  color: var(--lifeline);
+}
+
+.network-signal__path {
+  height: 48px;
+}
+
+/* Shared section rhythm -------------------------------------------------- */
+.marketing-section {
+  padding-block: clamp(56px, 7vw, 104px);
+}
+
+.marketing-container {
+  width: min(calc(100% - 2 * var(--page-gutter)), var(--content-max));
+}
+
+.marketing.bloodstream-page .section-heading h2 {
+  color: var(--text-on-dark);
+  font-size: clamp(2rem, 3.6vw, 3.4rem);
+  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
+  font-weight: 540;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+}
+
+.marketing.bloodstream-page .section-heading p {
+  color: var(--text-on-dark-body);
+  line-height: 1.7;
+}
+
+.marketing.bloodstream-page .eyebrow {
+  border-color: var(--hairline-dark);
+  background: rgb(255 255 255 / 5%);
+  color: var(--text-on-dark-body);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+}
+
+.chapter-rail {
+  color: var(--text-on-dark-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+}
+
+.chapter-rail::after {
+  background: linear-gradient(90deg, rgb(255 82 99 / 48%), transparent);
+}
+
+/* Light editorial bands: journey, atlas and community -------------------- */
+.marketing.bloodstream-page :is(.journey-section, .compat-section, .community-section) {
+  --color-text: var(--text-body);
+  --color-text-strong: var(--text-strong);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-surface: var(--surface-0);
+  --color-surface-soft: var(--surface-1);
+  --color-surface-muted: var(--surface-2);
+  --color-border: var(--hairline);
+  --color-border-strong: var(--hairline-strong);
+  --color-border-subtle: var(--hairline);
+  --color-accent: var(--crimson-600);
+  --color-accent-soft: var(--crimson-50);
+  --color-accent-soft-strong: var(--crimson-100);
+  background: var(--paper-50);
+  color: var(--text-body);
+}
+
+.marketing.bloodstream-page :is(.journey-section, .compat-section, .community-section) .section-heading h2,
+.marketing.bloodstream-page :is(.journey-section, .compat-section, .community-section) .section-heading h3 {
+  color: var(--text-strong);
+}
+
+.marketing.bloodstream-page :is(.journey-section, .compat-section, .community-section) .section-heading p {
+  color: var(--text-muted);
+}
+
+.marketing.bloodstream-page :is(.journey-section, .compat-section, .community-section) .eyebrow {
+  border-color: var(--crimson-100);
+  background: var(--crimson-50);
+  color: var(--crimson-700);
+}
+
+.marketing.bloodstream-page :is(.journey-section, .compat-section, .community-section) .chapter-rail {
+  color: var(--text-subtle);
+}
+
+.marketing.bloodstream-page :is(.journey-section, .compat-section, .community-section) .chapter-rail::after {
+  background: linear-gradient(90deg, var(--crimson-200), transparent);
+}
+
+/* Journey ---------------------------------------------------------------- */
+.journey-section {
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.marketing.bloodstream-page .journey-vessel-wrap {
+  padding: clamp(20px, 3vw, 34px);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  background: var(--surface-0);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+
+.journey-vessel-track {
+  min-width: 0;
+}
+
+.journey-vessel {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.journey-vessel__line {
+  top: 21px;
+  right: 8%;
+  left: 8%;
+  height: 2px;
+  overflow: hidden;
+  background: var(--hairline);
+  opacity: 1;
+}
+
+.journey-vessel__line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--grad-vessel);
+  transform: scaleX(var(--journey-progress, 0));
+  transform-origin: left center;
+  transition: transform var(--motion-base) var(--ease-enter);
+}
+
+.marketing.bloodstream-page .journey-stage__node {
+  border-color: var(--crimson-200);
+  background: var(--surface-0);
+  color: var(--crimson-700);
+  box-shadow: 0 0 0 6px var(--crimson-50);
+}
+
+.marketing.bloodstream-page .journey-stage.is-selected .journey-stage__node {
+  border-color: var(--crimson-700);
+  background: var(--crimson-700);
+  color: var(--text-inverse);
+  box-shadow: 0 0 0 6px var(--crimson-100), 0 8px 22px rgb(139 0 24 / 22%);
+}
+
+.journey-stage__select:focus-visible {
+  outline-color: var(--ring);
+}
+
+.journey-stage__index {
+  color: var(--crimson-600);
+}
+
+.marketing.bloodstream-page .journey-stage h3 {
+  color: var(--text-strong);
+  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
+}
+
+.marketing.bloodstream-page .journey-stage p {
+  color: var(--text-muted);
+}
+
+.marketing.bloodstream-page .journey-vessel__selection {
+  display: grid;
+  gap: 2px;
+  align-items: start;
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--crimson-100);
+  border-left: 3px solid var(--crimson-600);
+  border-radius: var(--radius-md);
+  background: var(--crimson-50);
+  color: var(--text-body);
+}
+
+.marketing.bloodstream-page .journey-vessel__selection strong,
+.marketing.bloodstream-page .journey-vessel__selection > span {
+  color: var(--text-body);
+}
+
+.marketing.bloodstream-page .journey-vessel__selection strong {
+  color: var(--crimson-700);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* Blood group orb explorer ------------------------------------------------ */
+.blood-explorer {
+  display: grid;
+  gap: var(--space-5);
+  padding: clamp(18px, 3vw, 32px);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  background: var(--surface-0);
+  box-shadow: var(--shadow-2);
+}
+
+.blood-explorer__toolbar,
+.blood-explorer__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.42fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.blood-explorer__toolbar {
+  align-items: end;
+}
+
+.blood-explorer__stage {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--hairline);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: var(--space-3);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.orb-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.blood-orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 64px;
+  min-height: 64px;
+  padding: 6px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 50%;
+  background: var(--surface-1);
+  color: var(--text-strong);
+  cursor: pointer;
+  transition: transform var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.blood-orb:hover {
+  border-color: var(--crimson-300);
+  transform: translate3d(0, -2px, 0);
+}
+
+.blood-orb[data-selected='true'] {
+  border-color: var(--crimson-700);
+  background: var(--crimson-700);
+  color: var(--text-inverse);
+  box-shadow: var(--focus-ring);
+}
+
+.blood-orb__core {
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: var(--grad-vessel);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.blood-orb[data-selected='true'] .blood-orb__core {
+  opacity: 0.32;
+}
+
+.blood-orb__label {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.blood-orb--donor {
+  grid-template-rows: 44px auto auto;
+  width: 88px;
+  min-height: 108px;
+  gap: 2px;
+  border-radius: var(--radius-lg);
+}
+
+.blood-orb--donor .blood-orb__core {
+  inset: 6px auto auto 50%;
+  width: 42px;
+  height: 42px;
+  transform: translateX(-50%);
+}
+
+.blood-orb--donor[data-compatible='true']:not([data-selected='true']) {
+  border-color: var(--crimson-200);
+}
+
+.blood-orb--donor[data-compatible='false']:not([data-selected='true']) {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.blood-orb--donor[data-compatible='false'] .blood-orb__core {
+  opacity: 0.06;
+}
+
+.blood-orb__status {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.54rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.blood-orb__status svg {
+  flex: none;
+}
+
+.blood-orb--donor[data-compatible='true'] .blood-orb__status {
+  color: var(--success);
+}
+
+.blood-orb--donor[data-compatible='false'] .blood-orb__status {
+  color: var(--text-muted);
+}
+
+.blood-orb--donor[data-selected='true'] .blood-orb__status {
+  color: var(--text-inverse);
+}
+
+.compat-summary {
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 64px;
+  padding: var(--space-3) var(--space-4);
+  border-color: var(--crimson-100);
+  background: var(--crimson-50);
+}
+
+.compat-summary .counter {
+  color: var(--crimson-700);
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.compat-summary span {
+  color: var(--text-body);
+  font-size: var(--text-xs);
+}
+
+.blood-explorer__detail {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--paper-50);
+}
+
+.blood-explorer__detail h3 {
+  margin: var(--space-3) 0 var(--space-2);
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
+  letter-spacing: -0.03em;
+}
+
+.blood-explorer__detail p {
+  color: var(--text-body);
+  font-size: var(--text-sm);
+  line-height: 1.65;
+}
+
+.blood-explorer__detail .freshness {
+  margin-top: var(--space-3);
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+}
+
+.compat-table-fallback {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface-0);
+}
+
+.compat-table-fallback summary {
+  padding: var(--space-3) var(--space-4);
+  color: var(--crimson-700);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.compat-table-fallback .compat-matrix-wrap {
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.clinical-note {
+  border-color: var(--warning-border);
+  background: var(--warning-soft);
+  color: #6d3c00;
+}
+
+/* Community and platform cards ------------------------------------------ */
+.marketing.bloodstream-page :is(.community-section, .compat-section) .feature-card,
+.marketing.bloodstream-page .community-section .feature-card {
+  border-color: var(--hairline);
+  background: var(--surface-0);
+  box-shadow: var(--shadow-1);
+}
+
+.marketing.bloodstream-page .community-section .feature-card:hover {
+  border-color: var(--crimson-200);
+  transform: translate3d(0, -2px, 0);
+}
+
+.marketing.bloodstream-page .community-section .feature-card h3 {
+  color: var(--text-strong);
+}
+
+.marketing.bloodstream-page .community-section .feature-card p {
+  color: var(--text-muted);
+}
+
+.marketing.bloodstream-page .community-section .task-icon {
+  background: var(--crimson-50);
+  color: var(--crimson-700);
+}
+
+/* Emergency, privacy, trust, FAQ and CTA --------------------------------- */
+.marketing.bloodstream-page .feature-card {
+  transition: transform var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
+}
+
+.marketing.bloodstream-page .feature-card:hover {
+  transform: translate3d(0, -2px, 0);
+}
+
+.marketing.bloodstream-page .page-subtitle,
+.marketing.bloodstream-page .check-list li,
+.marketing.bloodstream-page .privacy-list li {
+  color: var(--text-on-dark-body);
+}
+
+.marketing.bloodstream-page .alert-info {
+  border-color: var(--info-border);
+  background: var(--info-soft);
+  color: var(--text-body);
+}
+
+.privacy-section .clinical-note {
+  border-color: var(--hairline-dark);
+  background: rgb(255 255 255 / 6%);
+  color: var(--text-on-dark-body);
+}
+
+.marketing.bloodstream-page .metric-card {
+  border-color: var(--hairline-dark);
+  background: rgb(255 255 255 / 4%);
+}
+
+.marketing.bloodstream-page .metric-value,
+.marketing.bloodstream-page .metric-label {
+  color: var(--text-on-dark);
+}
+
+.marketing.bloodstream-page .metric-delta {
+  background: rgb(255 255 255 / 8%);
+  color: var(--text-on-dark-body);
+}
+
+.marketing.bloodstream-page .faq-list details {
+  border-color: var(--hairline-dark);
+  background: rgb(255 255 255 / 4%);
+}
+
+.marketing.bloodstream-page .faq-list summary {
+  color: var(--text-on-dark);
+}
+
+.marketing.bloodstream-page .faq-list p {
+  color: var(--text-on-dark-body);
+}
+
+.marketing-cta {
+  padding-block: clamp(64px, 8vw, 110px);
+}
+
+.cta-motion-boundary {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.marketing.bloodstream-page .marketing-cta h2 {
+  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
+  font-weight: 540;
+}
+
+.marketing.bloodstream-page .marketing-footer-grid p,
+.marketing.bloodstream-page .marketing-footer-grid a {
+  color: var(--text-on-dark-body);
+}
+
+.footer-bottom {
+  color: var(--text-on-dark-muted);
+}
+
+/* Responsive ------------------------------------------------------------- */
+@media (max-height: 720px) and (min-width: 901px) {
+  .marketing.bloodstream-page .bloodstream-hero {
+    padding-block: 20px;
+  }
+
+  .hero-title {
+    margin-top: var(--space-3);
+    font-size: clamp(2.4rem, 4.1vw, 4rem);
+  }
+
+  .bloodstream-hero .hero-lede {
+    margin-top: var(--space-3);
+    line-height: 1.52;
+  }
+
+  .hero-actions {
+    margin-top: var(--space-4);
+  }
+
+  .hero-proof {
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+  }
+
+  .hero-vessel-card {
+    max-height: min(52svh, 400px);
+  }
+
+  .network-signal__inner {
+    min-height: 68px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .journey-vessel {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: var(--space-6);
+  }
+
+  .journey-vessel__line {
+    display: none;
+  }
+
+  .blood-explorer__toolbar,
+  .blood-explorer__stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 980px) {
+  .marketing.bloodstream-page .bloodstream-hero {
+    min-height: auto;
+    padding-block: var(--space-10) var(--space-12);
+  }
+
+  .bloodstream-hero .marketing-container {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+
+  .hero-vessel-card {
+    max-height: 420px;
+  }
+
+  .hero-title {
+    max-width: 16ch;
+  }
+}
+
+@media (max-width: 768px) {
+  .journey-vessel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .blood-explorer {
+    padding: var(--space-4);
+  }
+
+  .blood-orb--donor {
+    width: 78px;
+    min-height: 104px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-title {
+    font-size: clamp(2.35rem, 10vw, 3.5rem);
+  }
+
+  .hero-actions {
+    display: grid;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  .hero-proof {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero-vessel-card {
+    min-height: 260px;
+    max-height: 320px;
+  }
+
+  .journey-vessel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .blood-orb {
+    min-width: 58px;
+    min-height: 58px;
+  }
+
+  .blood-orb--donor {
+    width: 72px;
+    min-height: 102px;
+  }
+
+  .blood-orb__status {
+    font-size: 0.5rem;
+  }
+
+  .compat-summary {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-ambient__wash,
+  .landing-ambient__thread,
+  .bloodstream-visual__flow,
+  .cell-field__cell,
+  .journey-vessel__line::after {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .journey-vessel__line::after {
+    transform: scaleX(1) !important;
+  }
+
+  .landing-ambient {
+    opacity: 0.35;
+  }
+}

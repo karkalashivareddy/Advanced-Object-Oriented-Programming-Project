@@ -45,6 +45,27 @@ export default defineConfig({
   },
   preview: {
     port: 5173,
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => proxyReq.removeHeader('origin'));
+        },
+      },
+      '/ws': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        ws: true,
+        configure: (proxy) => {
+          const stripOrigin = (proxyReq: { removeHeader: (name: string) => void }) =>
+            proxyReq.removeHeader('origin');
+          proxy.on('proxyReq', stripOrigin);
+          proxy.on('proxyReqWs', stripOrigin);
+        },
+      },
+    },
   },
   test: {
     environment: 'jsdom',

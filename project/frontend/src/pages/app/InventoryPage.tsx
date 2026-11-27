@@ -31,10 +31,15 @@ import {
   EmptyState,
   ErrorState,
   FormField,
+  Grid,
+  Input,
   Modal,
   PageHeader,
+  Select,
   Skeleton,
+  StatCard,
   StatusBadge,
+  Surface,
   useToast,
   type DataTableColumn,
   type SortState,
@@ -387,32 +392,28 @@ export function InventoryPage() {
         }
       />
 
-      <section className="metric-grid page-enter stagger-1" aria-label="Inventory summary">
-        <article className="metric-card surface">
-          <span className="metric-label">Units on this page</span>
-          <strong className="metric-value">{formatNumber(serverUnits.length)}</strong>
-          <span className="metric-delta">
-            of {formatNumber(inventoryQuery.data?.totalElements ?? 0)} returned by the API
-          </span>
-        </article>
-        <article className="metric-card surface">
-          <span className="metric-label">Expiring soon</span>
-          <strong className="metric-value">{formatNumber(alertsQuery.data?.expiringSoon)}</strong>
-          <span className="metric-delta">Within 7 days</span>
-        </article>
-        <article className="metric-card surface">
-          <span className="metric-label">Expired units</span>
-          <strong className="metric-value">{formatNumber(alertsQuery.data?.expired)}</strong>
-          <span className="metric-delta">Needs review</span>
-        </article>
-        <article className="metric-card surface">
-          <span className="metric-label">Low-stock organizations</span>
-          <strong className="metric-value">{formatNumber(alertsQuery.data?.lowStockOrganizations)}</strong>
-          <span className="metric-delta">From the alerts endpoint</span>
-        </article>
+      <section className="page-enter stagger-1" aria-label="Inventory summary">
+        <Grid columns="stats">
+          <StatCard
+            label="Units on this page"
+            value={formatNumber(serverUnits.length)}
+            hint={`of ${formatNumber(inventoryQuery.data?.totalElements ?? 0)} returned by the API`}
+          />
+          <StatCard
+            label="Expiring soon"
+            value={formatNumber(alertsQuery.data?.expiringSoon)}
+            hint="Within 7 days"
+          />
+          <StatCard label="Expired units" value={formatNumber(alertsQuery.data?.expired)} hint="Needs review" />
+          <StatCard
+            label="Low-stock organizations"
+            value={formatNumber(alertsQuery.data?.lowStockOrganizations)}
+            hint="From the alerts endpoint"
+          />
+        </Grid>
       </section>
 
-      <div className="toolbar surface-glass page-enter stagger-2">
+      <div className="toolbar page-enter stagger-2">
         <span className="live-pill">
           <span className="live-dot" aria-hidden="true" /> Inventory view
         </span>
@@ -430,28 +431,43 @@ export function InventoryPage() {
         </button>
       </div>
 
-      {alertsQuery.data && (
-        <section className="surface surface-raised" style={{ marginBottom: 'var(--space-4)' }} aria-label="Risk alerts">
-          <div className="section-heading">
-            <h2>Inventory alerts</h2>
-            <span className="status-chip">API alerts</span>
-          </div>
-          <div className="cluster">
-            <span className="badge badge-warning">Expiring within 7 days: {alertsQuery.data.expiringSoon}</span>
-            <span className="badge badge-danger">Expired: {alertsQuery.data.expired}</span>
-            <span className="badge badge-info">Low-stock organizations: {alertsQuery.data.lowStockOrganizations}</span>
-          </div>
-        </section>
-      )}
-      {alertsQuery.isError && (
-        <div className="alert alert-warning" style={{ marginBottom: 'var(--space-4)' }} role="status">
-          <AlertTriangle size={16} aria-hidden="true" />
-          <span>Alerts could not be loaded: {getErrorMessage(alertsQuery.error)}</span>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => void alertsQuery.refetch()}>
-            Retry
-          </button>
+      <Surface
+        as="section"
+        variant="raised"
+        padding="md"
+        className="inventory-alerts-slot"
+        style={{ marginBottom: 'var(--space-4)' }}
+        aria-label="Risk alerts"
+        aria-busy={alertsQuery.isPending || undefined}
+      >
+        <div className="section-heading">
+          <h2>Inventory alerts</h2>
+          <span className="status-chip">API alerts</span>
         </div>
-      )}
+        <div className="cluster">
+          {alertsQuery.data ? (
+            <>
+              <span className="badge badge-warning">Expiring within 7 days: {alertsQuery.data.expiringSoon}</span>
+              <span className="badge badge-danger">Expired: {alertsQuery.data.expired}</span>
+              <span className="badge badge-info">Low-stock organizations: {alertsQuery.data.lowStockOrganizations}</span>
+            </>
+          ) : alertsQuery.isError ? (
+            <span className="alert-inline" role="status">
+              <AlertTriangle size={16} aria-hidden="true" />
+              Alerts could not be loaded: {getErrorMessage(alertsQuery.error)}
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => void alertsQuery.refetch()}>
+                Retry
+              </button>
+            </span>
+          ) : (
+            <>
+              <Skeleton width={190} height={20} />
+              <Skeleton width={120} height={20} />
+              <Skeleton width={180} height={20} />
+            </>
+          )}
+        </div>
+      </Surface>
 
       <DataTable
         ariaLabel="Blood unit inventory"
@@ -507,15 +523,14 @@ export function InventoryPage() {
           </>
         )}
         toolbar={
-          <div className="surface-interactive" style={{ width: '100%' }}>
+          <div>
             <div className="filter-grid">
               <div className="filter-field">
                 <label htmlFor="inventory-search">Unit search</label>
                 <div className="search-input-wrap">
                   <Search size={15} aria-hidden="true" />
-                  <input
+                  <Input
                     id="inventory-search"
-                    className="input toolbar-search"
                     type="search"
                     aria-describedby="inventory-search-note"
                     placeholder="Unit, public ID or location…"
@@ -532,9 +547,8 @@ export function InventoryPage() {
               </div>
               <div className="filter-field">
                 <label htmlFor="inventory-blood-group">Blood group</label>
-                <select
+                <Select
                   id="inventory-blood-group"
-                  className="select"
                   value={bloodGroup}
                   onChange={(event) => {
                     setBloodGroup(event.target.value);
@@ -547,13 +561,12 @@ export function InventoryPage() {
                       {humanize(group)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="filter-field">
                 <label htmlFor="inventory-component">Component</label>
-                <select
+                <Select
                   id="inventory-component"
-                  className="select"
                   value={componentType}
                   onChange={(event) => {
                     setComponentType(event.target.value);
@@ -566,13 +579,12 @@ export function InventoryPage() {
                       {humanize(type)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="filter-field">
                 <label htmlFor="inventory-status">Status</label>
-                <select
+                <Select
                   id="inventory-status"
-                  className="select"
                   value={status}
                   onChange={(event) => {
                     setStatus(event.target.value);
@@ -585,13 +597,12 @@ export function InventoryPage() {
                       {humanize(item)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="filter-field">
                 <label htmlFor="inventory-expiring">Expiring within</label>
-                <select
+                <Select
                   id="inventory-expiring"
-                  className="select"
                   value={expiringWithinDays}
                   onChange={(event) => {
                     setExpiringWithinDays(event.target.value);
@@ -602,7 +613,7 @@ export function InventoryPage() {
                   <option value="7">7 days</option>
                   <option value="30">30 days</option>
                   <option value="90">90 days</option>
-                </select>
+                </Select>
               </div>
               <div className="section-actions">
                 <span className="chip">
@@ -618,9 +629,9 @@ export function InventoryPage() {
       />
 
       {inventoryQuery.isError && (
-        <div className="surface" style={{ marginTop: 'var(--space-4)' }}>
+        <Surface padding="md" style={{ marginTop: 'var(--space-4)' }}>
           <ErrorState error={inventoryQuery.error} onRetry={() => void inventoryQuery.refetch()} />
-        </div>
+        </Surface>
       )}
 
       <Drawer
@@ -677,7 +688,7 @@ export function InventoryPage() {
             </dl>
 
             {auth.hasPermission(PERMISSIONS.INVENTORY_WRITE) && (
-              <section className="surface surface-raised" style={{ marginTop: 16 }}>
+              <Surface as="section" variant="raised" padding="md" style={{ marginTop: 16 }}>
                 <div className="section-heading">
                   <h3>Record adjustment</h3>
                   <span className="status-chip">Audited</span>
@@ -729,7 +740,7 @@ export function InventoryPage() {
                     {adjustUnit.isPending ? 'Saving adjustment…' : 'Save adjustment'}
                   </button>
                 </div>
-              </section>
+              </Surface>
             )}
 
             <section style={{ marginTop: 16 }}>
@@ -799,7 +810,7 @@ export function InventoryPage() {
         }
       >
         {pendingAction && (
-          <div className="surface surface-raised">
+          <Surface variant="raised" padding="md">
             <p>
               Unit <strong className="mono">{pendingAction.unitNumber}</strong> will be{' '}
               {pendingAction.action === 'release'
@@ -812,7 +823,7 @@ export function InventoryPage() {
                 <span>{getErrorMessage(unitAction.error)}</span>
               </div>
             )}
-          </div>
+          </Surface>
         )}
       </Modal>
 

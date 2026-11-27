@@ -1,0 +1,262 @@
+/* M8 app motion polish. Everything here animates transform/opacity only;
+   layout sizes change instantly and looping effects stop when hidden. */
+
+/* Sidebar ----------------------------------------------------------------- */
+/* The shell used to transition grid-template-columns; collapse is now an
+   instant size change with spring transform/opacity cues inside the rail. */
+.app-shell {
+  transition: none;
+}
+
+.sidebar-brand__motion {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.nav-link {
+  position: relative;
+}
+
+.nav-active-indicator {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 0;
+  width: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  pointer-events: none;
+}
+
+.nav-link .nav-active-indicator {
+  overflow: visible;
+}
+
+.is-collapsed .nav-link .nav-active-indicator {
+  display: block;
+}
+
+/* Stable loading slots ----------------------------------------------------- */
+.inventory-alerts-slot {
+  min-height: 113px;
+}
+
+.alert-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.chart-card--inventory { min-height: 884px; }
+.chart-card--requests { min-height: 557px; }
+
+/* Topbar ------------------------------------------------------------------ */
+.topbar-notification-host {
+  display: flex;
+  align-items: center;
+  flex: 0 0 40px;
+  min-width: 40px;
+}
+
+.topbar-notification-host .btn-icon {
+  flex: none;
+  width: 40px;
+  min-height: 40px;
+}
+
+.user-trigger-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 190px;
+  min-height: 34px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.user-trigger-shell:hover {
+  background: var(--color-surface-muted);
+}
+
+.user-trigger-meta {
+  display: grid;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.user-trigger-meta strong,
+.user-trigger-meta small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-trigger-meta strong {
+  color: var(--color-text-strong);
+  font-size: var(--text-xs);
+}
+
+.user-trigger-meta small {
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.user-trigger-chevron {
+  flex: none;
+}
+
+/* The real control is an invisible overlay: its accessible name stays the
+   action label while the visible identity text lives in the shell. */
+.user-trigger {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  padding: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.user-trigger:hover {
+  background: transparent;
+}
+
+.user-trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .user-trigger-meta strong,
+  .user-trigger-meta small,
+  .user-trigger-chevron {
+    display: none;
+  }
+
+  .user-trigger-shell {
+    flex: 0 0 40px;
+    width: 40px;
+    max-width: 40px;
+    min-height: 40px;
+    justify-content: center;
+    padding: 3px;
+  }
+
+  .org-trigger {
+    max-width: 110px;
+  }
+
+  .scope-name {
+    max-width: 20vw;
+  }
+
+  .topbar-actions {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar-divider {
+    display: none;
+  }
+}
+
+/* Badges, charts and empty states ---------------------------------------- */
+.badge-vial {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 12px;
+  flex: none;
+  border: 1px solid currentColor;
+  border-top-width: 2px;
+  border-radius: 2px 2px 3px 3px;
+}
+
+.badge-vial::before {
+  content: '';
+  position: absolute;
+  inset: 5px 1px 1px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.55;
+  transform-origin: bottom;
+  animation: ll-vial-fill var(--motion-base) var(--ease-out) both;
+}
+
+@keyframes ll-vial-fill {
+  from { opacity: 0; transform: scaleY(0.3); }
+  to { opacity: 0.55; transform: scaleY(1); }
+}
+
+.chart-tooltip {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text-strong);
+  font-size: var(--text-xs);
+  animation: ll-fade-in var(--motion-fast) var(--ease-out) both;
+}
+
+.chart-tooltip__label {
+  color: var(--color-text-muted);
+}
+
+.chart-tooltip__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.state-action {
+  display: inline-flex;
+}
+
+/* Loop pause contract ------------------------------------------------------ */
+body[data-page-hidden='true'] .skeleton::after,
+body[data-page-hidden='true'] .live-dot::after,
+body[data-page-hidden='true'] .is-spinning,
+body[data-page-hidden='true'] .state-spinner,
+[data-motion-paused='true'] .skeleton::after,
+[data-motion-paused='true'] .live-dot::after,
+[data-motion-paused='true'] .is-spinning,
+[data-motion-paused='true'] .state-spinner {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell,
+  .user-trigger-shell {
+    transition: none;
+  }
+
+  .skeleton::after,
+  .live-dot::after,
+  .is-spinning,
+  .state-spinner,
+  .badge-vial::before,
+  .chart-tooltip {
+    animation: none !important;
+  }
+
+  .badge-vial::before {
+    opacity: 0.55;
+    transform: none;
+  }
+
+  .nav-active-indicator {
+    transform: none !important;
+  }
+}

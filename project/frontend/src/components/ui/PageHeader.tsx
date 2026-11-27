@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { cx } from '@/lib/utils';
 
 interface PageHeaderProps {
   title: string;
@@ -8,20 +9,21 @@ interface PageHeaderProps {
   eyebrow?: string;
   actions?: ReactNode;
   backTo?: string;
+  className?: string;
 }
 
-export function PageHeader({ title, description, eyebrow, actions, backTo }: PageHeaderProps) {
+export function PageHeader({ title, description, eyebrow, actions, backTo, className }: PageHeaderProps) {
   return (
-    <header className="page-header">
-      <div>
+    <header className={cx('page-header', 'page-header--app', className)}>
+      <div className="page-header__copy">
         {backTo && (
-          <Link className="auth-back" to={backTo} style={{ marginBottom: 'var(--space-2)' }}>
+          <Link className="auth-back" to={backTo}>
             <ArrowLeft size={14} aria-hidden="true" /> Back
           </Link>
         )}
-        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-        <h1>{title}</h1>
-        {description && <p>{description}</p>}
+        {eyebrow && <span className="eyebrow eyebrow--chip">{eyebrow}</span>}
+        <h1 className="page-header__title">{title}</h1>
+        {description && <p className="page-header__description">{description}</p>}
       </div>
       {actions && <div className="page-header-actions">{actions}</div>}
     </header>

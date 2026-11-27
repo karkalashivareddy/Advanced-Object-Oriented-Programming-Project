@@ -24,10 +24,15 @@ import {
   Drawer,
   ErrorState,
   FormField,
+  Grid,
+  Input,
   Modal,
   PageHeader,
+  Select,
   Skeleton,
+  StatCard,
   StatusBadge,
+  Surface,
   useToast,
   type DataTableColumn,
   type SortState,
@@ -431,25 +436,13 @@ export function DispatchPage() {
         }
       />
 
-      <div className="metric-grid">
-        <div className="metric-card surface stagger-1">
-          <span className="metric-label">In progress</span>
-          <span className="metric-value">{inProgressCount}</span>
-          <span className="metric-delta">Preparing and in transit</span>
-        </div>
-        <div className="metric-card surface stagger-2">
-          <span className="metric-label">Incidents</span>
-          <span className="metric-value">{incidentCount}</span>
-          <span className="metric-delta">Awaiting follow-up</span>
-        </div>
-        <div className="metric-card surface stagger-3">
-          <span className="metric-label">Delivered</span>
-          <span className="metric-value">{deliveredCount}</span>
-          <span className="metric-delta">Completed handovers</span>
-        </div>
-      </div>
+      <Grid columns="stats">
+        <StatCard label="In progress" value={inProgressCount} hint="Preparing and in transit" />
+        <StatCard label="Incidents" value={incidentCount} hint="Awaiting follow-up" />
+        <StatCard label="Delivered" value={deliveredCount} hint="Completed handovers" />
+      </Grid>
 
-      <div className="surface premium-table" style={{ marginTop: 18 }}>
+      <div style={{ marginTop: 18 }}>
         <DataTable
           ariaLabel="Dispatch list"
           rowKey={(row) => row.id}
@@ -465,8 +458,7 @@ export function DispatchPage() {
             <div className="toolbar">
               <div className="toolbar-search">
                 <Search size={15} aria-hidden="true" />
-                <input
-                  className="input"
+                <Input
                   type="search"
                   aria-label="Search dispatches"
                   placeholder="Search dispatches…"
@@ -477,9 +469,8 @@ export function DispatchPage() {
               <div className="filter-grid">
                 <div className="filter-field">
                   <label className="sr-only" htmlFor="dispatch-status">Dispatch status</label>
-                  <select
+                  <Select
                     id="dispatch-status"
-                    className="select"
                     value={status}
                     onChange={(event) => setStatus(event.target.value)}
                   >
@@ -487,13 +478,12 @@ export function DispatchPage() {
                     {DISPATCH_STATUSES.map((item) => (
                       <option key={item} value={item}>{humanize(item)}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="filter-field">
                   <label className="sr-only" htmlFor="dispatch-organization">Organization</label>
-                  <select
+                  <Select
                     id="dispatch-organization"
-                    className="select"
                     value={organizationFilter}
                     onChange={(event) => setOrganizationFilter(event.target.value)}
                   >
@@ -501,7 +491,7 @@ export function DispatchPage() {
                     {organizationOptions.map((item) => (
                       <option key={item.id} value={item.id}>{item.label}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
               <span className="freshness" aria-live="polite">
@@ -521,9 +511,9 @@ export function DispatchPage() {
         />
       </div>
       {dispatchQuery.isError && (
-        <div className="surface" style={{ marginTop: 16 }}>
+        <Surface padding="md" style={{ marginTop: 16 }}>
           <ErrorState error={dispatchQuery.error} onRetry={() => void dispatchQuery.refetch()} />
-        </div>
+        </Surface>
       )}
 
       <div className="task-grid" style={{ marginTop: 18 }}>

@@ -290,6 +290,10 @@
   min-width: 0;
 }
 
+.task-queue-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .task-card {
   display: grid;
   align-content: start;
@@ -613,6 +617,12 @@
   background: var(--color-surface);
 }
 
+.auth-form .text-muted a {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
 .auth-visual,
 .auth-aside {
   display: flex;
@@ -877,9 +887,13 @@ table.chart-data-table {
   }
 }
 
-@media (min-width: 641px) and (max-width: 900px) {
+@media (min-width: 641px) and (max-width: 1100px) {
   .operational-metrics,
   .analytics-overview-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .task-queue-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

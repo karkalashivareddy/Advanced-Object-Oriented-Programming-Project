@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="vesselDrop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#df1b3b" />
+      <stop offset="0.55" stop-color="#c8102e" />
+      <stop offset="1" stop-color="#8b0018" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="#faf8f9" />
+  <circle cx="1030" cy="110" r="270" fill="#ffe8ed" opacity="0.75" />
+  <circle cx="120" cy="740" r="230" fill="#fff5f7" opacity="0.9" />
+  <path d="M90 690 C320 742 880 742 1110 690" fill="none" stroke="#e8dce0" stroke-width="3" />
+  <path d="M280 150 C250 225 170 312 170 392 A110 110 0 0 0 390 392 C390 312 310 225 280 150Z" fill="url(#vesselDrop)" />
+  <path d="M250 322 C232 352 222 374 222 398 A58 58 0 0 0 338 398 C338 370 310 322 292 302Z" fill="#fff5f7" opacity="0.18" />
+  <path d="M196 402 h34 l16-30 22 58 18-28 h34" fill="none" stroke="#ff5263" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M372 372 C470 300 520 500 690 420" fill="none" stroke="#8b0018" stroke-width="26" stroke-linecap="round" opacity="0.16" />
+  <path d="M372 360 C470 288 520 488 690 408" fill="none" stroke="#c8102e" stroke-width="14" stroke-linecap="round" />
+  <circle cx="470" cy="318" r="8" fill="#ff5263" opacity="0.8" />
+  <circle cx="565" cy="410" r="8" fill="#ff5263" opacity="0.6" />
+  <circle cx="690" cy="408" r="14" fill="#df1b3b" />
+  <rect x="742" y="236" width="250" height="360" rx="42" fill="url(#vesselDrop)" />
+  <rect x="800" y="198" width="134" height="48" rx="16" fill="#24151c" />
+  <rect x="770" y="290" width="194" height="252" rx="22" fill="#fff5f7" opacity="0.95" />
+  <path d="M867 330 C852 358 830 388 830 416 A37 37 0 0 0 904 416 C904 388 882 358 867 330Z" fill="#c8102e" />
+  <rect x="810" y="470" width="114" height="10" rx="5" fill="#e8dce0" />
+  <rect x="810" y="494" width="78" height="10" rx="5" fill="#e8dce0" />
+  <circle cx="690" cy="408" r="5" fill="#fff5f7" />
+</svg>

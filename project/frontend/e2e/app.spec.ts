@@ -18,6 +18,11 @@ test('unauthenticated workspace access redirects to sign in', async ({ page }) =
 });
 
 test('admin dashboard loads live data and the request status filter refetches', async ({ page }) => {
+  const forbiddenPaths: string[] = [];
+  page.on('response', (response) => {
+    if (response.status() === 403) forbiddenPaths.push(new URL(response.url()).pathname);
+  });
+
   await login(page);
   const operationalMetrics = page.locator('.operational-metrics').last();
   await expect(operationalMetrics.locator('.metric-card')).toHaveCount(6);
@@ -33,6 +38,7 @@ test('admin dashboard loads live data and the request status filter refetches', 
   await page.getByLabel('Request status').selectOption('APPROVED');
   await filtered;
   await expect(page.getByLabel('Request status')).toHaveValue('APPROVED');
+  expect(forbiddenPaths).toEqual([]);
 });
 
 test('donor search and blood-group filters use bounded server-side pages', async ({ page }) => {
@@ -70,6 +76,15 @@ test('donations workspace consumes the paged donor options response', async ({ p
   await expect(page.getByRole('heading', { name: 'Donations' })).toBeVisible();
   await expect(page.getByLabel('Donor')).toBeVisible();
   await expect(page.getByText('Donor options unavailable')).toHaveCount(0);
+  expect(pageErrors).toEqual([]);
+});
+
+test('donor dashboard consumes the paged donor profile response', async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await login(page, { email: 'donor@lifelink.local', password: 'Donor@123!' });
+  await expect(page.getByRole('heading', { name: 'Your donor workspace' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Upcoming appointments', exact: true })).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 

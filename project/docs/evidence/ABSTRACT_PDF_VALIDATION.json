@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-11-24T11:35:31.976337+00:00",
+  "generated_at": "2026-11-24T13:11:32.999756+00:00",
   "scope": "Original Project Abstract Submission Form layout with corrected content only; no colour or redesign changes.",
   "files": {
     "pdf": "C:\\Users\\karka\\Advanced-Object-Oriented-Programming-Project\\project\\docs\\abstract\\LifeLink_Project_Abstract.pdf",
-    "pdf_sha256": "0f358a4783935cf4e7fd03ee5b84eef5077ed427eb6a0fdfaa619b745e23d3e4",
+    "pdf_sha256": "b96f27fd391a0911a6040074bdf64e7e94b89e5809544ddcb39be6bbc6f11b0c",
     "editable_docx": "C:\\Users\\karka\\Advanced-Object-Oriented-Programming-Project\\project\\docs\\abstract\\LifeLink_Project_Abstract.docx",
-    "editable_docx_sha256": "9ec030739e4140f246830ad476d8fd72e3ac5861286fbffab739ee8ba47ae4fc",
+    "editable_docx_sha256": "53fea3e900c3b034100c4d8b03b04ce6d380d2284f6cc44498b26346a15098f3",
     "original_form_docx": "C:\\Users\\karka\\Advanced-Object-Oriented-Programming-Project\\project\\docs\\abstract\\Project Abstract Submission Form.docx",
     "original_form_docx_sha256": "bb43451f28f43fa7a76c7e4f5cf5f6e310a3899458990a9f3478df5ee9ab56b2",
     "original_verification_pdf": "C:\\Users\\karka\\Advanced-Object-Oriented-Programming-Project\\project\\docs\\abstract\\Project Abstract Submission Form - verification.pdf",
@@ -25,7 +25,7 @@
     "declared_words": 187,
     "counted_words": 187,
     "limit": 250,
-    "body": "LifeLink is a blood bank coordination platform that unifies donor registration, donation screening, blood-\nunit inventory, hospital emergency requests, allocation, reservation, dispatch, notification, audit, and analytics. It\naddresses the inconsistency and poor traceability of manual blood distribution, where a unit can be promised twice, an\nunscreened donation can be released, expired stock can be issued, and one organization can see another organization's\ndata. The system models the supply chain as guarded Java domain objects whose state transitions enforce real\ninvariants. A modular Spring Boot REST service and React/TypeScript single-page application share one PostgreSQL\ndatabase; Flyway migrations, scoped authorization, and database constraints complement object-\nlevel checks.\n\nThe local runtime uses Dockerized PostgreSQL 16 on a Windows host; Linux containers are runtime\npackaging, not the application language. Pessimistic row locks, optimistic versioning, ordered locking, and persisted\nidempotency keys prevent double reservation and duplicate dispatch. Audit events and a notification-only outbox\npreserve decisions and durable notification intents. The expected outcome is a testable platform that blocks illegal transitions,\nprovides inventory alerts and analytics, and demonstrates encapsulation, abstraction, inheritance, polymorphism,\nSOLID, strategy/specification/repository patterns, generics, exceptions, and concurrency in real Java classes."
+    "body": "LifeLink is a blood bank coordination platform that unifies donor registration, donation screening, blood-\nunit inventory, hospital emergency requests, allocation, reservation, dispatch, notification, audit, and analytics. It\naddresses the inconsistency and poor traceability of manual blood distribution, where a unit can be promised twice, an\nunscreened donation can be released, expired stock can be issued, and one organization can see another organization's\ndata. The system models the supply chain as guarded Java domain objects whose state transitions enforce real\ninvariants. A modular Spring Boot REST service owns PostgreSQL; the React/TypeScript SPA uses only\nREST/STOMP. Flyway migrations, scoped authorization, and database constraints complement object-\nlevel checks.\n\nThe local runtime uses Dockerized PostgreSQL 16 on a Windows host; Linux containers are runtime\npackaging, not the application language. Pessimistic row locks, optimistic versioning, ordered locking, and persisted\nidempotency keys prevent double reservation and duplicate dispatch. Audit events and a notification-only outbox\npreserve decisions and durable notification intents. The expected outcome is a testable platform that blocks illegal transitions,\nprovides inventory alerts and analytics, and demonstrates encapsulation, abstraction, inheritance, polymorphism,\nSOLID, strategy/specification/repository patterns, generics, exceptions, and concurrency in real Java classes."
   },
   "checks": [
     {

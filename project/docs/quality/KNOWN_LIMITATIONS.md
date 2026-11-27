@@ -1,12 +1,27 @@
 # Known Limitations
 
-Date: 24 November 2026. Status: current for the implemented local/demo system on
-`feature/lifelink-bloodstream-experience`. This is the authoritative limitation
-list. Supporting runs are in [`TEST_RESULTS.md`](TEST_RESULTS.md), the current
-reconciliation in
-[`../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md`](../reviews/CURRENT_STATE_ENGINEERING_AND_DESIGN_AUDIT.md),
+Date: 27 November 2026. Status: current for the implemented local/demo system on
+`feature/lifelink-bloodstream-experience`, including the uncommitted **THE
+LIFELINK** redesign increment. This is the authoritative limitation list.
+Supporting runs are in [`TEST_RESULTS.md`](TEST_RESULTS.md), the current audit in
+[`../reviews/LIFELINK_FULL_REPOSITORY_AUDIT.md`](../reviews/LIFELINK_FULL_REPOSITORY_AUDIT.md),
 and raw probe results in [`../evidence/`](../evidence/). **No production-readiness
 claim is made.**
+
+## Current redesign addendum — 27 November 2026
+
+- Frontend gates now record **54 Vitest tests in 11 files**, a passing typecheck/build, **0 high/critical dependency vulnerabilities**, and **46 Playwright executions** (23 specs × Chrome and Edge). Item 23 below preserves its older count as history; use the current number above.
+- Backend rerun records **135 tests run, 0 failures, 0 errors, 8 skipped**. The 8 skips are the Docker-dependent PostgreSQL Testcontainers classes (`PostgresAuditSearchTest`, `PostgresIdempotencyConcurrencyTest`) because the Docker daemon was unavailable. Earlier Docker-backed evidence is historical and is not relabelled as current.
+- Axe WCAG A/AA scans found **zero violations on `/`, `/login`, and `/register`** in both browsers. This is route-level evidence, not a full application audit, screen-reader test, formal WCAG 2.2 conformance, or Lighthouse result.
+- Most authenticated operational pages still use the existing high-density layout plus global brand CSS; the cinematic redesign was concentrated on public/entry surfaces, the shell, and shared primitives. A full individual redesign of every authenticated route was not performed.
+- Reduced-motion, forced-colors, keyboard, breakpoint, and failed-resource checks were executed in Chrome and Edge. Screenshots at 360/390/768/1024/1280/1536 px were captured through DOM/computed-style/containment probes but were not manually viewed by the auditing model.
+- The design kit is available only in the Vite DEV build at `/__kit`; it is not a production route or customer-facing feature.
+- Motion remains CSS/SVG/rAF only. The allowed `motion` dependency was not installed; Tailwind, shadcn, Three.js/R3F, GSAP, and Google Fonts CDN were not introduced.
+- The landing vessel story is explicitly illustrative and is not live supply data. No landing statistics endpoint was invented; all operational numbers come from real API responses or honest empty/unavailable states.
+- The exact nearby-discovery note and exact RBC compatibility note are rendered and asserted by tests. The 64-pair RBC matrix is red-cell-only teaching material, not a clinical decision table or a duplicate allocation engine.
+- No clinical validation, FHIR mapping, production deployment, penetration test, load/soak test, backup/restore test, or multi-instance deployment proof was added in this increment.
+
+The numbered items below are retained as the detailed baseline limitation register; where a count or date differs from this addendum, this addendum is current.
 
 Status labels: **V** verified by an executed probe · **I** implemented but not
 runtime-verified · **N** not implemented · **B** blocked by environment/scope.

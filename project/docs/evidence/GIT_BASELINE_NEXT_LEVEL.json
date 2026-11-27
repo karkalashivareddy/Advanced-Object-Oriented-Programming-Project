@@ -1,0 +1,98 @@
+{
+  "generatedAt": "2026-11-24T18:30:00+05:30",
+  "purpose": "Git safety baseline for the Next-Generation Blood Network Platform phase, recorded before extending implementation.",
+  "commands": [
+    "git status --short",
+    "git branch --show-current",
+    "git log --oneline -12",
+    "git remote -v",
+    "git rev-list --left-right --count origin/main...HEAD",
+    "git diff --stat",
+    "git diff --cached --stat",
+    "git ls-files --others --ignored --exclude-standard"
+  ],
+  "branch": "feature/lifelink-bloodstream-experience",
+  "head": "5cf42191683adeebc9ca493c81b5d26254fcb3b3",
+  "originMain": "5cf42191683adeebc9ca493c81b5d26254fcb3b3",
+  "aheadBehindOriginMain": "0 0",
+  "remote": {
+    "name": "origin",
+    "url": "https://github.com/karkalashivareddy/Advanced-Object-Oriented-Programming-Project"
+  },
+  "previousReportCommitsVerifiedPresent": [
+    "2b77ca7",
+    "4f68323",
+    "1819a9f",
+    "3159adc",
+    "5a07ae9",
+    "d532f25"
+  ],
+  "differenceFromPreviousReport": "HEAD is no longer d532f25. It advanced by the pushed abstract commit 5cf4219 docs(abstract): restore original submission form layout. origin/main resolves to the same commit, so the branch is 0 ahead and 0 behind.",
+  "recentCommits": [
+    "5cf4219 docs(abstract): restore original submission form layout",
+    "d532f25 docs(abstract): remove instructional parenthetical notes",
+    "5a07ae9 docs: make audit git-state note commit-count independent",
+    "3159adc docs: finalize current audit header after local commits",
+    "1819a9f docs: reconcile architecture, abstract, evidence, and user guides",
+    "4f68323 feat(frontend): add bloodstream landing and tenancy-safe realtime UI",
+    "2b77ca7 fix(backend): harden audit, inventory, and workflow invariants",
+    "59401d4 docs(abstract): set team 8 and correct tools list"
+  ],
+  "stagedChanges": [],
+  "trackedWorkingTreeChangesAtBaseline": [
+    "project/backend/src/main/java/com/lifelink/donor/DonorProfile.java",
+    "project/backend/src/main/java/com/lifelink/identity/Permission.java",
+    "project/backend/src/main/java/com/lifelink/identity/Role.java",
+    "project/backend/src/main/java/com/lifelink/identity/TenantAccessService.java",
+    "project/backend/src/main/java/com/lifelink/organization/Organization.java",
+    "project/docs/abstract/LifeLink_Project_Abstract.docx",
+    "project/docs/abstract/LifeLink_Project_Abstract.pdf",
+    "project/docs/evidence/ABSTRACT_PDF_TEXT.txt",
+    "project/docs/evidence/ABSTRACT_PDF_VALIDATION.json",
+    "project/frontend/src/lib/utils.ts",
+    "project/frontend/src/pages/app/DashboardPage.tsx"
+  ],
+  "untrackedWorkObserved": {
+    "userLabWorkPreserved": [
+      "LAB-WORK/PRACTICAL-4/.gitignore",
+      "LAB-WORK/PRACTICAL-4/.vscode/",
+      "LAB-WORK/PRACTICAL-4/EVIDENCE_NOTES.md",
+      "LAB-WORK/PRACTICAL-4/KLH_LOGO.png",
+      "LAB-WORK/PRACTICAL-4/PRACTICAL-4 - VERIFICATION.txt",
+      "LAB-WORK/PRACTICAL-4/Practical-4.docx",
+      "LAB-WORK/PRACTICAL-4/VSCODE_EDITOR.png",
+      "LAB-WORK/PRACTICAL-4/VSCODE_OUTPUT.txt",
+      "LAB-WORK/PRACTICAL-4/VSCODE_TERMINAL.png",
+      "LAB-WORK/PRACTICAL-4/src/"
+    ],
+    "inProgressAuditEvidence": [
+      "project/docs/evidence/BASELINE_CURRENT_BROWSER_AUDIT.json",
+      "project/docs/evidence/final_browser_audit.cjs",
+      "project/docs/evidence/geospatial_api_evidence.cjs",
+      "project/docs/evidence/screenshots/baseline_current_*.png"
+    ],
+    "inProgressImplementation": [
+      "project/backend/src/main/java/com/lifelink/common/GeoPoint.java",
+      "project/frontend/src/lib/formRules.ts",
+      "project/frontend/src/lib/useMediaQuery.ts",
+      "project/frontend/src/lib/useNow.ts",
+      "project/frontend/src/lib/utils.test.ts"
+    ]
+  },
+  "ignoredFilesObserved": [
+    "project/frontend/node_modules/**",
+    "project/frontend/test-results/.last-run.json",
+    "project/frontend/tsconfig.app.tsbuildinfo",
+    "project/frontend/tsconfig.node.tsbuildinfo"
+  ],
+  "safety": {
+    "noResetHard": true,
+    "noGitClean": true,
+    "noForcePush": true,
+    "noHistoryRewrite": true,
+    "noBranchSwitch": true,
+    "noUserFileDeletion": true,
+    "noPushOrMerge": true,
+    "labWorkUntouched": true
+  }
+}

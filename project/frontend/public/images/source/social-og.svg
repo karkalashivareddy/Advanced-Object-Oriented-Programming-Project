@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="ogGlow" cx="0.16" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#8b0018" stop-opacity="0.85" />
+      <stop offset="0.55" stop-color="#3a0713" stop-opacity="0.35" />
+      <stop offset="1" stop-color="#10070c" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="ogDrop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#df1b3b" />
+      <stop offset="0.6" stop-color="#c8102e" />
+      <stop offset="1" stop-color="#8b0018" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#10070c" />
+  <rect width="1200" height="630" fill="url(#ogGlow)" />
+  <circle cx="250" cy="300" r="215" fill="#180d13" stroke="#6d1026" stroke-width="3" />
+  <circle cx="250" cy="300" r="175" fill="none" stroke="#ff5263" stroke-width="2" stroke-dasharray="8 14" opacity="0.4" />
+  <path d="M250 120 C226 170 160 245 160 315 A90 90 0 0 0 340 315 C340 245 274 170 250 120Z" fill="url(#ogDrop)" />
+  <path d="M104 326 h62 l26-46 38 94 30-48 h54" fill="none" stroke="#ff5263" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="540" y="315" font-family="Arial, Helvetica, sans-serif" font-size="118" font-weight="700" fill="#ffffff" letter-spacing="-3">LifeLink</text>
+  <text x="544" y="372" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="#d8c5cc" letter-spacing="1">The living blood network</text>
+  <rect x="544" y="408" width="300" height="4" rx="2" fill="#c8102e" />
+  <path d="M540 520 C700 500 900 540 1120 500" fill="none" stroke="#ff5263" stroke-width="4" opacity="0.6" />
+</svg>

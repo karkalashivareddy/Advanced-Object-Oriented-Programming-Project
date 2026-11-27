@@ -1,79 +1,171 @@
 :root {
   color-scheme: light;
 
-  /* Deep-navy text anchors the whole light system. */
-  --color-navy-950: #0a1730;
-  --color-navy-900: #10213f;
-  --color-navy-800: #1a3157;
-  --color-navy-700: #29426b;
+  /* Brand crimson --------------------------------------------------------- */
+  --crimson-50: #fff5f7;
+  --crimson-100: #ffe8ed;
+  --crimson-200: #ffd0da;
+  --crimson-300: #f5a9b8;
+  --crimson-400: #e85570;
+  --crimson-500: #df1b3b;
+  --crimson-600: #c8102e;
+  --crimson-700: #8b0018;
+  --crimson-800: #6d1026;
+  --crimson-900: #3a0713;
 
-  /* Surfaces */
-  --color-canvas: #f5f7fa;
-  --color-surface: #ffffff;
-  --color-surface-raised: #ffffff;
-  --color-surface-soft: #f7f9fc;
-  --color-surface-muted: #eef2f7;
-  --color-surface-hover: #f4f7fb;
-  --color-glass: rgb(255 255 255 / 84%);
-  --color-glass-border: rgb(255 255 255 / 78%);
+  /* Paper and ink --------------------------------------------------------- */
+  --paper-0: #ffffff;
+  --paper-50: #faf8f9;
+  --paper-100: #f3eff1;
+  --paper-200: #e8dce0;
+  --paper-300: #d3bec6;
 
-  /* Brand: restrained healthcare red */
-  --color-accent: #a81f2e;
-  --color-accent-hover: #8d1926;
-  --color-accent-active: #74131e;
-  --color-accent-soft: #fff1f2;
-  --color-accent-soft-strong: #ffe1e4;
+  --ink-950: #10070c;
+  --ink-900: #180d13;
+  --ink-800: #24151c;
+  --ink-700: #33232b;
+  --ink-600: #47363d;
+
+  --text-strong: #1d1015;
+  --text-body: #3a2a31;
+  --text-muted: #51434a;
+  --text-subtle: #67565e;
+  --text-on-dark: #f6eef1;
+  --text-on-dark-body: #d8c5cc;
+  --text-on-dark-muted: #b9a8b0;
+  --text-inverse: #ffffff;
+
+  /* Semantic surfaces ----------------------------------------------------- */
+  --surface-0: #ffffff;
+  --surface-1: #faf8f9;
+  --surface-2: #f3eff1;
+  --surface-dark-0: #10070c;
+  --surface-dark-1: #180d13;
+  --surface-dark-2: #22121a;
+
+  --hairline: #e8dce0;
+  --hairline-strong: #d3bec6;
+  --hairline-dark: rgb(255 255 255 / 16%);
+  --ring: #c8102e;
+  --ring-dark: #ff5263;
+
+  /* Gradients are decorative; text always sits on a solid token. --------- */
+  --grad-hero: radial-gradient(1000px 480px at 78% 4%, rgb(200 16 46 / 22%), transparent 62%),
+    radial-gradient(720px 420px at 4% 96%, rgb(109 16 38 / 32%), transparent 70%),
+    linear-gradient(150deg, #10070c 0%, #180d13 52%, #10070c 100%);
+  --grad-vessel: linear-gradient(135deg, #df1b3b 0%, #c8102e 46%, #8b0018 100%);
+  --grad-journey: linear-gradient(180deg, #fff5f7 0%, #faf8f9 48%, #ffffff 100%);
+  --grad-cta: linear-gradient(135deg, #c8102e 0%, #8b0018 100%);
+
+  /* Elevation ------------------------------------------------------------- */
+  --shadow-1: 0 1px 2px rgb(24 13 19 / 5%), 0 4px 14px rgb(24 13 19 / 4%);
+  --shadow-2: 0 10px 30px rgb(24 13 19 / 8%), 0 2px 8px rgb(24 13 19 / 5%);
+  --shadow-3: 0 24px 64px rgb(24 13 19 / 13%), 0 6px 18px rgb(24 13 19 / 7%);
+  --shadow-dark: 0 40px 100px rgb(10 3 7 / 38%), 0 10px 28px rgb(10 3 7 / 24%);
+
+  /* Status --------------------------------------------------------------- */
+  --success: #146c36;
+  --success-soft: #e8f7f0;
+  --success-border: #b7e2c7;
+  --warning: #8a4b00;
+  --warning-soft: #fdf3dc;
+  --warning-border: #efd49a;
+  --danger: #a30d26;
+  --danger-soft: #ffecee;
+  --danger-border: #f5bfca;
+  --info: #2856a8;
+  --info-soft: #e8f0fd;
+  --info-border: #c9d8f7;
+  --teal: #0f6c66;
+  --teal-soft: #eafaf7;
+  --teal-border: #b6e6dc;
+  --violet: #6337ba;
+  --violet-soft: #f4efff;
+  --violet-border: #d9c9fb;
+  --neutral: #45536b;
+  --neutral-soft: #f0f3f7;
+  --neutral-border: #dbe2ea;
+
+  --color-success: var(--success);
+  --color-success-bright: #16a36a;
+  --color-success-soft: var(--success-soft);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-bright: #b7791f;
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+  --color-info: var(--info);
+  --color-info-bright: #2f6bd0;
+  --color-info-soft: var(--info-soft);
+  --color-info-border: var(--info-border);
+  --color-danger: var(--danger);
+  --color-danger-bright: #f04452;
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-border: var(--danger-border);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
+  --color-teal-border: var(--teal-border);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --color-violet-border: var(--violet-border);
+  --color-neutral: var(--neutral);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-neutral-border: var(--neutral-border);
+
+  /* Legacy semantic aliases ---------------------------------------------- */
+  --paper: var(--paper-50);
+  --paper-soft: var(--paper-100);
+  --paper-deep: var(--paper-200);
+  --rose-50: var(--crimson-50);
+  --rose-100: var(--crimson-100);
+  --rose-200: var(--crimson-200);
+  --rose-300: var(--crimson-300);
+  --emergency: #f04452;
+  --lifeline: #ff5263;
+  --lifeline-deep: #a30d26;
+
+  --color-canvas: var(--paper-50);
+  --color-surface: var(--surface-0);
+  --color-surface-raised: var(--surface-0);
+  --color-surface-soft: var(--surface-1);
+  --color-surface-muted: var(--surface-2);
+  --color-surface-hover: var(--crimson-50);
+  --color-glass: rgb(255 255 255 / 88%);
+  --color-glass-border: rgb(255 255 255 / 72%);
+
+  --color-accent: var(--crimson-600);
+  --color-accent-hover: #a30d26;
+  --color-accent-active: var(--crimson-700);
+  --color-accent-soft: var(--crimson-50);
+  --color-accent-soft-strong: var(--crimson-100);
   --color-accent-contrast: #ffffff;
 
-  /* Text (AA on white and soft surfaces) */
-  --color-text: #24334a;
-  --color-text-strong: var(--color-navy-950);
-  --color-text-muted: #51617a;
-  --color-text-subtle: #5d6c84;
-  --color-text-inverse: #ffffff;
+  --color-text: var(--text-body);
+  --color-text-strong: var(--text-strong);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-border: var(--hairline);
+  --color-border-strong: var(--hairline-strong);
+  --color-border-subtle: var(--hairline);
 
-  /* Status */
-  --color-success: #146c36;
-  --color-success-soft: #edfaf2;
-  --color-success-border: #bce7cd;
-  --color-warning: #9a4a06;
-  --color-warning-soft: #fff8e8;
-  --color-warning-border: #f5dda2;
-  --color-info: #1d4ed8;
-  --color-info-soft: #eef4ff;
-  --color-info-border: #c9dafd;
-  --color-danger: #a81f2e;
-  --color-danger-soft: #fff1f2;
-  --color-danger-border: #f6cbd0;
-  --color-teal: #0f6c66;
-  --color-teal-soft: #eafaf7;
-  --color-teal-border: #b6e6dc;
-  --color-violet: #6337ba;
-  --color-violet-soft: #f4efff;
-  --color-violet-border: #d9c9fb;
-  --color-neutral: #45536b;
-  --color-neutral-soft: #f0f3f7;
-  --color-neutral-border: #dbe2ea;
+  --chart-1: var(--crimson-600);
+  --chart-2: var(--info);
+  --chart-3: var(--success);
+  --chart-4: var(--warning);
+  --chart-5: var(--text-muted);
+  --chart-6: var(--violet);
+  --chart-axis: var(--text-muted);
+  --chart-grid: var(--paper-100);
 
-  /* Lines */
-  --color-border: #dde4ed;
-  --color-border-strong: #c6d0dd;
-  --color-border-subtle: #eaeff5;
+  /* Typography ----------------------------------------------------------- */
+  --font-sans: 'Geist Variable', 'Geist Fallback', 'Segoe UI Variable', ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Fraunces Variable', 'Fraunces Fallback', 'Iowan Old Style', 'Palatino Linotype',
+    'Book Antiqua', Georgia, 'Times New Roman', serif;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono Fallback', ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, 'Liberation Mono', monospace;
 
-  /* Chart palette (CSS variables let forced-colors/themes override SVGs) */
-  --chart-1: #a81f2e;
-  --chart-2: #1d4ed8;
-  --chart-3: #146c36;
-  --chart-4: #9a4a06;
-  --chart-5: #64748b;
-  --chart-6: #6337ba;
-  --chart-axis: #51617a;
-  --chart-grid: #e7edf4;
-
-  /* Typography */
-  --font-sans: Inter, 'Segoe UI Variable', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --text-2xs: 0.6875rem;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -81,15 +173,18 @@
   --text-xl: 1.25rem;
   --text-2xl: 1.5rem;
   --text-3xl: 1.875rem;
-  --text-4xl: 2.5rem;
-  --text-5xl: 3.25rem;
+  --text-4xl: clamp(2.25rem, 4vw, 3rem);
+  --text-5xl: clamp(2.75rem, 6vw, 4.75rem);
+  --text-6xl: clamp(3.25rem, 8vw, 6.75rem);
 
-  /* Radii, spacing, elevation */
-  --radius-sm: 7px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  /* Geometry ------------------------------------------------------------- */
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
   --radius-pill: 999px;
+
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -101,45 +196,97 @@
   --space-12: 3rem;
   --space-16: 4rem;
   --space-20: 5rem;
+  --space-24: 6rem;
 
-  --shadow-xs: 0 1px 2px rgb(16 33 63 / 5%);
-  --shadow-sm: 0 2px 8px rgb(16 33 63 / 6%), 0 1px 2px rgb(16 33 63 / 4%);
-  --shadow-md: 0 12px 32px rgb(16 33 63 / 9%), 0 2px 8px rgb(16 33 63 / 4%);
-  --shadow-lg: 0 28px 68px rgb(16 33 63 / 14%), 0 6px 18px rgb(16 33 63 / 7%);
-  --shadow-focus: 0 0 0 3px rgb(168 31 46 / 24%);
+  --border-hairline: 1px solid var(--hairline);
+  --focus-ring: 0 0 0 3px rgb(200 16 46 / 26%);
+  --focus-ring-dark: 0 0 0 3px rgb(255 82 99 / 38%);
 
-  --transition-fast: 140ms ease;
-  --transition-base: 220ms ease;
+  --elevation-0: 0 0 0 transparent;
+  --elevation-1: var(--shadow-1);
+  --elevation-2: var(--shadow-2);
+  --elevation-3: var(--shadow-3);
+  --elevation-4: var(--shadow-dark);
+  --shadow-xs: var(--shadow-1);
+  --shadow-sm: var(--shadow-1);
+  --shadow-md: var(--shadow-2);
+  --shadow-lg: var(--shadow-3);
+  --shadow-focus: var(--focus-ring);
+
+  --blur-sm: 8px;
+  --blur-md: 16px;
+  --blur-lg: 28px;
+
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 40;
+  --z-header: 60;
+  --z-overlay: 80;
+  --z-popover: 90;
+  --z-modal: 100;
+  --z-skip: 200;
+
+  /* Motion --------------------------------------------------------------- */
+  --motion-instant: 90ms;
+  --motion-fast: 160ms;
+  --motion-base: 320ms;
+  --motion-slow: 760ms;
+  --motion-flow: 16s;
+  --motion-pulse: 3.4s;
+  --ease-flow: cubic-bezier(0.45, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --transition-fast: var(--motion-fast) var(--ease-out);
+  --transition-base: var(--motion-base) var(--ease-enter);
+
+  /* Layout --------------------------------------------------------------- */
   --sidebar-width: 252px;
   --sidebar-width-collapsed: 76px;
   --topbar-height: 68px;
+  --content-max: 1280px;
+  --page-gutter: clamp(16px, 3vw, 32px);
 
-  /* Bloodstream identity: deep vessel tones with a single restrained arterial accent. */
-  --color-vessel-950: #210811;
-  --color-vessel-900: #370a19;
-  --color-vessel-800: #520d22;
-  --color-vessel-700: #741329;
-  --color-vessel-600: #981a33;
-  --color-vessel-500: #b92a43;
-  --color-vessel-100: #f7e8eb;
-  --color-vessel-50: #fcf5f6;
-  --color-plasma: #fff8f9;
-  --color-plasma-rgb: 255 248 249;
+  /* Legacy aliases used by existing components. */
+  --color-navy-950: var(--ink-900);
+  --color-navy-900: var(--ink-800);
+  --color-navy-800: var(--ink-700);
+  --color-navy-700: var(--ink-600);
+  --color-vessel-950: #10070c;
+  --color-vessel-900: #180d13;
+  --color-vessel-800: #2a0b16;
+  --color-vessel-700: var(--crimson-800);
+  --color-vessel-600: #a80d26;
+  --color-vessel-500: var(--crimson-600);
+  --color-vessel-100: var(--crimson-100);
+  --color-vessel-50: var(--crimson-50);
+  --color-plasma: #16090f;
+  --color-plasma-rgb: 22 9 15;
   --color-cell: #d5485f;
-  --color-cell-bright: #f06c7e;
-  --color-cell-core: #8d1c31;
-  --color-vessel-rgb: 168 31 46;
+  --color-cell-bright: var(--lifeline);
+  --color-cell-core: var(--crimson-700);
+  --color-vessel-rgb: 200 16 46;
+}
 
-  /* Editorial display face for public storytelling; workspace remains utility-first. */
-  --font-display: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia,
-    'Times New Roman', serif;
-
-  /* Motion is intentionally slow enough to read as flow, never as an alert. */
-  --motion-fast: 180ms;
-  --motion-base: 420ms;
-  --motion-slow: 900ms;
-  --motion-flow: 14s;
-  --motion-pulse: 3.2s;
-  --ease-flow: cubic-bezier(0.45, 0, 0.2, 1);
-  --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+/* Cinematic surfaces share one dark token set; no page-level palette forks. */
+.marketing,
+.auth-visual {
+  --color-canvas: var(--surface-dark-0);
+  --color-surface: var(--surface-dark-1);
+  --color-surface-raised: var(--surface-dark-2);
+  --color-surface-soft: #1d1016;
+  --color-surface-muted: #26141c;
+  --color-surface-hover: #2a1720;
+  --color-glass: rgb(24 13 19 / 78%);
+  --color-glass-border: rgb(255 255 255 / 14%);
+  --color-text: var(--text-on-dark-body);
+  --color-text-strong: var(--text-on-dark);
+  --color-text-muted: var(--text-on-dark-muted);
+  --color-text-subtle: var(--text-on-dark-muted);
+  --color-border: var(--hairline-dark);
+  --color-border-strong: rgb(255 255 255 / 30%);
+  --color-border-subtle: rgb(255 255 255 / 10%);
+  --chart-grid: rgb(255 255 255 / 12%);
+  --chart-axis: var(--text-on-dark-muted);
+  --shadow-focus: var(--focus-ring-dark);
 }

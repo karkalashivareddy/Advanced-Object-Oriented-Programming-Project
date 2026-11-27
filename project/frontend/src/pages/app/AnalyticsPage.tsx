@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, Boxes, ClipboardList, Info, ShieldCheck } from 'lucide-react';
+import { Boxes, ClipboardList, Info, ShieldCheck } from 'lucide-react';
 import { api, getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { formatNumber, humanize } from '@/lib/utils';
-import { BarChartView, type ChartDatum } from '@/components/ui/Charts';
-import { EmptyState, ErrorState } from '@/components/ui/EmptyState';
-import { Skeleton } from '@/components/ui/Skeleton';
+import type { AnalyticsChartDatum } from '@/components/ui/AnalyticsBarChart';
+import { DeferredBarChartView } from '@/components/ui/DeferredBarChartView';
+import {
+  EmptyState,
+  ErrorState,
+  Grid,
+  PageHeader,
+  SectionCard,
+  Skeleton,
+  StatCard,
+  Surface,
+} from '@/components/ui';
 import type { PageResponse } from '@/types/api';
 import type { AnalyticsOverview, OrganizationView } from '@/types/domain';
 
@@ -18,6 +27,8 @@ interface OverviewMetric {
   label: string;
   value: number;
 }
+
+type ChartDatum = AnalyticsChartDatum;
 
 function finiteNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -102,17 +113,13 @@ function AnimatedMetric({ metric, reduced }: { metric: OverviewMetric; reduced: 
   }, [metric.value, reduced]);
 
   return (
-    <article className="metric-card">
-      <span className="metric-label">{metric.label}</span>
-      <strong className="metric-value">{formatNumber(displayed)}</strong>
-      <span className="metric-delta">Analytics API</span>
-    </article>
+    <StatCard label={metric.label} value={formatNumber(displayed)} hint="Analytics API" />
   );
 }
 
 function ChartTable({ caption, data, valueLabel }: { caption: string; data: ChartDatum[]; valueLabel: string }) {
   return (
-    <div className="surface surface-raised chart-data-table-wrap">
+    <div className="chart-data-table-wrap">
       <table className="premium-table chart-data-table">
         <caption>{caption}</caption>
         <thead>
@@ -178,65 +185,62 @@ export function AnalyticsPage() {
 
   return (
     <div className="app-page page-enter">
-      <header className="page-intro">
-        <div>
-          <span className="eyebrow"><BarChart3 size={14} aria-hidden="true" /> Insights</span>
-          <h1 className="page-title">Analytics</h1>
-          <p className="page-subtitle">
-            Metrics are read directly from the analytics API and scoped to your account and organization.
-          </p>
-        </div>
-        <div className="section-actions">
-          {isPlatformAdmin && canReadAnalytics && (
-            <div className="filter-field analytics-scope-control">
-              <label htmlFor="analytics-organization-scope">Organization scope</label>
-              <select
-                id="analytics-organization-scope"
-                className="input"
-                value={platformScope ?? ''}
-                onChange={(event) => setPlatformScope(
-                  event.target.value === '' ? null : Number(event.target.value),
-                )}
-              >
-                <option value="">All organizations</option>
-                {(organizationOptions.data?.content ?? []).map((organization) => (
-                  <option key={organization.id} value={organization.id}>{organization.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          <span className="live-pill"><span className="live-dot" aria-hidden="true" /> Read-only view</span>
-          <span className="freshness">No export is performed</span>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Insights"
+        title="Analytics"
+        description="Metrics are read directly from the analytics API and scoped to your account and organization."
+        actions={
+          <div className="section-actions">
+            {isPlatformAdmin && canReadAnalytics && (
+              <div className="filter-field analytics-scope-control">
+                <label htmlFor="analytics-organization-scope">Organization scope</label>
+                <select
+                  id="analytics-organization-scope"
+                  className="input"
+                  value={platformScope ?? ''}
+                  onChange={(event) => setPlatformScope(
+                    event.target.value === '' ? null : Number(event.target.value),
+                  )}
+                >
+                  <option value="">All organizations</option>
+                  {(organizationOptions.data?.content ?? []).map((organization) => (
+                    <option key={organization.id} value={organization.id}>{organization.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <span className="live-pill"><span className="live-dot" aria-hidden="true" /> Read-only view</span>
+            <span className="freshness">No export is performed</span>
+          </div>
+        }
+      />
 
       {!canReadAnalytics && (
-        <div className="surface">
+        <Surface padding="md">
           <EmptyState
             title="Analytics needs ANALYTICS_READ"
             description="Your account does not have access to the analytics endpoints. Other workspace pages remain available."
             action={<a className="btn btn-secondary" href="#main-content">Back to top</a>}
           />
-        </div>
+        </Surface>
       )}
 
-      <section className="surface surface-glass stagger-1" aria-labelledby="overview-metrics-title">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">Overview</span>
-            <h2 className="page-title" id="overview-metrics-title">Counts from /analytics/overview</h2>
-            <p className="page-subtitle">Animated where motion is allowed; values are never invented.</p>
-          </div>
-        </div>
+      <SectionCard
+        eyebrow="Overview"
+        title="Counts from /analytics/overview"
+        description="Animated where motion is allowed; values are never invented."
+        variant="glass"
+        className="stagger-1"
+      >
         {canReadAnalytics && overview.isPending && (
-          <div className="metric-grid analytics-overview-metrics">
+          <Grid columns="stats">
             {Array.from({ length: 4 }).map((_, index) => (
-              <article className="metric-card" key={index}>
+              <Surface key={index} padding="sm">
                 <Skeleton width="60%" />
                 <Skeleton width="40%" height={28} />
-              </article>
+              </Surface>
             ))}
-          </div>
+          </Grid>
         )}
         {canReadAnalytics && overview.isError && (
           <ErrorState error={overview.error} onRetry={() => void overview.refetch()} />
@@ -246,48 +250,49 @@ export function AnalyticsPage() {
         )}
         {metrics.length > 0 && (
           <>
-            <div className="metric-grid analytics-overview-metrics">
+            <Grid columns="stats">
               {metrics.map((metric) => (
                 <AnimatedMetric key={metric.label} metric={metric} reduced={reducedMotion} />
               ))}
-            </div>
+            </Grid>
             <ChartTable caption="Overview metric values" data={metrics.map((metric) => ({ name: metric.label, value: metric.value }))} valueLabel="Value" />
           </>
         )}
-      </section>
+      </SectionCard>
 
-      <section className="chart-card surface" aria-labelledby="analytics-inventory-title">
-          <div className="section-heading">
+      <Surface as="section" padding="md" className="chart-card chart-card--inventory" aria-labelledby="analytics-inventory-title">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow"><Boxes size={14} aria-hidden="true" /> Inventory</span>
+            <h2 className="page-title" id="analytics-inventory-title">Available units by blood group</h2>
+            <p className="page-subtitle">Complete organization-scoped totals are aggregated by the backend.</p>
+          </div>
+        </div>
+        {canReadAnalytics && inventoryMetrics.isError && (
+          <div className="alert alert-warning">
+            <Info size={16} aria-hidden="true" />
             <div>
-              <span className="eyebrow"><Boxes size={14} aria-hidden="true" /> Inventory</span>
-              <h2 className="page-title" id="analytics-inventory-title">Available units by blood group</h2>
-              <p className="page-subtitle">Complete organization-scoped totals are aggregated by the backend.</p>
+              <strong>Grouped API totals could not load</strong>
+              {getErrorMessage(inventoryMetrics.error)}
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => void inventoryMetrics.refetch()}>
+                Retry grouped totals
+              </button>
             </div>
           </div>
-          {canReadAnalytics && inventoryMetrics.isPending && <Skeleton height={180} />}
-          {canReadAnalytics && inventoryMetrics.isError && (
-            <div className="alert alert-warning">
-              <Info size={16} aria-hidden="true" />
-              <div>
-                <strong>Grouped API totals could not load</strong>
-                {getErrorMessage(inventoryMetrics.error)}
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => void inventoryMetrics.refetch()}>
-                  Retry grouped totals
-                </button>
-              </div>
-            </div>
-          )}
-          {inventoryChartData.length > 0 ? (
-            <>
-              <BarChartView data={inventoryChartData} ariaLabel="Available units by blood group chart" />
-              <ChartTable caption="Available units by blood group" data={inventoryChartData} valueLabel="Units" />
-            </>
-          ) : (
-            <EmptyState title="No available inventory" description="The backend returned no available units for this authorized scope." />
-          )}
-      </section>
+        )}
+        {canReadAnalytics && inventoryMetrics.isPending ? (
+          <Skeleton height={250} />
+        ) : inventoryChartData.length > 0 ? (
+          <>
+            <DeferredBarChartView data={inventoryChartData} ariaLabel="Available units by blood group chart" />
+            <ChartTable caption="Available units by blood group" data={inventoryChartData} valueLabel="Units" />
+          </>
+        ) : (
+          <EmptyState title="No available inventory" description="The backend returned no available units for this authorized scope." />
+        )}
+      </Surface>
 
-      <section className="chart-card surface stagger-3" aria-labelledby="analytics-requests-title">
+      <Surface as="section" padding="md" className="chart-card chart-card--requests stagger-3" aria-labelledby="analytics-requests-title">
         <div className="section-heading">
           <div>
             <span className="eyebrow"><ClipboardList size={14} aria-hidden="true" /> Requests</span>
@@ -295,7 +300,6 @@ export function AnalyticsPage() {
             <p className="page-subtitle">Complete organization-scoped status counts from the backend.</p>
           </div>
         </div>
-        {canReadAnalytics && requestMetrics.isPending && <Skeleton height={180} />}
         {canReadAnalytics && requestMetrics.isError && (
           <div className="alert alert-warning">
             <Info size={16} aria-hidden="true" />
@@ -308,15 +312,17 @@ export function AnalyticsPage() {
             </div>
           </div>
         )}
-        {requestChartData.length > 0 ? (
+        {canReadAnalytics && requestMetrics.isPending ? (
+          <Skeleton height={250} />
+        ) : requestChartData.length > 0 ? (
           <>
-            <BarChartView data={requestChartData} ariaLabel="Emergency requests by status chart" />
+            <DeferredBarChartView data={requestChartData} ariaLabel="Emergency requests by status chart" />
             <ChartTable caption="Emergency request counts by status" data={requestChartData} valueLabel="Requests" />
           </>
         ) : (
           <EmptyState title="No emergency requests" description="The backend returned no requests for this authorized scope." />
         )}
-      </section>
+      </Surface>
 
       <p className="freshness">
         <ShieldCheck size={13} aria-hidden="true" /> Each chart has one companion data table for exact values and keyboard access; separate views avoid repeating the same series.

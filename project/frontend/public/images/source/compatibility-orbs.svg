@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <defs>
+    <linearGradient id="orbOne" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#df1b3b" />
+      <stop offset="1" stop-color="#8b0018" />
+    </linearGradient>
+    <linearGradient id="orbTwo" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff5263" />
+      <stop offset="1" stop-color="#c8102e" />
+    </linearGradient>
+    <linearGradient id="orbThree" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#c8102e" />
+      <stop offset="1" stop-color="#3a0713" />
+    </linearGradient>
+    <radialGradient id="orbGlow">
+      <stop offset="0" stop-color="#8b0018" stop-opacity="0.75" />
+      <stop offset="1" stop-color="#10070c" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="1200" fill="#10070c" />
+  <circle cx="600" cy="540" r="540" fill="url(#orbGlow)" />
+  <circle cx="410" cy="470" r="235" fill="url(#orbOne)" opacity="0.92" />
+  <circle cx="790" cy="470" r="235" fill="url(#orbTwo)" opacity="0.86" />
+  <circle cx="600" cy="790" r="235" fill="url(#orbThree)" opacity="0.94" />
+  <circle cx="410" cy="470" r="235" fill="none" stroke="#ffe8ed" stroke-width="3" opacity="0.55" />
+  <circle cx="790" cy="470" r="235" fill="none" stroke="#ffe8ed" stroke-width="3" opacity="0.55" />
+  <circle cx="600" cy="790" r="235" fill="none" stroke="#ffe8ed" stroke-width="3" opacity="0.55" />
+  <path d="M430 700 H770" fill="none" stroke="#ff5263" stroke-width="4" stroke-dasharray="10 16" opacity="0.8" />
+  <path d="M600 575 C582 610 552 650 552 684 A48 48 0 0 0 648 684 C648 650 618 610 600 575Z" fill="#fff5f7" />
+  <circle cx="600" cy="470" r="26" fill="#fff5f7" />
+  <circle cx="293" cy="470" r="10" fill="#ff5263" />
+  <circle cx="907" cy="470" r="10" fill="#ff5263" />
+  <circle cx="600" cy="980" r="10" fill="#ff5263" />
+</svg>

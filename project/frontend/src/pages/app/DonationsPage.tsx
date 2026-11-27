@@ -24,10 +24,15 @@ import {
   EmptyState,
   ErrorState,
   FormField,
+  Grid,
+  Input,
   Modal,
   PageHeader,
+  Select,
   Skeleton,
+  StatCard,
   StatusBadge,
+  Surface,
   useToast,
   type DataTableColumn,
 } from '@/components/ui';
@@ -381,26 +386,24 @@ export function DonationsPage() {
         }
       />
 
-      <section className="metric-grid page-enter stagger-1" aria-label="Donation summary">
-        <article className="metric-card surface">
-          <span className="metric-label">Donations returned</span>
-          <strong className="metric-value">{allDonations.length}</strong>
-          <span className="metric-delta">For the selected organization</span>
-        </article>
-        <article className="metric-card surface">
-          <span className="metric-label">Awaiting screening</span>
-          <strong className="metric-value">
-            {allDonations.filter((donation) => statusOf(donation) === 'RECORDED').length}
-          </strong>
-          <span className="metric-delta">Status: recorded</span>
-        </article>
-        <article className="metric-card surface">
-          <span className="metric-label">Approved</span>
-          <strong className="metric-value">
-            {allDonations.filter((donation) => statusOf(donation) === 'APPROVED').length}
-          </strong>
-          <span className="metric-delta">Units created by the API</span>
-        </article>
+      <section className="page-enter stagger-1" aria-label="Donation summary">
+        <Grid columns="stats">
+          <StatCard
+            label="Donations returned"
+            value={allDonations.length}
+            hint="For the selected organization"
+          />
+          <StatCard
+            label="Awaiting screening"
+            value={allDonations.filter((donation) => statusOf(donation) === 'RECORDED').length}
+            hint="Status: recorded"
+          />
+          <StatCard
+            label="Approved"
+            value={allDonations.filter((donation) => statusOf(donation) === 'APPROVED').length}
+            hint="Units created by the API"
+          />
+        </Grid>
       </section>
 
       <DataTable
@@ -446,15 +449,14 @@ export function DonationsPage() {
           </>
         )}
         toolbar={
-          <div className="surface-interactive" style={{ width: '100%' }}>
+          <div>
             <div className="filter-grid">
               <div className="filter-field">
                 <label htmlFor="donation-search">Search donations</label>
                 <div className="search-input-wrap">
                   <Search size={15} aria-hidden="true" />
-                  <input
+                  <Input
                     id="donation-search"
-                    className="input toolbar-search"
                     type="search"
                     aria-describedby="donation-filter-note"
                     placeholder="Public ID, donor or notes…"
@@ -471,9 +473,8 @@ export function DonationsPage() {
               </div>
               <div className="filter-field">
                 <label htmlFor="donation-donor">Donor</label>
-                <select
+                <Select
                   id="donation-donor"
-                  className="select"
                   value={donorFilter}
                   onChange={(event) => {
                     setDonorFilter(event.target.value);
@@ -486,7 +487,7 @@ export function DonationsPage() {
                       {donor.fullName}
                     </option>
                   ))}
-                </select>
+                </Select>
                 {donorsQuery.isError && (
                   <span className="text-xs text-warning" role="alert">
                     Donor options unavailable: {getErrorMessage(donorsQuery.error)}
@@ -495,9 +496,8 @@ export function DonationsPage() {
               </div>
               <div className="filter-field">
                 <label htmlFor="donation-org">Organization</label>
-                <select
+                <Select
                   id="donation-org"
-                  className="select"
                   value={scopedOrganizationId}
                   onChange={(event) => {
                     setOrgFilter(event.target.value);
@@ -510,13 +510,12 @@ export function DonationsPage() {
                       {option.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="filter-field">
                 <label htmlFor="donation-status">Status</label>
-                <select
+                <Select
                   id="donation-status"
-                  className="select"
                   value={status}
                   onChange={(event) => {
                     setStatus(event.target.value);
@@ -529,13 +528,12 @@ export function DonationsPage() {
                       {humanize(item)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="filter-field">
                 <label htmlFor="donation-date-from">Donated from</label>
-                <input
+                <Input
                   id="donation-date-from"
-                  className="input"
                   type="date"
                   value={dateFrom}
                   onChange={(event) => {
@@ -546,9 +544,8 @@ export function DonationsPage() {
               </div>
               <div className="filter-field">
                 <label htmlFor="donation-date-to">Donated to</label>
-                <input
+                <Input
                   id="donation-date-to"
-                  className="input"
                   type="date"
                   value={dateTo}
                   onChange={(event) => {
@@ -568,9 +565,9 @@ export function DonationsPage() {
       />
 
       {donationsQuery.isError && (
-        <div className="surface" style={{ marginTop: 16 }}>
+        <Surface padding="md" style={{ marginTop: 16 }}>
           <ErrorState error={donationsQuery.error} onRetry={() => void donationsQuery.refetch()} />
-        </div>
+        </Surface>
       )}
 
       <Drawer
@@ -623,7 +620,7 @@ export function DonationsPage() {
               )}
             </dl>
 
-            <section className="surface surface-raised" style={{ marginTop: 16 }}>
+            <Surface as="section" variant="raised" padding="md" style={{ marginTop: 16 }}>
               <div className="section-heading">
                 <h3>Resulting units</h3>
                 <span className="status-chip">{units.length} units</span>
@@ -656,9 +653,9 @@ export function DonationsPage() {
                   ))}
                 </ul>
               )}
-            </section>
+            </Surface>
 
-            <section className="surface surface-raised" style={{ marginTop: 16 }}>
+            <Surface as="section" variant="raised" padding="md" style={{ marginTop: 16 }}>
               <div className="section-heading">
                 <h3>Screening history</h3>
                 <span className="status-chip">Audit log</span>
@@ -697,7 +694,7 @@ export function DonationsPage() {
                   ))}
                 </ul>
               )}
-            </section>
+            </Surface>
 
             <div className="action-row" style={{ marginTop: 16 }}>
               {canScreen(detail) && (

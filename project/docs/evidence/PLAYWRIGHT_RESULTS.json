@@ -144,7 +144,7 @@
     "webServer": {
       "command": "npm run dev -- --host 127.0.0.1 --port 4173 --strictPort",
       "env": {
-        "VITE_API_PROXY_TARGET": "http://127.0.0.1:18182"
+        "VITE_API_PROXY_TARGET": "http://127.0.0.1:18080"
       },
       "url": "http://127.0.0.1:4173",
       "reuseExistingServer": true,
@@ -176,12 +176,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1101,
+                  "duration": 1281,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:25.706Z",
+                  "startTime": "2026-11-27T13:55:45.875Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -197,14 +197,14 @@
               "results": [
                 {
                   "workerIndex": 2,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 973,
+                  "duration": 1845,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:36.803Z",
+                  "startTime": "2026-11-27T13:56:09.013Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -233,12 +233,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2276,
+                  "duration": 2286,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:25.692Z",
+                  "startTime": "2026-11-27T13:55:45.876Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -254,14 +254,14 @@
               "results": [
                 {
                   "workerIndex": 3,
-                  "parallelIndex": 1,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2438,
+                  "duration": 2913,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:38.167Z",
+                  "startTime": "2026-11-27T13:56:09.167Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -290,12 +290,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2250,
+                  "duration": 2626,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:27.092Z",
+                  "startTime": "2026-11-27T13:55:47.480Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -311,14 +311,14 @@
               "results": [
                 {
                   "workerIndex": 2,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2627,
+                  "duration": 2916,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:38.145Z",
+                  "startTime": "2026-11-27T13:56:11.136Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -328,7 +328,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-74534db260b1ee2aa501",
           "file": "app.spec.ts",
-          "line": 38,
+          "line": 44,
           "column": 1
         },
         {
@@ -347,12 +347,69 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2095,
+                  "duration": 2000,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:28.258Z",
+                  "startTime": "2026-11-27T13:55:48.480Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2088,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:12.574Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c31ff144dc4fee3acd0a-d08e663f42d1c3e26fde",
+          "file": "app.spec.ts",
+          "line": 70,
+          "column": 1
+        },
+        {
+          "title": "donor dashboard consumes the paged donor profile response",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1741,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:55:50.124Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -368,14 +425,14 @@
               "results": [
                 {
                   "workerIndex": 2,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2349,
+                  "duration": 1774,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:40.791Z",
+                  "startTime": "2026-11-27T13:56:14.072Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -383,9 +440,9 @@
               "status": "expected"
             }
           ],
-          "id": "c31ff144dc4fee3acd0a-d08e663f42d1c3e26fde",
+          "id": "c31ff144dc4fee3acd0a-72229fff1c87388523b1",
           "file": "app.spec.ts",
-          "line": 64,
+          "line": 82,
           "column": 1
         },
         {
@@ -401,15 +458,15 @@
               "projectName": "chrome",
               "results": [
                 {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1990,
+                  "duration": 1618,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:29.362Z",
+                  "startTime": "2026-11-27T13:55:50.494Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -425,14 +482,14 @@
               "results": [
                 {
                   "workerIndex": 3,
-                  "parallelIndex": 1,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2062,
+                  "duration": 1775,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:40.981Z",
+                  "startTime": "2026-11-27T13:56:14.676Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -442,7 +499,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-1fb0302478e4433f07fb",
           "file": "app.spec.ts",
-          "line": 76,
+          "line": 91,
           "column": 1
         },
         {
@@ -458,72 +515,15 @@
               "projectName": "chrome",
               "results": [
                 {
-                  "workerIndex": 1,
-                  "parallelIndex": 1,
-                  "status": "passed",
-                  "duration": 2718,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-11-25T03:24:30.371Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            },
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "edge",
-              "projectName": "edge",
-              "results": [
-                {
-                  "workerIndex": 3,
-                  "parallelIndex": 1,
-                  "status": "passed",
-                  "duration": 2378,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-11-25T03:24:43.092Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "c31ff144dc4fee3acd0a-ed492c89ccefa1d71362",
-          "file": "app.spec.ts",
-          "line": 88,
-          "column": 1
-        },
-        {
-          "title": "nearby search and emergency requests have no desktop horizontal overflow",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chrome",
-              "projectName": "chrome",
-              "results": [
-                {
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1851,
+                  "duration": 2381,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:31.367Z",
+                  "startTime": "2026-11-27T13:55:51.879Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -539,14 +539,71 @@
               "results": [
                 {
                   "workerIndex": 2,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1870,
+                  "duration": 2473,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:43.156Z",
+                  "startTime": "2026-11-27T13:56:15.860Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c31ff144dc4fee3acd0a-ed492c89ccefa1d71362",
+          "file": "app.spec.ts",
+          "line": 103,
+          "column": 1
+        },
+        {
+          "title": "nearby search and emergency requests have no desktop horizontal overflow",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1828,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:55:52.125Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2040,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:16.460Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -556,7 +613,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-1219c588e8a17ae80b21",
           "file": "app.spec.ts",
-          "line": 109,
+          "line": 124,
           "column": 1
         },
         {
@@ -575,12 +632,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1566,
+                  "duration": 1984,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:33.105Z",
+                  "startTime": "2026-11-27T13:55:53.985Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -596,14 +653,14 @@
               "results": [
                 {
                   "workerIndex": 2,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1841,
+                  "duration": 2043,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:45.045Z",
+                  "startTime": "2026-11-27T13:56:18.346Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -613,7 +670,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-64f941141f468f9d4d76",
           "file": "app.spec.ts",
-          "line": 126,
+          "line": 141,
           "column": 1
         }
       ]
@@ -640,12 +697,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1611,
+                  "duration": 2069,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:33.258Z",
+                  "startTime": "2026-11-27T13:55:54.282Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -661,14 +718,14 @@
               "results": [
                 {
                   "workerIndex": 3,
-                  "parallelIndex": 1,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1483,
+                  "duration": 2030,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:45.536Z",
+                  "startTime": "2026-11-27T13:56:18.528Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -697,12 +754,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1040,
+                  "duration": 1429,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:34.902Z",
+                  "startTime": "2026-11-27T13:55:56.375Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -718,14 +775,14 @@
               "results": [
                 {
                   "workerIndex": 3,
-                  "parallelIndex": 1,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1126,
+                  "duration": 1647,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:47.039Z",
+                  "startTime": "2026-11-27T13:56:20.584Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -754,12 +811,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1469,
+                  "duration": 2187,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:34.710Z",
+                  "startTime": "2026-11-27T13:55:55.998Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -775,14 +832,14 @@
               "results": [
                 {
                   "workerIndex": 2,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1520,
+                  "duration": 2157,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:46.922Z",
+                  "startTime": "2026-11-27T13:56:20.432Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -811,12 +868,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 721,
+                  "duration": 918,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:36.213Z",
+                  "startTime": "2026-11-27T13:55:58.206Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -832,14 +889,14 @@
               "results": [
                 {
                   "workerIndex": 2,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 677,
+                  "duration": 1015,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-25T03:24:48.461Z",
+                  "startTime": "2026-11-27T13:56:22.607Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -853,13 +910,675 @@
           "column": 1
         }
       ]
+    },
+    {
+      "title": "lifeline-verification.spec.ts",
+      "file": "lifeline-verification.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "lifeline landing stays contained at every target breakpoint",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7525,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:55:57.829Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "lifeline-console",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7386,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:22.253Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "lifeline-console",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5006744772e1d77a5f12-aed5f7bbf5eb4427067a",
+          "file": "lifeline-verification.spec.ts",
+          "line": 12,
+          "column": 1
+        },
+        {
+          "title": "compatibility atlas is keyboard operable and keeps the exact clinical note",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1952,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:05.374Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2167,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:29.658Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5006744772e1d77a5f12-104fcd79531b0291f184",
+          "file": "lifeline-verification.spec.ts",
+          "line": 47,
+          "column": 1
+        },
+        {
+          "title": "journey stages are keyboard operable and announce the selection",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1031,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:07.341Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1073,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:31.838Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5006744772e1d77a5f12-55aacb1144c192641281",
+          "file": "lifeline-verification.spec.ts",
+          "line": 72,
+          "column": 1
+        },
+        {
+          "title": "forced colors keeps the primary call to action visible",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 751,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:55:59.157Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 772,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:23.655Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5006744772e1d77a5f12-c1da899171a0038f29a6",
+          "file": "lifeline-verification.spec.ts",
+          "line": 83,
+          "column": 1
+        },
+        {
+          "title": "reduced motion removes decorative animation without hiding content",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 807,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:55:59.926Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 839,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:24.447Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5006744772e1d77a5f12-aae8f1f4e9c0903074a7",
+          "file": "lifeline-verification.spec.ts",
+          "line": 92,
+          "column": 1
+        },
+        {
+          "title": "developer-only design kit renders in the dev server",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 971,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:00.749Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 959,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:25.300Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5006744772e1d77a5f12-b3eda39974fa0a291ba0",
+          "file": "lifeline-verification.spec.ts",
+          "line": 108,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "public-forms-accessibility.spec.ts",
+      "file": "public-forms-accessibility.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "registration public form has no axe WCAG A/AA violations",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1515,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:01.806Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "axe-registration",
+                      "contentType": "application/json",
+                      "body": "ewogICJnZW5lcmF0ZWRBdCI6ICIyMDI2LTExLTI3VDEzOjU2OjAzLjE4MVoiLAogICJyb3V0ZSI6ICIvcmVnaXN0ZXIiLAogICJicm93c2VyIjogImNocm9tZSIsCiAgInRhZ3MiOiBbCiAgICAid2NhZzJhIiwKICAgICJ3Y2FnMmFhIiwKICAgICJ3Y2FnMjFhIiwKICAgICJ3Y2FnMjFhYSIsCiAgICAid2NhZzIyYWEiCiAgXSwKICAidmlvbGF0aW9ucyI6IFtdLAogICJwYXNzZXMiOiAyOCwKICAiaW5jb21wbGV0ZSI6IFsKICAgIHsKICAgICAgImlkIjogImNvbG9yLWNvbnRyYXN0IiwKICAgICAgImltcGFjdCI6ICJzZXJpb3VzIiwKICAgICAgImRlc2NyaXB0aW9uIjogIkVuc3VyZSB0aGUgY29udHJhc3QgYmV0d2VlbiBmb3JlZ3JvdW5kIGFuZCBiYWNrZ3JvdW5kIGNvbG9ycyBtZWV0cyBXQ0FHIDIgQUEgbWluaW11bSBjb250cmFzdCByYXRpbyB0aHJlc2hvbGRzIgogICAgfQogIF0KfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1435,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:26.329Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "axe-registration",
+                      "contentType": "application/json",
+                      "body": "ewogICJnZW5lcmF0ZWRBdCI6ICIyMDI2LTExLTI3VDEzOjU2OjI3LjU4NFoiLAogICJyb3V0ZSI6ICIvcmVnaXN0ZXIiLAogICJicm93c2VyIjogImVkZ2UiLAogICJ0YWdzIjogWwogICAgIndjYWcyYSIsCiAgICAid2NhZzJhYSIsCiAgICAid2NhZzIxYSIsCiAgICAid2NhZzIxYWEiLAogICAgIndjYWcyMmFhIgogIF0sCiAgInZpb2xhdGlvbnMiOiBbXSwKICAicGFzc2VzIjogMjgsCiAgImluY29tcGxldGUiOiBbCiAgICB7CiAgICAgICJpZCI6ICJjb2xvci1jb250cmFzdCIsCiAgICAgICJpbXBhY3QiOiAic2VyaW91cyIsCiAgICAgICJkZXNjcmlwdGlvbiI6ICJFbnN1cmUgdGhlIGNvbnRyYXN0IGJldHdlZW4gZm9yZWdyb3VuZCBhbmQgYmFja2dyb3VuZCBjb2xvcnMgbWVldHMgV0NBRyAyIEFBIG1pbmltdW0gY29udHJhc3QgcmF0aW8gdGhyZXNob2xkcyIKICAgIH0KICBdCn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "24802d210e802b598c58-9d2eb262b058bb8483e1",
+          "file": "public-forms-accessibility.spec.ts",
+          "line": 10,
+          "column": 3
+        },
+        {
+          "title": "login public form has no axe WCAG A/AA violations",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1431,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:03.332Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "axe-login",
+                      "contentType": "application/json",
+                      "body": "ewogICJnZW5lcmF0ZWRBdCI6ICIyMDI2LTExLTI3VDEzOjU2OjA0LjU5OFoiLAogICJyb3V0ZSI6ICIvbG9naW4iLAogICJicm93c2VyIjogImNocm9tZSIsCiAgInRhZ3MiOiBbCiAgICAid2NhZzJhIiwKICAgICJ3Y2FnMmFhIiwKICAgICJ3Y2FnMjFhIiwKICAgICJ3Y2FnMjFhYSIsCiAgICAid2NhZzIyYWEiCiAgXSwKICAidmlvbGF0aW9ucyI6IFtdLAogICJwYXNzZXMiOiAyNSwKICAiaW5jb21wbGV0ZSI6IFsKICAgIHsKICAgICAgImlkIjogImNvbG9yLWNvbnRyYXN0IiwKICAgICAgImltcGFjdCI6ICJzZXJpb3VzIiwKICAgICAgImRlc2NyaXB0aW9uIjogIkVuc3VyZSB0aGUgY29udHJhc3QgYmV0d2VlbiBmb3JlZ3JvdW5kIGFuZCBiYWNrZ3JvdW5kIGNvbG9ycyBtZWV0cyBXQ0FHIDIgQUEgbWluaW11bSBjb250cmFzdCByYXRpbyB0aHJlc2hvbGRzIgogICAgfQogIF0KfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1403,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:27.773Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "axe-login",
+                      "contentType": "application/json",
+                      "body": "ewogICJnZW5lcmF0ZWRBdCI6ICIyMDI2LTExLTI3VDEzOjU2OjI4Ljk5NVoiLAogICJyb3V0ZSI6ICIvbG9naW4iLAogICJicm93c2VyIjogImVkZ2UiLAogICJ0YWdzIjogWwogICAgIndjYWcyYSIsCiAgICAid2NhZzJhYSIsCiAgICAid2NhZzIxYSIsCiAgICAid2NhZzIxYWEiLAogICAgIndjYWcyMmFhIgogIF0sCiAgInZpb2xhdGlvbnMiOiBbXSwKICAicGFzc2VzIjogMjUsCiAgImluY29tcGxldGUiOiBbCiAgICB7CiAgICAgICJpZCI6ICJjb2xvci1jb250cmFzdCIsCiAgICAgICJpbXBhY3QiOiAic2VyaW91cyIsCiAgICAgICJkZXNjcmlwdGlvbiI6ICJFbnN1cmUgdGhlIGNvbnRyYXN0IGJldHdlZW4gZm9yZWdyb3VuZCBhbmQgYmFja2dyb3VuZCBjb2xvcnMgbWVldHMgV0NBRyAyIEFBIG1pbmltdW0gY29udHJhc3QgcmF0aW8gdGhyZXNob2xkcyIKICAgIH0KICBdCn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "24802d210e802b598c58-aaa04e51523c578e3129",
+          "file": "public-forms-accessibility.spec.ts",
+          "line": 10,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "public-landing-accessibility.spec.ts",
+      "file": "public-landing-accessibility.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "redesigned landing page has no axe WCAG A/AA violations",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1967,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:04.788Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "axe-landing",
+                      "contentType": "application/json",
+                      "body": "ewogICJnZW5lcmF0ZWRBdCI6ICIyMDI2LTExLTI3VDEzOjU2OjA2LjUxNVoiLAogICJyb3V0ZSI6ICIvIiwKICAiYnJvd3NlciI6ICJjaHJvbWUiLAogICJ0YWdzIjogWwogICAgIndjYWcyYSIsCiAgICAid2NhZzJhYSIsCiAgICAid2NhZzIxYSIsCiAgICAid2NhZzIxYWEiLAogICAgIndjYWcyMmFhIgogIF0sCiAgInZpb2xhdGlvbnMiOiBbXSwKICAicGFzc2VzIjogMjYsCiAgImluY29tcGxldGUiOiBbCiAgICB7CiAgICAgICJpZCI6ICJhcmlhLXByb2hpYml0ZWQtYXR0ciIsCiAgICAgICJpbXBhY3QiOiAic2VyaW91cyIsCiAgICAgICJkZXNjcmlwdGlvbiI6ICJFbnN1cmUgQVJJQSBhdHRyaWJ1dGVzIGFyZSBub3QgcHJvaGliaXRlZCBmb3IgYW4gZWxlbWVudCdzIHJvbGUiCiAgICB9LAogICAgewogICAgICAiaWQiOiAiY29sb3ItY29udHJhc3QiLAogICAgICAiaW1wYWN0IjogInNlcmlvdXMiLAogICAgICAiZGVzY3JpcHRpb24iOiAiRW5zdXJlIHRoZSBjb250cmFzdCBiZXR3ZWVuIGZvcmVncm91bmQgYW5kIGJhY2tncm91bmQgY29sb3JzIG1lZXRzIFdDQUcgMiBBQSBtaW5pbXVtIGNvbnRyYXN0IHJhdGlvIHRocmVzaG9sZHMiCiAgICB9CiAgXQp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2155,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:29.193Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "axe-landing",
+                      "contentType": "application/json",
+                      "body": "ewogICJnZW5lcmF0ZWRBdCI6ICIyMDI2LTExLTI3VDEzOjU2OjMxLjEyNloiLAogICJyb3V0ZSI6ICIvIiwKICAiYnJvd3NlciI6ICJlZGdlIiwKICAidGFncyI6IFsKICAgICJ3Y2FnMmEiLAogICAgIndjYWcyYWEiLAogICAgIndjYWcyMWEiLAogICAgIndjYWcyMWFhIiwKICAgICJ3Y2FnMjJhYSIKICBdLAogICJ2aW9sYXRpb25zIjogW10sCiAgInBhc3NlcyI6IDI2LAogICJpbmNvbXBsZXRlIjogWwogICAgewogICAgICAiaWQiOiAiYXJpYS1wcm9oaWJpdGVkLWF0dHIiLAogICAgICAiaW1wYWN0IjogInNlcmlvdXMiLAogICAgICAiZGVzY3JpcHRpb24iOiAiRW5zdXJlIEFSSUEgYXR0cmlidXRlcyBhcmUgbm90IHByb2hpYml0ZWQgZm9yIGFuIGVsZW1lbnQncyByb2xlIgogICAgfSwKICAgIHsKICAgICAgImlkIjogImNvbG9yLWNvbnRyYXN0IiwKICAgICAgImltcGFjdCI6ICJzZXJpb3VzIiwKICAgICAgImRlc2NyaXB0aW9uIjogIkVuc3VyZSB0aGUgY29udHJhc3QgYmV0d2VlbiBmb3JlZ3JvdW5kIGFuZCBiYWNrZ3JvdW5kIGNvbG9ycyBtZWV0cyBXQ0FHIDIgQUEgbWluaW11bSBjb250cmFzdCByYXRpbyB0aHJlc2hvbGRzIgogICAgfQogIF0KfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e623567c0e44334f8ade-9bbecce45732a6af0023",
+          "file": "public-landing-accessibility.spec.ts",
+          "line": 6,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "resource-diagnostics.spec.ts",
+      "file": "resource-diagnostics.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "records failed browser resources and unload listeners with their initiators",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1442,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:06.794Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "browser-resource-diagnostics",
+                      "contentType": "application/json",
+                      "body": "ewogICJnZW5lcmF0ZWRBdCI6ICIyMDI2LTExLTI3VDEzOjU2OjA3LjkxMloiLAogICJicm93c2VyIjogImNocm9tZSIsCiAgInJvdXRlcyI6IFsKICAgICIvIiwKICAgICIvcmVnaXN0ZXIiLAogICAgIi9sb2dpbiIKICBdLAogICJmYWlsZWRSZXNwb25zZXMiOiBbXSwKICAidW5sb2FkTGlzdGVuZXJzIjogewogICAgInJlZ2lzdHJhdGlvbnMiOiBbCiAgICAgIHsKICAgICAgICAidHlwZSI6ICJiZWZvcmV1bmxvYWQiLAogICAgICAgICJzdGFjayI6ICJFcnJvclxuICAgIGF0IEV2ZW50VGFyZ2V0LmFkZEV2ZW50TGlzdGVuZXIgKDxhbm9ueW1vdXM+OjE1OjE4KVxuICAgIGF0IGh0dHA6Ly8xMjcuMC4wLjE6NDE3My9Adml0ZS9jbGllbnQ6Nzg1OjYxIgogICAgICB9CiAgICBdLAogICAgInByb3BlcnR5V3JpdGVzIjogW10KICB9LAogICJ1bmxvYWRQb2xpY3lNZXNzYWdlcyI6IFtdLAogICJyZWxldmFudENvbnNvbGVNZXNzYWdlcyI6IFtdCn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1535,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T13:56:31.384Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "browser-resource-diagnostics",
+                      "contentType": "application/json",
+                      "body": "ewogICJnZW5lcmF0ZWRBdCI6ICIyMDI2LTExLTI3VDEzOjU2OjMyLjU1NFoiLAogICJicm93c2VyIjogImVkZ2UiLAogICJyb3V0ZXMiOiBbCiAgICAiLyIsCiAgICAiL3JlZ2lzdGVyIiwKICAgICIvbG9naW4iCiAgXSwKICAiZmFpbGVkUmVzcG9uc2VzIjogW10sCiAgInVubG9hZExpc3RlbmVycyI6IHsKICAgICJyZWdpc3RyYXRpb25zIjogWwogICAgICB7CiAgICAgICAgInR5cGUiOiAiYmVmb3JldW5sb2FkIiwKICAgICAgICAic3RhY2siOiAiRXJyb3JcbiAgICBhdCBFdmVudFRhcmdldC5hZGRFdmVudExpc3RlbmVyICg8YW5vbnltb3VzPjoxNToxOClcbiAgICBhdCBodHRwOi8vMTI3LjAuMC4xOjQxNzMvQHZpdGUvY2xpZW50Ojc4NTo2MSIKICAgICAgfQogICAgXSwKICAgICJwcm9wZXJ0eVdyaXRlcyI6IFtdCiAgfSwKICAidW5sb2FkUG9saWN5TWVzc2FnZXMiOiBbXSwKICAicmVsZXZhbnRDb25zb2xlTWVzc2FnZXMiOiBbXQp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "08e45dd4e57c3a6d2212-9674b0f95f67aefc884c",
+          "file": "resource-diagnostics.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-25T03:24:25.167Z",
-    "duration": 24390.058,
-    "expected": 24,
+    "startTime": "2026-11-27T13:55:45.253Z",
+    "duration": 48179.595,
+    "expected": 46,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

@@ -1,9 +1,53 @@
 # LifeLink Verified Test Results
 
-## Final verification — 25 November 2026
+## Final verification — 27 November 2026 (current)
+
+Branch `feature/lifelink-bloodstream-experience`; working-tree HEAD
+`566e14071675716c9b507e8df37751a92fd139cf`. These results cover the current
+uncommitted cinematic redesign increment. Publication status is recorded in
+[`../reviews/LIFELINK_NEXT_LEVEL_IMPLEMENTATION_REPORT.md`](../reviews/LIFELINK_NEXT_LEVEL_IMPLEMENTATION_REPORT.md).
+Existing unrelated edits, including `LAB-WORK/`, are outside test scope.
+
+| Area | Command / evidence | Result |
+| --- | --- | --- |
+| Backend | `.\mvnw.cmd -B -ntp test` from `project/backend` | **BUILD SUCCESS; 135 tests run, 0 failures, 0 errors, 8 skipped.** The skips are 4 `PostgresAuditSearchTest` and 4 `PostgresIdempotencyConcurrencyTest` cases, both `@Testcontainers(disabledWithoutDocker = true)`; the Docker daemon was unavailable. Earlier Docker-backed PostgreSQL evidence is historical. |
+| Frontend typecheck | `npm run typecheck` from `project/frontend` | Passed. |
+| Frontend unit tests | `npm test` from `project/frontend` | **54 tests in 11 files passed.** Includes API/error contract, refresh single-flight, organization scope, route guards, cache invalidation, form rules, 64-pair RBC matrix and exact note, brand/layout keyboard behaviour, and registration validation. |
+| Frontend production build | `npm run build` | Passed; Vite transformed **2,297 modules**. |
+| Dependency audit | `npm audit --audit-level=high` | **0 vulnerabilities.** |
+| Full browser E2E | `$env:VITE_API_PROXY_TARGET='http://127.0.0.1:18080'; npx playwright test` | **46 passed**, 0 failed, 0 flaky, 0 skipped; 23 specs × Chrome/Edge. Covers authenticated dashboard/filtering, bounded donor search, paged donor profiles, donation options, mobile dialog focus/Escape, overflow, STOMP + REST polling, landing story, keyboard/breakpoints, forced colors, reduced motion, dev kit, axe public pages, and failed resources. |
+| Axe accessibility | `npx playwright test e2e/public-landing-accessibility.spec.ts e2e/public-forms-accessibility.spec.ts` | **Zero axe WCAG A/AA violations** on `/`, `/login`, and `/register` in both Chrome and Edge. |
+| Local API stack | Local H2 dev server on port `18080` | Flyway `V1`–`V6` applied; seeded 2 organizations, 22 users, 17 donors, 9 blood units and 1 request; `GET /actuator/health` returned HTTP 200 `UP`. |
+| Git hygiene | `git diff --check` | No whitespace errors; normal LF/CRLF warnings only. |
+
+The browser result JSON is [PLAYWRIGHT_RESULTS.json](../evidence/PLAYWRIGHT_RESULTS.json).
+Breakpoint screenshots are in [`../evidence/screenshots/`](../evidence/screenshots/),
+including `lifeline-landing-360.png`, `-390.png`, `-768.png`, `-1024.png`,
+`-1280.png`, and `-1536.png`. Axe checks cover the three public pages only;
+they are not a full WCAG conformance or screen-reader audit. Browser timing and
+DOM checks are not Lighthouse or field Web Vitals. No penetration test, load
+test, production routing-provider test, clinical validation, FHIR mapping, or
+formal WCAG conformance audit was run.
+
+A follow-up live-browser probe exercised all six seeded accounts against the
+production `vite preview` build. It found and fixed a donor-only blank page:
+`/api/v1/donors` returns a paged `PageResponse`, but the dashboard treated it as
+an array before calling `.find()`. The dashboard now reads `content`; the
+unscoped admin dashboard no longer requests organization-scoped donation data;
+and sockjs-client's deprecated `unload` registration is remapped to `pagehide`
+during import. The final six-account probe reported zero page errors, zero
+console errors, and zero HTTP responses at or above 400. The donor regression
+spec is included in the 46 executions above.
+
+## Historical verification — 25 November 2026 (superseded)
+
+The table below is retained as a dated record and must not be read as the
+current gate result.
+
+### Original 25 November record
 
 Branch `feature/lifelink-bloodstream-experience`; test baseline was
-`5cf42191683adeebc9ca493c81b5d26254fcb3b3`. These results record the local
+`5cf42191683adeebc9ca493c81b5d26254fcb3b3`. These historical results recorded the local
 verification run; publication status is recorded in the final implementation
 report. Existing unrelated edits, including `LAB-WORK/`, are outside test scope.
 
@@ -24,10 +68,11 @@ states; its summary and samples are in [FINAL_BROWSER_AUDIT.json](../evidence/FI
 capture recorded no overflow, missing expected headings or failed HTTP responses.
 It did record a 404 resource warning and Chromium unload-policy console notices.
 
-The custom DOM checks are not a full axe-core or screen-reader audit; browser
-timing samples are not Lighthouse or field Web Vitals. No penetration test,
-load test, production routing-provider test, or formal WCAG conformance audit
-was run. The historical verification snapshot below is retained for context.
+At that time, the custom DOM checks were not a full axe-core or screen-reader
+audit; browser timing samples were not Lighthouse or field Web Vitals. No
+penetration test, load test, production routing-provider test, or formal WCAG
+conformance audit was run. The older verification snapshots below are retained
+for context.
 
 **Superseded snapshot from before donor discovery.** Branch:
 `feature/lifelink-bloodstream-experience`, base HEAD

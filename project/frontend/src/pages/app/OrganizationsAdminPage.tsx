@@ -14,9 +14,13 @@ import {
   ErrorState,
   FormField,
   FreshnessIndicator,
+  Grid,
+  Input,
   Modal,
   PageHeader,
+  StatCard,
   StatusBadge,
+  Surface,
   useToast,
   type DataTableColumn,
 } from '@/components/ui';
@@ -309,25 +313,29 @@ export function OrganizationsAdminPage() {
       />
 
       {!orgsQuery.isError && (
-        <div className="metric-grid stagger-1" aria-label="Organization summary">
-          <article className="metric-card">
-            <span className="metric-label">Organizations (server total)</span>
-            <strong className="metric-value">{orgsQuery.data?.totalElements ?? '—'}</strong>
-            <span className="metric-delta">From /organizations pagination</span>
-          </article>
-          <article className="metric-card">
-            <span className="metric-label">Verified on this page</span>
-            <strong className="metric-value">{orgsQuery.data ? verifiedOnPage : '—'}</strong>
-            <span className="metric-delta">Page-scoped count</span>
-          </article>
-          <article className="metric-card">
-            <span className="metric-label">Active context</span>
-            <strong className="metric-value" style={{ fontSize: 'var(--text-base)' }}>
-              {activeMembership?.organizationName ?? (isPlatformAdmin ? 'Platform admin' : 'None')}
-            </strong>
-            <span className="metric-delta">Selected from the top bar</span>
-          </article>
-        </div>
+        <section className="stagger-1" aria-label="Organization summary">
+          <Grid columns="stats">
+            <StatCard
+              label="Organizations (server total)"
+              value={orgsQuery.data?.totalElements ?? '—'}
+              hint="From /organizations pagination"
+            />
+            <StatCard
+              label="Verified on this page"
+              value={orgsQuery.data ? verifiedOnPage : '—'}
+              hint="Page-scoped count"
+            />
+            <StatCard
+              label="Active context"
+              value={
+                <span style={{ fontSize: 'var(--text-base)' }}>
+                  {activeMembership?.organizationName ?? (isPlatformAdmin ? 'Platform admin' : 'None')}
+                </span>
+              }
+              hint="Selected from the top bar"
+            />
+          </Grid>
+        </section>
       )}
 
       <div className="stagger-2" style={{ margin: '16px 0' }}>
@@ -344,13 +352,13 @@ export function OrganizationsAdminPage() {
       </div>
 
       {orgsQuery.isError ? (
-        <section className="surface surface-glass stagger-2">
+        <Surface as="section" variant="glass" padding="md" className="stagger-2">
           <ErrorState
             title="Organizations could not be loaded"
             error={orgsQuery.error}
             onRetry={() => void orgsQuery.refetch()}
           />
-        </section>
+        </Surface>
       ) : (
         <div className="stagger-2">
           <DataTable
@@ -369,13 +377,12 @@ export function OrganizationsAdminPage() {
             toolbar={
               <div className="toolbar">
                 <div className="filter-grid">
-                  <div className="filter-field toolbar-search">
+                  <div className="filter-field">
                     <label className="sr-only" htmlFor="organizations-search">Search organizations on this page</label>
                     <div className="search-input-wrap">
                       <Search size={15} aria-hidden="true" />
-                      <input
+                      <Input
                         id="organizations-search"
-                        className="input"
                         type="search"
                         placeholder="Search organizations…"
                         value={search}
@@ -470,7 +477,7 @@ export function OrganizationsAdminPage() {
             </div>
 
             {canManage && (
-              <div className="surface surface-raised" style={{ marginTop: 16, padding: 16 }}>
+              <Surface as="section" variant="raised" padding="md" style={{ marginTop: 16 }}>
                 <h3>Add a member</h3>
                 <p className="text-xs text-subtle" style={{ marginBottom: 12 }}>
                   Search the user directory; the backend only supports creating memberships. Removal and role changes are not exposed by the API.
@@ -554,7 +561,7 @@ export function OrganizationsAdminPage() {
                     {addMember.isPending ? 'Adding…' : 'Add member'}
                   </button>
                 </div>
-              </div>
+              </Surface>
             )}
           </>
         )}

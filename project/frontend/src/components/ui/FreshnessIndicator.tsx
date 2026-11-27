@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import { RefreshCw } from 'lucide-react';
+import { dur, ease } from '@/lib/motion';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 import { cx } from '@/lib/utils';
+import { useMotionPause } from './Skeleton';
 
 interface FreshnessIndicatorProps {
   /** Timestamp of the last successful load. */
@@ -43,6 +47,8 @@ export function FreshnessIndicator({
   label = 'Live',
   className,
 }: FreshnessIndicatorProps) {
+  const reduced = useReducedMotion();
+  const pauseRef = useMotionPause<HTMLDivElement>();
   const [now, setNow] = useState(() => Date.now());
   const hiddenAt = useRef<number | null>(null);
   const onRefreshRef = useRef(onRefresh);
@@ -80,14 +86,26 @@ export function FreshnessIndicator({
   const age = updated === null ? 'Waiting for data' : `Updated ${relativeAge(updated, now)}`;
 
   return (
-    <div className={cx('freshness', className)} data-refreshing={refreshing || undefined}>
-      <span className="live-pill">
+    <div ref={pauseRef} className={cx('freshness', className)} data-refreshing={refreshing || undefined}>
+      <motion.span
+        className="live-pill"
+        initial={reduced ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: dur.fast, ease: ease.out }}
+      >
         <span className="live-dot" aria-hidden="true" />
         {label}
-      </span>
-      <span className="freshness-time" aria-live="off">
+      </motion.span>
+      <motion.span
+        key={updated ?? 'pending'}
+        className="freshness-time"
+        aria-live="off"
+        initial={reduced ? false : { opacity: 0, y: 2 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: dur.fast, ease: ease.out }}
+      >
         {age}
-      </span>
+      </motion.span>
       {onRefresh && (
         <button
           type="button"

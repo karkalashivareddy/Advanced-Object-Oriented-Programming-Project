@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import {
   Bar,
   BarChart,
@@ -13,7 +13,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { motion } from 'motion/react';
 import { cx, formatNumber } from '@/lib/utils';
+import { dur, ease } from '@/lib/motion';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
 export interface ChartDatum {
@@ -24,14 +26,30 @@ export interface ChartDatum {
 /** Palette lives in tokens.css so themes and forced-colors mode can override it. */
 const axisStyle = { fontSize: 11, fill: 'var(--chart-axis)' };
 const gridStroke = 'var(--chart-grid)';
-const tooltipStyle = {
-  backgroundColor: 'var(--color-surface)',
-  borderColor: 'var(--color-border)',
-  color: 'var(--color-text-strong)',
-  borderRadius: 'var(--radius-md)',
-  boxShadow: 'var(--shadow-md)',
-  fontSize: 'var(--text-xs)',
-};
+const chartAnimation = { animationDuration: 480, animationEasing: 'ease-out' } as const;
+
+interface ChartTooltipProps {
+  active?: boolean;
+  label?: ReactNode;
+  payload?: ReadonlyArray<{ name?: ReactNode; value?: number | string }>;
+}
+
+/** Compact tooltip: the data is unchanged, only its presentation is refined. */
+export function ChartTooltip({ active, label, payload }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null;
+  const entry = payload[0];
+  return (
+    <div className="chart-tooltip">
+      <span className="chart-tooltip__label">{label ?? entry.name}</span>
+      <strong className="chart-tooltip__value">{formatNumber(entry.value ?? 0)}</strong>
+    </div>
+  );
+}
+
+function chartSummary(data: ChartDatum[]): string {
+  if (data.length === 0) return 'No chart data available.';
+  return `Chart data: ${data.map((entry) => `${entry.name}, ${formatNumber(entry.value)}`).join('; ')}.`;
+}
 
 interface ChartProps {
   data: ChartDatum[];
@@ -81,15 +99,49 @@ function ChartFrame({
   showDataTable,
   dataTableCaption,
   data,
+  summaryId,
   children,
-}: ChartProps & { children: ReactNode }) {
-  if (!showDataTable) return <>{children}</>;
+}: ChartProps & { summaryId?: string; children: ReactNode }) {
+  if (!showDataTable) {
+    return (
+      <>
+        {children}
+        {summaryId && <span id={summaryId} className="sr-only">{chartSummary(data)}</span>}
+      </>
+    );
+  }
   return (
     <figure className="chart-figure">
       {children}
       <figcaption className="sr-only">{ariaLabel}</figcaption>
       <ChartDataTable data={data} caption={dataTableCaption ?? `${ariaLabel} — data table`} />
     </figure>
+  );
+}
+
+function ChartContainer({
+  ariaLabel,
+  describedBy,
+  reduced,
+  children,
+}: {
+  ariaLabel: string;
+  describedBy?: string;
+  reduced: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <motion.div
+      className="chart-container"
+      role="img"
+      aria-label={ariaLabel}
+      aria-describedby={describedBy}
+      initial={reduced ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: dur.base, ease: ease.enter }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -101,30 +153,33 @@ export function BarChartView({
   dataTableCaption,
 }: ChartProps) {
   const reduced = useReducedMotion();
+  const summaryId = useId();
   return (
     <ChartFrame
       ariaLabel={ariaLabel}
       showDataTable={showDataTable}
       dataTableCaption={dataTableCaption}
       data={data}
+      summaryId={summaryId}
     >
-      <div className="chart-container" role="img" aria-label={ariaLabel}>
+      <ChartContainer ariaLabel={ariaLabel} describedBy={showDataTable ? undefined : summaryId} reduced={reduced}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: -16 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
             <XAxis dataKey="name" tick={axisStyle} tickLine={false} axisLine={false} />
             <YAxis tick={axisStyle} tickLine={false} axisLine={false} allowDecimals={false} />
-            <Tooltip cursor={{ fill: 'var(--color-surface-hover)' }} contentStyle={tooltipStyle} />
+            <Tooltip cursor={{ fill: 'var(--color-surface-hover)' }} content={<ChartTooltip />} />
             <Bar
               dataKey="value"
               fill={color}
               radius={[5, 5, 0, 0]}
               maxBarSize={46}
               isAnimationActive={!reduced}
+              {...chartAnimation}
             />
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </ChartContainer>
     </ChartFrame>
   );
 }
@@ -137,20 +192,22 @@ export function LineChartView({
   dataTableCaption,
 }: ChartProps) {
   const reduced = useReducedMotion();
+  const summaryId = useId();
   return (
     <ChartFrame
       ariaLabel={ariaLabel}
       showDataTable={showDataTable}
       dataTableCaption={dataTableCaption}
       data={data}
+      summaryId={summaryId}
     >
-      <div className="chart-container" role="img" aria-label={ariaLabel}>
+      <ChartContainer ariaLabel={ariaLabel} describedBy={showDataTable ? undefined : summaryId} reduced={reduced}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 12, bottom: 8, left: -16 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
             <XAxis dataKey="name" tick={axisStyle} tickLine={false} axisLine={false} />
             <YAxis tick={axisStyle} tickLine={false} axisLine={false} allowDecimals={false} />
-            <Tooltip contentStyle={tooltipStyle} />
+            <Tooltip content={<ChartTooltip />} />
             <Line
               type="monotone"
               dataKey="value"
@@ -158,10 +215,11 @@ export function LineChartView({
               strokeWidth={2.5}
               dot={{ r: 3 }}
               isAnimationActive={!reduced}
+              {...chartAnimation}
             />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+      </ChartContainer>
     </ChartFrame>
   );
 }
@@ -173,14 +231,16 @@ export function PieChartView({
   dataTableCaption,
 }: ChartProps) {
   const reduced = useReducedMotion();
+  const summaryId = useId();
   return (
     <ChartFrame
       ariaLabel={ariaLabel}
       showDataTable={showDataTable}
       dataTableCaption={dataTableCaption}
       data={data}
+      summaryId={summaryId}
     >
-      <div className="chart-container" role="img" aria-label={ariaLabel}>
+      <ChartContainer ariaLabel={ariaLabel} describedBy={showDataTable ? undefined : summaryId} reduced={reduced}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -191,15 +251,16 @@ export function PieChartView({
               outerRadius={90}
               paddingAngle={2}
               isAnimationActive={!reduced}
+              {...chartAnimation}
             >
               {data.map((entry, index) => (
                 <Cell key={entry.name} fill={`var(--chart-${(index % 6) + 1})`} />
               ))}
             </Pie>
-            <Tooltip contentStyle={tooltipStyle} />
+            <Tooltip content={<ChartTooltip />} />
           </PieChart>
         </ResponsiveContainer>
-      </div>
+      </ChartContainer>
     </ChartFrame>
   );
 }

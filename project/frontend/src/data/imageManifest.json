@@ -1,0 +1,137 @@
+{
+  "vessel": {
+    "width": 1200,
+    "height": 800,
+    "paths": {
+      "480": {
+        "avif": "/images/vessel-480.avif",
+        "webp": "/images/vessel-480.webp",
+        "jpeg": "/images/vessel-480.jpg"
+      },
+      "960": {
+        "avif": "/images/vessel-960.avif",
+        "webp": "/images/vessel-960.webp",
+        "jpeg": "/images/vessel-960.jpg"
+      },
+      "1440": {
+        "avif": "/images/vessel-1440.avif",
+        "webp": "/images/vessel-1440.webp",
+        "jpeg": "/images/vessel-1440.jpg"
+      },
+      "2400": {
+        "avif": "/images/vessel-2400.avif",
+        "webp": "/images/vessel-2400.webp",
+        "jpeg": "/images/vessel-2400.jpg"
+      }
+    },
+    "blurDataURL": "data:image/webp;base64,UklGRpoAAABXRUJQVlA4II4AAADwAwCdASoYABAAPu1iqU2ppaOiMAgBMB2JZgAAW+mq3V1xr//sZs4AAP7x0NRkuUKcvCkMlw77lIfakGkuYguZmNVlqbHbyKz0wIieksTfBVjMBj/a/XifXgo2yXvfvE2nhegLVT9zbyoutQlA5qkj/FBGpe7D2jrdDhn+Mq36hWrU6DcCHe/bEIEKAAAA"
+  },
+  "compatibility-orbs": {
+    "width": 1200,
+    "height": 1200,
+    "paths": {
+      "480": {
+        "avif": "/images/compatibility-orbs-480.avif",
+        "webp": "/images/compatibility-orbs-480.webp",
+        "jpeg": "/images/compatibility-orbs-480.jpg"
+      },
+      "960": {
+        "avif": "/images/compatibility-orbs-960.avif",
+        "webp": "/images/compatibility-orbs-960.webp",
+        "jpeg": "/images/compatibility-orbs-960.jpg"
+      },
+      "1440": {
+        "avif": "/images/compatibility-orbs-1440.avif",
+        "webp": "/images/compatibility-orbs-1440.webp",
+        "jpeg": "/images/compatibility-orbs-1440.jpg"
+      },
+      "2400": {
+        "avif": "/images/compatibility-orbs-2400.avif",
+        "webp": "/images/compatibility-orbs-2400.webp",
+        "jpeg": "/images/compatibility-orbs-2400.jpg"
+      }
+    },
+    "blurDataURL": "data:image/webp;base64,UklGRpAAAABXRUJQVlA4IIQAAACwBACdASoYABgAPu1mq06ppaQiKA1RMB2JbAC2yBEcmsLlE/Y+62XGfNNwbfUAAP7ymOz0eL4PFT3xWv8PInLcEPJ/u7ijKN8M5RSQYURYKpWorqPb9m1j+cW7JmStQJVTjv6hI6Ii8v/5EoYFu7hCwBqxLTeLX7Pmddtm3UGqecsgAAA="
+  },
+  "privacy-rings": {
+    "width": 1200,
+    "height": 1200,
+    "paths": {
+      "480": {
+        "avif": "/images/privacy-rings-480.avif",
+        "webp": "/images/privacy-rings-480.webp",
+        "jpeg": "/images/privacy-rings-480.jpg"
+      },
+      "960": {
+        "avif": "/images/privacy-rings-960.avif",
+        "webp": "/images/privacy-rings-960.webp",
+        "jpeg": "/images/privacy-rings-960.jpg"
+      },
+      "1440": {
+        "avif": "/images/privacy-rings-1440.avif",
+        "webp": "/images/privacy-rings-1440.webp",
+        "jpeg": "/images/privacy-rings-1440.jpg"
+      },
+      "2400": {
+        "avif": "/images/privacy-rings-2400.avif",
+        "webp": "/images/privacy-rings-2400.webp",
+        "jpeg": "/images/privacy-rings-2400.jpg"
+      }
+    },
+    "blurDataURL": "data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAABQAwCdASoYABgAPu1mqk8ppaQiKA1RMB2JYw3BpXbAlzOGAAD+8IGiTC12LjIhieiC4T35KdRaslsBKiNc1JKHnKFXusxac5DwAA=="
+  },
+  "emergency-handoff": {
+    "width": 1200,
+    "height": 800,
+    "paths": {
+      "480": {
+        "avif": "/images/emergency-handoff-480.avif",
+        "webp": "/images/emergency-handoff-480.webp",
+        "jpeg": "/images/emergency-handoff-480.jpg"
+      },
+      "960": {
+        "avif": "/images/emergency-handoff-960.avif",
+        "webp": "/images/emergency-handoff-960.webp",
+        "jpeg": "/images/emergency-handoff-960.jpg"
+      },
+      "1440": {
+        "avif": "/images/emergency-handoff-1440.avif",
+        "webp": "/images/emergency-handoff-1440.webp",
+        "jpeg": "/images/emergency-handoff-1440.jpg"
+      },
+      "2400": {
+        "avif": "/images/emergency-handoff-2400.avif",
+        "webp": "/images/emergency-handoff-2400.webp",
+        "jpeg": "/images/emergency-handoff-2400.jpg"
+      }
+    },
+    "blurDataURL": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAABQBACdASoYABAAPu1iqk4ppaQiMAgBMB2JZQAD4rIgA7Nevk68JSJbfmpQAP7xw9rlsiAYGn4nl4D8YzLVNCeaHz5Jh18aZMEz4Yp4k7IEMXtCJu9vkMrO5XbWR3XA1c8T4OQS5UklR4JD5XJylLs/mdbJM7qAAAA="
+  },
+  "social-og": {
+    "width": 1200,
+    "height": 630,
+    "paths": {
+      "480": {
+        "avif": "/images/social-og-480.avif",
+        "webp": "/images/social-og-480.webp",
+        "jpeg": "/images/social-og-480.jpg"
+      },
+      "960": {
+        "avif": "/images/social-og-960.avif",
+        "webp": "/images/social-og-960.webp",
+        "jpeg": "/images/social-og-960.jpg"
+      },
+      "1440": {
+        "avif": "/images/social-og-1440.avif",
+        "webp": "/images/social-og-1440.webp",
+        "jpeg": "/images/social-og-1440.jpg"
+      },
+      "2400": {
+        "avif": "/images/social-og-2400.avif",
+        "webp": "/images/social-og-2400.webp",
+        "jpeg": "/images/social-og-2400.jpg"
+      }
+    },
+    "blurDataURL": "data:image/webp;base64,UklGRqYAAABXRUJQVlA4WAoAAAAQAAAAFwAADAAAQUxQSC0AAAABuYzofygYtY0kaYbH8Ge0CJbHvQD2GUsREzAB+6ahTjogRLQMf+FmeikJ8gEAVlA4IFIAAACwAwCdASoYAA0APu1iqU2ppaQiMAgBMB2JYgDCgCHe8hqQ/gNukAD+7oYRKlpOAh7drSFQ1W6N9crb33qKbmKCnymsNQVGnovmcHAICa85fYAA"
+  }
+}

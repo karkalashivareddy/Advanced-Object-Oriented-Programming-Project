@@ -6,11 +6,18 @@ import { useAuth } from '@/lib/auth';
 import { BLOOD_GROUPS } from '@/lib/constants';
 import { PERMISSIONS } from '@/lib/permissions';
 import { formatDateTime, humanize } from '@/lib/utils';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { FormField } from '@/components/ui/FormField';
-import { EmptyState, ErrorState } from '@/components/ui/EmptyState';
-import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Skeleton } from '@/components/ui/Skeleton';
+import {
+  EmptyState,
+  ErrorState,
+  FormField,
+  Grid,
+  Input,
+  PageHeader,
+  Select,
+  Skeleton,
+  StatusBadge,
+  Surface,
+} from '@/components/ui';
 import type { BloodGroup, DonorAvailability } from '@/types/domain';
 
 interface NearbyDonor {
@@ -85,7 +92,7 @@ export function NearbyDonorsPage() {
       />
 
       <section className="nearby-search-layout" aria-label="Donor discovery search">
-        <div className="surface nearby-search-panel">
+        <Surface as="section" variant="flat" padding="md" className="nearby-search-panel">
           <div className="nearby-panel-heading">
             <span className="nearby-icon"><Radio size={18} aria-hidden="true" /></span>
             <div>
@@ -93,24 +100,24 @@ export function NearbyDonorsPage() {
               <p>Matches require current consent, available status and a location updated in the last 30 days.</p>
             </div>
           </div>
-          <div className="nearby-filter-grid">
+          <Grid columns="auto" gap="md" className="nearby-filter-grid">
             <FormField label="Requested blood group" required>
-              <select value={bloodGroup} onChange={(event) => { setBloodGroup(event.target.value as BloodGroup); setSubmitted(false); }}>
+              <Select value={bloodGroup} onChange={(event) => { setBloodGroup(event.target.value as BloodGroup); setSubmitted(false); }}>
                 {BLOOD_GROUPS.map((group) => <option value={group} key={group}>{humanize(group)}</option>)}
-              </select>
+              </Select>
             </FormField>
             <FormField label="Search radius" required hint="Maximum supported radius is 50 km.">
-              <select value={radiusKm} onChange={(event) => { setRadiusKm(Number(event.target.value)); setSubmitted(false); }}>
+              <Select value={radiusKm} onChange={(event) => { setRadiusKm(Number(event.target.value)); setSubmitted(false); }}>
                 {[5, 10, 25, 50].map((distance) => <option value={distance} key={distance}>{distance} km</option>)}
-              </select>
+              </Select>
             </FormField>
             <FormField label="Origin latitude" required hint="Use a hospital location. Coordinates stay in this form and are sent only to the LifeLink API.">
-              <input inputMode="decimal" value={latitude} onChange={(event) => { setLatitude(event.target.value); setSubmitted(false); }} placeholder="12.9716" />
+              <Input inputMode="decimal" value={latitude} onChange={(event) => { setLatitude(event.target.value); setSubmitted(false); }} placeholder="12.9716" />
             </FormField>
             <FormField label="Origin longitude" required>
-              <input inputMode="decimal" value={longitude} onChange={(event) => { setLongitude(event.target.value); setSubmitted(false); }} placeholder="77.5946" />
+              <Input inputMode="decimal" value={longitude} onChange={(event) => { setLongitude(event.target.value); setSubmitted(false); }} placeholder="77.5946" />
             </FormField>
-          </div>
+          </Grid>
           {locationError && <p className="field-error" role="alert">{locationError}</p>}
           <div className="nearby-actions">
             <button type="button" className="btn btn-secondary" onClick={useDeviceLocation}>
@@ -121,9 +128,9 @@ export function NearbyDonorsPage() {
               <MapPin size={16} aria-hidden="true" /> Search nearby donors
             </button>
           </div>
-        </div>
+        </Surface>
 
-        <aside className="surface nearby-privacy-panel" aria-label="Search method and privacy">
+        <Surface as="aside" variant="tint" padding="md" className="nearby-privacy-panel" aria-label="Search method and privacy">
           <div className="nearby-radius-visual" aria-hidden="true">
             <span className="radius-ring radius-ring-outer" />
             <span className="radius-ring radius-ring-inner" />
@@ -137,12 +144,12 @@ export function NearbyDonorsPage() {
           </ol>
           <div className="nearby-safety-note">
             <ShieldCheck size={17} aria-hidden="true" />
-            <p>Nearby search does not establish medical eligibility or blood compatibility. Confirm all clinical decisions with authorized staff.</p>
+            <p>Nearby donor discovery is an operational assistance feature. Final donor eligibility, blood compatibility and clinical decisions require authorized clinical verification.</p>
           </div>
-        </aside>
+        </Surface>
       </section>
 
-      <section className="nearby-results surface" aria-labelledby="nearby-results-heading" aria-live="polite">
+      <Surface as="section" variant="flat" padding="md" className="nearby-results" aria-labelledby="nearby-results-heading" aria-live="polite">
         <div className="nearby-results-header">
           <div>
             <span className="eyebrow">Response</span>
@@ -174,7 +181,7 @@ export function NearbyDonorsPage() {
           </>
         ) : null}
         <p className="nearby-disclaimer">A matching blood group is not a clinical compatibility decision. Donor availability is self-reported; screening and eligibility must be confirmed by authorized personnel.</p>
-      </section>
+      </Surface>
     </div>
   );
 }

@@ -25,7 +25,7 @@
 | **Repository** | [Advanced-Object-Oriented-Programming-Project](https://github.com/karkalashivareddy/Advanced-Object-Oriented-Programming-Project) |
 | **Project Title** | LifeLink — Blood Bank Coordination Platform |
 | **Implementation status** | Implemented and verified locally; not a production deployment |
-| **Last Updated** | 24 November 2026 |
+| **Last Updated** | 27 November 2026 |
 
 > The abstract submission form also lists additional team members and administrative fields. Those fields are preserved in the corrected abstract source; any roster or faculty-detail discrepancy requires human confirmation and is not silently changed here.
 
@@ -33,7 +33,7 @@
 
 ## Project Overview
 
-LifeLink coordinates the path from donor to delivery: donor profiles and consent records, donation screening, blood-unit inventory, hospital emergency requests, allocation suggestions, time-bound reservations, dispatch and delivery, notifications, audit records, and scoped analytics.
+LifeLink coordinates the path from donor to delivery: donor profiles and consent records, donation screening, blood-unit inventory, hospital emergency requests, allocation suggestions, time-bound reservations, dispatch and delivery, notifications, audit records, and scoped analytics. The current interface presents this as **THE LIFELINK — VASCULAR INTELLIGENCE**, a continuous donor-to-delivery story with a dark cinematic public surface and a bright, high-density workspace.
 
 The application is a **modular Java monolith with a separate static web client**:
 
@@ -52,7 +52,7 @@ Java is the primary implementation language for the AOOP assessment. React/TypeS
 | :--- | :--- |
 | Backend language | Java 21 |
 | Backend framework | Spring Boot 3.5.16: Web MVC, Security, Data JPA/Hibernate, Validation, WebSocket/STOMP, Actuator, springdoc OpenAPI |
-| Frontend | React 19.2, TypeScript 5.9, Vite 7.3, React Router 7.9, TanStack Query 5, Recharts 3, SockJS + STOMP.js |
+| Frontend | React 19, TypeScript 5.9, Vite 7.3, React Router 7, TanStack Query 5, Recharts 3, SockJS + STOMP.js, lucide-react, self-hosted Fraunces/Inter variable fonts, layered CSS design tokens |
 | Database | PostgreSQL 16 (Docker Compose); H2 PostgreSQL mode and Testcontainers PostgreSQL in tests |
 | Migrations | Flyway `V1`–`V6` with Hibernate `ddl-auto=validate` |
 | Build | Maven Wrapper 3.9.11 (`project/backend`), npm (`project/frontend`) |
@@ -161,11 +161,12 @@ The values below distinguish the previously verified baseline from the current l
 
 | Gate | Recorded result |
 | :--- | :--- |
-| Backend current suite | **135 tests, 0 failures, 0 errors, 0 skipped**; includes PostgreSQL 16 Testcontainers, Flyway V1–V6, nearby-search privacy/tenant checks, donor paging, analytics aggregates, and idempotency/concurrency coverage. |
-| Frontend current increment | **48 tests in 9 files passed**; TypeScript build and Vite production build passed. |
-| Playwright E2E | **24 executions passed** across Chrome and Edge; includes bounded donor search, donations with paged donor options, dashboard metric layout, desktop/mobile overflow checks, STOMP, landing story, keyboard skip link and reduced motion. |
+| Backend current suite | `.\mvnw.cmd -B -ntp test` — **135 tests run, 0 failures, 0 errors, 8 skipped**. The skips are the Docker-dependent PostgreSQL Testcontainers classes because the Docker daemon was unavailable; earlier Docker-backed evidence is historical. |
+| Frontend current increment | **54 tests in 11 files passed**; TypeScript typecheck and Vite production build passed (2,297 modules transformed); `npm audit --audit-level=high` found 0 vulnerabilities. |
+| Playwright E2E | **46 executions passed** (23 specs × Chrome and Edge); includes authenticated dashboard/filtering, bounded donor search, paged donor-profile and donation-option consumption, mobile dialog focus/Escape, overflow checks, STOMP + REST polling, landing story, keyboard/breakpoints, forced colors, reduced motion, dev kit, axe public pages, and failed-resource diagnostics. |
+| Accessibility | Axe WCAG A/AA scans reported **zero violations** on landing, login and registration in both browsers; this is route-level evidence, not full WCAG conformance. |
 | Browser STOMP | Authenticated `CONNECT` with Bearer token, own-queue `SUBSCRIBE`, and `CONNECTED` frame observed; REST polling remains active |
-| Local verification stack | Isolated H2 dev server applied Flyway `V1`–`V6` and loaded development demo seed; PostgreSQL 16 migration and donor-search API verified through Testcontainers. |
+| Local verification stack | Isolated H2 dev server applied Flyway `V1`–`V6` and loaded development demo seed; health returned HTTP 200 `UP`. |
 | Corrected abstract | 4-page PDF in the original black-and-white submission form layout, with all 9 form sections, a 187-word abstract, and no replacement characters; original submission files preserved |
 
 Full commands, evidence links, and limitations are in
@@ -188,6 +189,10 @@ Full commands, evidence links, and limitations are in
 - [Deployment guide](project/docs/deployment/DEPLOYMENT_GUIDE.md)
 - [Test results](project/docs/quality/TEST_RESULTS.md)
 - [Known limitations](project/docs/quality/KNOWN_LIMITATIONS.md)
+- [Product and engineering research](project/docs/reviews/LIFELINK_PRODUCT_AND_ENGINEERING_RESEARCH.md)
+- [Full repository audit](project/docs/reviews/LIFELINK_FULL_REPOSITORY_AUDIT.md)
+- [AOOP implementation map](project/docs/reviews/AOOP_IMPLEMENTATION_MAP.md)
+- [Next-level implementation report](project/docs/reviews/LIFELINK_NEXT_LEVEL_IMPLEMENTATION_REPORT.md)
 - [Browser evidence](project/docs/evidence/)
 
 ---

@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, LogOut, Menu, Search, Settings2, UserRound } from 'lucide-react';
+import { motion } from 'motion/react';
+import { ChevronDown, Info, LogOut, Menu, Search, Settings2, UserRound } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { dur, ease } from '@/lib/motion';
 import { NAV_ITEMS } from '@/lib/navigation';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 import { initials } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { NotificationCenter } from './NotificationCenter';
@@ -17,6 +20,9 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const reduced = useReducedMotion();
+  const identityId = useId();
+  const topbarRef = useRef<HTMLElement | null>(null);
   const runtimeMode = useQuery({
     queryKey: ['runtime', 'mode'],
     queryFn: () => api.get<{ demoDataEnabled: boolean }>('/runtime/mode'),
@@ -78,7 +84,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
     .sort((left, right) => right.to.length - left.to.length)[0];
 
   return (
-    <header className="topbar">
+    <header className="topbar" ref={topbarRef}>
       <button
         type="button"
         className="btn btn-ghost btn-icon mobile-menu-button"
@@ -145,32 +151,47 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
       </div>
 
       <div className="topbar-actions">
-        {runtimeMode.data?.demoDataEnabled && (
-          <span className="demo-data-flag" role="status" aria-label="DEMO DATA — NOT LIVE BLOOD AVAILABILITY">
-            <span className="demo-data-flag__full">DEMO DATA · NOT LIVE BLOOD AVAILABILITY</span>
-            <span className="demo-data-flag__compact" aria-hidden="true">DEMO · NOT LIVE</span>
-          </span>
-        )}
+        <span className="demo-data-flag-slot" data-pending={runtimeMode.isPending ? 'true' : undefined}>
+          {runtimeMode.data?.demoDataEnabled && (
+            <span className="demo-data-flag" role="status" aria-label="DEMO DATA — NOT LIVE BLOOD AVAILABILITY">
+              <Info size={13} aria-hidden="true" />
+              <span className="demo-data-flag__full">DEMO DATA · NOT LIVE BLOOD AVAILABILITY</span>
+              <span className="demo-data-flag__compact" aria-hidden="true">DEMO · NOT LIVE</span>
+            </span>
+          )}
+        </span>
         <OrganizationSwitcher />
         <span className="topbar-divider" aria-hidden="true" />
-        <NotificationCenter />
-        <div className="menu-anchor" ref={userRef}>
-          <button
-            ref={userTriggerRef}
-            type="button"
-            className="user-trigger"
-            aria-label="Open user menu"
-            aria-expanded={userOpen}
-            aria-haspopup="menu"
-            onClick={() => setUserOpen((current) => !current)}
+        {reduced ? (
+          <NotificationCenter />
+        ) : (
+          <motion.div
+            className="topbar-notification-host"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: dur.fast, ease: ease.out }}
           >
+            <NotificationCenter />
+          </motion.div>
+        )}
+        <div className="menu-anchor" ref={userRef}>
+          <div className="user-trigger-shell" onClick={() => setUserOpen((current) => !current)}>
             <span className="avatar">{initials(auth.user?.fullName)}</span>
-            <span>
+            <span className="user-trigger-meta" id={identityId}>
               <strong>{auth.user?.fullName ?? 'Account'}</strong>
               <small>{auth.user?.email ?? ''}</small>
             </span>
-            <ChevronDown size={14} aria-hidden="true" />
-          </button>
+            <ChevronDown className="user-trigger-chevron" size={14} aria-hidden="true" />
+            <button
+              ref={userTriggerRef}
+              type="button"
+              className="user-trigger"
+              aria-label="Open user menu"
+              aria-describedby={identityId}
+              aria-expanded={userOpen}
+              aria-haspopup="menu"
+            />
+          </div>
           {userOpen && (
             <div
               className="popover"

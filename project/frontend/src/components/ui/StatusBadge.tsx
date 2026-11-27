@@ -1,3 +1,6 @@
+import { motion } from 'motion/react';
+import { dur, ease } from '@/lib/motion';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 import { humanize } from '@/lib/utils';
 
 export type BadgeTone =
@@ -87,15 +90,28 @@ interface StatusBadgeProps {
   label?: string;
   tone?: BadgeTone;
   showDot?: boolean;
+  /** Opt-in reusable vial glyph for unit-status displays; adds no new statuses. */
+  vial?: boolean;
 }
 
-export function StatusBadge({ status, label, tone, showDot = true }: StatusBadgeProps) {
+export function StatusBadge({ status, label, tone, showDot = true, vial = false }: StatusBadgeProps) {
+  const reduced = useReducedMotion();
   const text = label ?? humanize(status);
   const resolvedTone = tone ?? toneForStatus(status ?? '');
   return (
-    <span className={`badge badge-${resolvedTone}`}>
-      {showDot && <span className="badge-dot" aria-hidden="true" />}
+    <motion.span
+      key={`${resolvedTone}:${text}`}
+      className={`badge badge-${resolvedTone}`}
+      initial={reduced ? false : { opacity: 0, y: 2 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: dur.fast, ease: ease.out }}
+    >
+      {vial ? (
+        <span className="badge-vial" aria-hidden="true" />
+      ) : (
+        showDot && <span className="badge-dot" aria-hidden="true" />
+      )}
       {text}
-    </span>
+    </motion.span>
   );
 }

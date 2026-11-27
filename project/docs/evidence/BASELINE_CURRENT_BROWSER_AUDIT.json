@@ -1,0 +1,326 @@
+[
+  {
+    "label": "landing:desktop1920",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Every drop has a journey.",
+    "scrollWidth": 1920,
+    "innerWidth": 1920,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK Journey Platform Security FAQ Sign in Create account DONOR TO DELIVERY, ONE RECORD Every drop has a journey. LifeLink connects donor records, blood inventory, emergency requests, and dispatch in one permission-aware workspace. Every handoff stays attached to the same unit, the same request, and the same accountable team. Create donor account Sign in to workspace Donors self-register. Staff access is provisioned by an organization administrator. Permission-aware by design Unit-level traceability Idempotent handoffs Auditable actions JOURNEY IN MOTION ILLUS"
+  },
+  {
+    "label": "landing:desktop1920:runtime",
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "serverErrors": []
+  },
+  {
+    "label": "landing:desktop1440",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Every drop has a journey.",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK Journey Platform Security FAQ Sign in Create account DONOR TO DELIVERY, ONE RECORD Every drop has a journey. LifeLink connects donor records, blood inventory, emergency requests, and dispatch in one permission-aware workspace. Every handoff stays attached to the same unit, the same request, and the same accountable team. Create donor account Sign in to workspace Donors self-register. Staff access is provisioned by an organization administrator. Permission-aware by design Unit-level traceability Idempotent handoffs Auditable actions JOURNEY IN MOTION ILLUS"
+  },
+  {
+    "label": "landing:desktop1440:runtime",
+    "consoleErrors": [],
+    "serverErrors": []
+  },
+  {
+    "label": "landing:desktop1366",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Every drop has a journey.",
+    "scrollWidth": 1366,
+    "innerWidth": 1366,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK Journey Platform Security FAQ Sign in Create account DONOR TO DELIVERY, ONE RECORD Every drop has a journey. LifeLink connects donor records, blood inventory, emergency requests, and dispatch in one permission-aware workspace. Every handoff stays attached to the same unit, the same request, and the same accountable team. Create donor account Sign in to workspace Donors self-register. Staff access is provisioned by an organization administrator. Permission-aware by design Unit-level traceability Idempotent handoffs Auditable actions JOURNEY IN MOTION ILLUS"
+  },
+  {
+    "label": "landing:desktop1366:runtime",
+    "consoleErrors": [],
+    "serverErrors": []
+  },
+  {
+    "label": "landing:mobile390",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Every drop has a journey.",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink DONOR TO DELIVERY, ONE RECORD Every drop has a journey. LifeLink connects donor records, blood inventory, emergency requests, and dispatch in one permission-aware workspace. Every handoff stays attached to the same unit, the same request, and the same accountable team. Create donor account Sign in to workspace Donors self-register. Staff access is provisioned by an organization administrator. Permission-aware by design Unit-level traceability Idempotent handoffs Auditable actions JOURNEY IN MOTION ILLUSTRATIVE ONE CONTINUOUS THREAD Donor Screened Reserved Delivered Vis"
+  },
+  {
+    "label": "landing:mobile390:runtime",
+    "consoleErrors": [],
+    "serverErrors": []
+  },
+  {
+    "label": "app:desktop1440:dashboard",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Good to see you, Blood",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Dashboard SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local WORKSPACE OVERVIEW Good to see you, Blood Current picture for your account. All values below come from the API. Account active Syncing Refreshing now… Refreshing… OPERATIONAL PULSE Live counts from the analytics API M"
+  },
+  {
+    "label": "app:desktop1440:inventory",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Blood inventory",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Inventory SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local OPERATIONS Blood inventory Track blood units with API-backed filters, paging and audited lifecycle actions. Add unit Units on this page 9 of 9 returned by the API Expiring soon 0 Within 7 days Expired units 0 Needs re"
+  },
+  {
+    "label": "app:desktop1440:donors",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Donors",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Donors SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local OPERATIONS Donors Link existing accounts to donor profiles and manage consent and appointments. New donor Profiles returned 1 From the donor API Available donors 1 Ready to donate Matching filters 1 Filtered locally Sear"
+  },
+  {
+    "label": "app:desktop1440:donations",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Donations",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Donations SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local OPERATIONS Donations Record donations, screen eligibility, approve units and trace their history. Record donation Donations returned 1 For the selected organization Awaiting screening 0 Status: recorded Approved 1 Uni"
+  },
+  {
+    "label": "app:desktop1440:requests",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Emergency requests",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Emergency requests SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local OPERATIONS Emergency requests Raise requests and track verification, approval, and event history through the API. Requests in view 0 0 after filters Awaiting staff action 0 Verification and approval Urgent or"
+  },
+  {
+    "label": "app:desktop1440:allocations",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Allocations",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Allocations SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local OPERATIONS Allocations Review candidate units for an emergency request. This screen does not make clinical decisions. Refresh requests Non-clinical decision support Suggestions are advisory only. Qualified staff mus"
+  },
+  {
+    "label": "app:desktop1440:reservations",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Reservations",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Reservations SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local OPERATIONS Reservations Time-bound holds on blood units, created with an idempotency key. New reservation Active holds 0 0 total in view Expiring within 10 min 0 Live countdown Confirmed 0 Ready for dispatch Reserv"
+  },
+  {
+    "label": "app:desktop1440:dispatch",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Dispatch",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Dispatch SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local OPERATIONS Dispatch Move confirmed reservations through departure, delivery, and incident reporting. New dispatch In progress 0 Preparing and in transit Incidents 0 Awaiting follow-up Delivered 0 Completed handovers Di"
+  },
+  {
+    "label": "app:desktop1440:notifications",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Notifications",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Notifications SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local WORKSPACE Notifications Notifications delivered to your account by the API, with server-backed pagination. Live updates off Refresh Mark all read Total notifications 1 From the paged API response Unread (account t"
+  },
+  {
+    "label": "app:desktop1440:audit",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Audit log",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Audit log SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local INSIGHTS Audit log Recorded actions and outcomes returned by the audit API. Read-only; no export endpoint is exposed. Refresh Server records Waiting for data Organization, actor, action and date filters are applied by"
+  },
+  {
+    "label": "app:desktop1440:analytics",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Analytics",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Collapse sidebar Server-side authorization enforced Workspace / Analytics SCOPE Unscoped 1 BB Blood Bank Administrator bank@lifelink.local INSIGHTS Analytics Metrics are read directly from the analytics API and scoped to your account and organization. Read-only view No export is performed OVERVIEW Counts from /analytics/overview Animated where motion is "
+  },
+  {
+    "label": "app:desktop1440:admin/users",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": null,
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Loading content…"
+  },
+  {
+    "label": "app:desktop1440:admin/organizations",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Welcome back",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Back to home SECURE SIGN IN Welcome back Sign in to your LifeLink organization workspace. Email address* Password* Sign in New here? Create account Demo accounts are seeded by the backend. Contact your administrator for credentials. One shared record for every critical handover. Move from donation to delivery with traceable units, explicit permissions, and a clear operational history. Organization-scoped access Permission-aware workflows Auditable critical actions"
+  },
+  {
+    "label": "app:desktop1440:profile",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Welcome back",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "overflow": false,
+    "bodyText": "Back to home SECURE SIGN IN Welcome back Sign in to your LifeLink organization workspace. Email address* Password* Sign in New here? Create account Demo accounts are seeded by the backend. Contact your administrator for credentials. One shared record for every critical handover. Move from donation to delivery with traceable units, explicit permissions, and a clear operational history. Organization-scoped access Permission-aware workflows Auditable critical actions"
+  },
+  {
+    "label": "app:desktop1440:runtime",
+    "consoleErrors": [],
+    "serverErrors": []
+  },
+  {
+    "label": "app:mobile390:dashboard",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Good to see you, Blood",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB WORKSPACE OVERVIEW Good to see you, Blood Current picture for your account. All values below come from the API. Account active Live view Updated just now Refresh OPERATIONAL PULSE Live counts from the analytics API Metrics are fetched only when your account has ANALYTICS_READ. Open analytics Availableunits"
+  },
+  {
+    "label": "app:mobile390:inventory",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Blood inventory",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB OPERATIONS Blood inventory Track blood units with API-backed filters, paging and audited lifecycle actions. Add unit Units on this page 9 of 9 returned by the API Expiring soon 0 Within 7 days Expired units 0 Needs review Low-stock organizations 0 From the alerts endpoint Inventory view Updated just now Re"
+  },
+  {
+    "label": "app:mobile390:donors",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Donors",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped BB OPERATIONS Donors Link existing accounts to donor profiles and manage consent and appointments. New donor Profiles returned 0 From the donor API Available donors 0 Ready to donate Matching filters 0 Filtered locally Search donors The donor API has no query or paging parameters, so filters and paging apply to"
+  },
+  {
+    "label": "app:mobile390:donations",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Donations",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB OPERATIONS Donations Record donations, screen eligibility, approve units and trace their history. Record donation Donations returned 1 For the selected organization Awaiting screening 0 Status: recorded Approved 1 Units created by the API Search donations Donor and organization are API filters; search and "
+  },
+  {
+    "label": "app:mobile390:requests",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Emergency requests",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB OPERATIONS Emergency requests Raise requests and track verification, approval, and event history through the API. Requests in view 0 0 after filters Awaiting staff action 0 Verification and approval Urgent or critical 0 Time-sensitive requests Fulfilled 0 Completed through dispatch Pending verification 0 r"
+  },
+  {
+    "label": "app:mobile390:allocations",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Allocations",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB OPERATIONS Allocations Review candidate units for an emergency request. This screen does not make clinical decisions. Refresh requests Non-clinical decision support Suggestions are advisory only. Qualified staff must verify compatibility and clinical suitability before any allocation is confirmed. The serv"
+  },
+  {
+    "label": "app:mobile390:reservations",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Reservations",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB OPERATIONS Reservations Time-bound holds on blood units, created with an idempotency key. New reservation Active holds 0 0 total in view Expiring within 10 min 0 Live countdown Confirmed 0 Ready for dispatch Reservation status All statuses Active Confirmed Cancelled Expired Organization All organizations C"
+  },
+  {
+    "label": "app:mobile390:dispatch",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Dispatch",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB OPERATIONS Dispatch Move confirmed reservations through departure, delivery, and incident reporting. New dispatch In progress 0 Preparing and in transit Incidents 0 Awaiting follow-up Delivered 0 Completed handovers Dispatch status All statuses Preparing In Transit Delivered Incident Organization All organ"
+  },
+  {
+    "label": "app:mobile390:notifications",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Notifications",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB WORKSPACE Notifications Notifications delivered to your account by the API, with server-backed pagination. Live updates off Refresh Mark all read Total notifications 1 From the paged API response Unread (account total) 1 From /notifications/unread-count On this page 1 Page 1 of 1 Notifications Updated just"
+  },
+  {
+    "label": "app:mobile390:audit",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Audit log",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB INSIGHTS Audit log Recorded actions and outcomes returned by the audit API. Read-only; no export endpoint is exposed. Refresh Server records Waiting for data Organization, actor, action and date filters are applied by the server. Outcome filtering only applies to the current page because the audit API has "
+  },
+  {
+    "label": "app:mobile390:analytics",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Analytics",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped BB INSIGHTS Analytics Metrics are read directly from the analytics API and scoped to your account and organization. Read-only view No export is performed OVERVIEW Counts from /analytics/overview Animated where motion is allowed; values are never invented. CLIENT-SIDE FILTERS Refine the returned records These fi"
+  },
+  {
+    "label": "app:mobile390:admin/users",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Users",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB ADMINISTRATION Users Review accounts and change account status through the user administration API. Refresh Accounts (server total) 2 From /users pagination On this page 2 Page 1 of 1 Shown after filters 2 No filters active User directory Updated just now Page-scoped filters Status, role and organization f"
+  },
+  {
+    "label": "app:mobile390:admin/organizations",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Organizations",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB ADMINISTRATION Organizations Onboard blood banks and hospitals, verify them, and manage memberships through the organizations API. No active organization Refresh Organizations (server total) 1 From /organizations pagination Verified on this page 1 Page-scoped count Active context None Selected from the top"
+  },
+  {
+    "label": "app:mobile390:profile",
+    "title": "LifeLink — Coordinated blood supply",
+    "h1": "Profile",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "overflow": false,
+    "bodyText": "Skip to content LifeLink BLOOD NETWORK WORKSPACE Dashboard Notifications OPERATIONS Inventory Donors Donations Emergency requests Allocations Reservations Dispatch INSIGHTS Audit log Analytics ADMINISTRATION Users Organizations ACCOUNT Profile Server-side authorization enforced Unscoped 1 BB ACCOUNT Profile Your identity, effective access, and organization memberships as returned by the API. Signed in as Blood Bank Administrator IDENTITY Blood Bank Administrator bank@lifelink.local Active BB FULL NAME Blood Bank Administrator EMAIL bank@lifelink.local USER ID 2 PUBLIC ID a7718c5c-80c0-4bec-96a"
+  },
+  {
+    "label": "app:mobile390:runtime",
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ],
+    "serverErrors": [
+      "500 http://127.0.0.1:15174/api/v1/audit-logs?page=0&size=20"
+    ]
+  }
+]

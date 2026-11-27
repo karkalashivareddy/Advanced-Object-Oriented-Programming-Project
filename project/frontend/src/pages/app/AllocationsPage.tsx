@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { api, getErrorMessage } from '@/lib/api';
+import { RBC_COMPATIBILITY_NOTE } from '@/lib/bloodCompatibility';
 import { useAuth } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { useInvalidateDomains } from '@/lib/queryCache';
@@ -21,10 +22,15 @@ import {
   EmptyState,
   ErrorState,
   FormField,
+  Grid,
+  Input,
   Modal,
   PageHeader,
+  Select,
   Skeleton,
+  StatCard,
   StatusBadge,
+  Surface,
   useToast,
 } from '@/components/ui';
 import type {
@@ -255,16 +261,17 @@ export function AllocationsPage() {
         }
       />
 
-      <div className="notice-banner surface-glass" role="note">
+      <div className="notice-banner" role="note">
         <Info size={18} aria-hidden="true" />
         <div>
           <strong>Non-clinical decision support</strong>
           Suggestions are advisory only. Qualified staff must verify compatibility and clinical suitability before any
           allocation is confirmed. The server remains responsible for authorization and invariants.
+          <p>{RBC_COMPATIBILITY_NOTE}</p>
         </div>
       </div>
 
-      <section className="surface surface-raised" style={{ marginTop: 18 }} aria-labelledby="suggestions-form-title">
+      <Surface as="section" variant="raised" padding="md" style={{ marginTop: 18 }} aria-labelledby="suggestions-form-title">
         <div className="section-heading">
           <div>
             <h2 id="suggestions-form-title">Request to evaluate</h2>
@@ -313,35 +320,37 @@ export function AllocationsPage() {
             <span className="field-error">Request list unavailable: {getErrorMessage(requestsQuery.error)}</span>
           )}
         </div>
-      </section>
+      </Surface>
 
-      <div className="metric-grid" style={{ marginTop: 18 }}>
-        <div className="metric-card surface stagger-1">
-          <span className="metric-label">Requested quantity</span>
-          <span className="metric-value">{quantity || '—'}</span>
-          <span className="metric-delta">{request ? humanize(request.priority) : 'Select a request'}</span>
-        </div>
-        <div className="metric-card surface stagger-2">
-          <span className="metric-label">Eligible candidates</span>
-          <span className="metric-value">{eligibleCount}</span>
-          <span className="metric-delta">{candidates.length} evaluated by API</span>
-        </div>
-        <div className="metric-card surface stagger-3">
-          <span className="metric-label">Selected units</span>
-          <span className="metric-value">{selectedCount}{quantity ? ` / ${quantity}` : ''}</span>
-          <span className="metric-delta">{selectionComplete ? 'Ready to confirm' : 'Exact quantity required'}</span>
-        </div>
-        <div className="metric-card surface">
-          <span className="metric-label">Feasibility</span>
-          <span className="metric-value" style={{ fontSize: 'var(--font-size-lg, 1.1rem)' }}>
-            {suggestion ? humanize(suggestion.feasibility) : '—'}
-          </span>
-          <span className="metric-delta">{suggestion?.ruleVersion || 'Awaiting evaluation'}</span>
-        </div>
-      </div>
+      <Grid columns="stats" style={{ marginTop: 18 }}>
+        <StatCard
+          label="Requested quantity"
+          value={quantity || '—'}
+          hint={request ? humanize(request.priority) : 'Select a request'}
+        />
+        <StatCard
+          label="Eligible candidates"
+          value={eligibleCount}
+          hint={`${candidates.length} evaluated by API`}
+        />
+        <StatCard
+          label="Selected units"
+          value={`${selectedCount}${quantity ? ` / ${quantity}` : ''}`}
+          hint={selectionComplete ? 'Ready to confirm' : 'Exact quantity required'}
+        />
+        <StatCard
+          label="Feasibility"
+          value={
+            <span style={{ fontSize: 'var(--font-size-lg, 1.1rem)' }}>
+              {suggestion ? humanize(suggestion.feasibility) : '—'}
+            </span>
+          }
+          hint={suggestion?.ruleVersion || 'Awaiting evaluation'}
+        />
+      </Grid>
 
       <div className="split-layout" style={{ marginTop: 18 }}>
-        <section className="surface surface-glass" aria-labelledby="request-context-title">
+        <Surface as="section" variant="glass" padding="md" aria-labelledby="request-context-title">
           <div className="section-heading">
             <h2 id="request-context-title">Request detail</h2>
             {request && <StatusBadge status={request.status} />}
@@ -397,9 +406,9 @@ export function AllocationsPage() {
               description="Pick a request to see its quantity, urgency, and deadline beside the candidates."
             />
           )}
-        </section>
+        </Surface>
 
-        <section className="surface" aria-labelledby="candidates-title">
+        <Surface as="section" padding="md" aria-labelledby="candidates-title">
           <div className="section-heading">
             <div>
               <h2 id="candidates-title">Candidate units</h2>
@@ -425,8 +434,7 @@ export function AllocationsPage() {
           <div className="toolbar">
             <div className="toolbar-search">
               <Search size={15} aria-hidden="true" />
-              <input
-                className="input"
+              <Input
                 type="search"
                 aria-label="Search candidate units"
                 placeholder="Search units…"
@@ -437,29 +445,27 @@ export function AllocationsPage() {
             <div className="filter-grid">
               <div className="filter-field">
                 <label className="sr-only" htmlFor="candidate-filter">Candidate eligibility</label>
-                <select
+                <Select
                   id="candidate-filter"
-                  className="select"
                   value={candidateFilter}
                   onChange={(event) => setCandidateFilter(event.target.value as CandidateFilter)}
                 >
                   <option value="all">All candidates</option>
                   <option value="eligible">Eligible only</option>
                   <option value="incompatible">Incompatible only</option>
-                </select>
+                </Select>
               </div>
               <div className="filter-field">
                 <label className="sr-only" htmlFor="candidate-sort">Sort candidates</label>
-                <select
+                <Select
                   id="candidate-sort"
-                  className="select"
                   value={candidateSort}
                   onChange={(event) => setCandidateSort(event.target.value as CandidateSort)}
                 >
                   <option value="rank">Server rank</option>
                   <option value="expiry">Expiry soonest</option>
                   <option value="unit">Unit number</option>
-                </select>
+                </Select>
               </div>
             </div>
           </div>
@@ -523,7 +529,7 @@ export function AllocationsPage() {
               blocked in this view.
             </p>
           )}
-        </section>
+        </Surface>
       </div>
 
       <Modal

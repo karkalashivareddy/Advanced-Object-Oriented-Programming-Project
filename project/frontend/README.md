@@ -32,9 +32,9 @@ The dev server listens on `http://localhost:5173` and proxies both `/api` and `/
 | `npm run dev` | Start Vite on port 5173 with the `/api` proxy. |
 | `npm run build` | Type-check with TypeScript project references and build to `dist/`. |
 | `npm run preview` | Serve the production build locally. |
-| `npm test` | Run the Vitest unit suite once (39 tests in the current run). |
+| `npm test` | Run the Vitest unit suite once (54 tests in 11 files in the current run). |
 | `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run test:e2e` | Run Playwright specs under `e2e/` (18 passes on Chrome and Edge with retries 0 in the current run; see [`../docs/evidence/PLAYWRIGHT_RESULTS.json`](../docs/evidence/PLAYWRIGHT_RESULTS.json)). |
+| `npm run test:e2e` | Run Playwright specs under `e2e/` (46 passes on Chrome and Edge with retries 0 in the current run; see [`../docs/evidence/PLAYWRIGHT_RESULTS.json`](../docs/evidence/PLAYWRIGHT_RESULTS.json)). |
 | `npm run test:e2e:ui` | Open the Playwright UI runner. |
 | `npm run test:stomp` | Standalone Node SockJS/STOMP smoke through the configured nginx/backend target; the SPA bridge evidence is captured separately. |
 | `npm run typecheck` | Type-check without emitting files. |
@@ -44,14 +44,15 @@ The dev server listens on `http://localhost:5173` and proxies both `/api` and `/
 ```text
 src/
 ├── components/
+│   ├── brand/      BloodDrop, bloodstream visual, lifeline, journey, reveal, wordmark
 │   ├── layout/     App shell, sidebar, topbar, notifications, route guard
 │   └── ui/         DataTable, Modal/Drawer, Toast, FormField, charts, states
 ├── hooks/          Debounce helper
-├── lib/            API client, auth context, permissions, navigation, analytics helpers
+├── lib/            API client, auth context, permissions, navigation, analytics, RBC teaching matrix
 ├── pages/
-│   ├── public/     Landing, login, registration, 403, 404
+│   ├── public/     Landing, login, registration, 403, 404, DEV design kit
 │   └── app/        Dashboard and operational/admin pages
-├── styles/         Design tokens, base rules, components, layout, pages
+├── styles/         Layered tokens, base, components, layout, pages, lifeline identity
 ├── test/           Vitest setup
 └── types/          API envelope and domain types
 ```
@@ -76,10 +77,12 @@ API contracts are mirrored from [`../docs/architecture/API_CONTRACTS.md`](../doc
 
 ## Design system
 
-A deliberate light theme is defined in `src/styles/tokens.css`, extended by the Bloodstream identity (`BloodstreamVisual`, `JourneyVessel`, `bloodstream-flow`, SMIL cells) on the public landing page. It uses white and soft-neutral surfaces, crimson/burgundy accents, deep slate text, and green/amber/blue/red status colours. Components use semantic HTML, visible focus rings, labelled inputs, responsive breakpoints, and `prefers-reduced-motion` support. No Tailwind or component-framework CSS is used.
+The **THE LIFELINK / Vascular Intelligence** identity is defined in layered CSS (`@layer tokens, base, components, layout, pages, utilities;`), with warm rose-tinted tokens in `tokens.css` and the continuous lifeline motif in `lifeline.css`. Public surfaces are dark and cinematic; authenticated pages remain bright and high-density. Display type uses self-hosted Fraunces Variable, body type uses self-hosted Inter Variable, and numeric data keeps a system tabular stack. Reusable primitives live in `src/components/brand/`. Motion is CSS/SVG/rAF only; the `motion` package is not installed. Components use semantic HTML, visible focus rings, labelled inputs, responsive breakpoints, forced-colors support, and `prefers-reduced-motion` handling. No Tailwind or component-framework CSS is used.
 
 ## Known constraints
 
 - Analytics payloads are normalised defensively because grouped metric shapes can evolve; unrecognised shapes render an empty state instead of fabricated numbers. The three real endpoints are `/analytics/overview`, `/analytics/inventory`, and `/analytics/requests`; there is no donations/activities analytics endpoint.
-- The landing page's product preview is an illustrative layout with dashes, not simulated live metrics, testimonials, counts, or certifications.
+- The landing page's product preview and vessel story are explicitly illustrative, not simulated live metrics, testimonials, counts, or certifications.
+- The 64-pair matrix in `src/lib/bloodCompatibility.ts` is a red-cell-only teaching visualisation. It is not the allocation engine and does not cover plasma, platelets, or crossmatching.
+- Axe WCAG A/AA checks cover `/`, `/login`, and `/register` in Chrome and Edge; they are not a full application conformance or screen-reader audit.
 - Some workflows require records created by another role first (for example, a dispatch requires a confirmed reservation).

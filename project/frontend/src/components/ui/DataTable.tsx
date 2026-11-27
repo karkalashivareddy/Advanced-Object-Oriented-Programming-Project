@@ -1,5 +1,8 @@
 import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
+import { motion } from 'motion/react';
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { dur, ease } from '@/lib/motion';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 import { EmptyState } from './EmptyState';
 import { Skeleton } from './Skeleton';
 
@@ -64,6 +67,14 @@ export function DataTable<T>({
   emptyDescription = 'Try adjusting your filters or create the first record.',
   emptyAction,
 }: DataTableProps<T>) {
+  const reduced = useReducedMotion();
+  const rowMotion = reduced
+    ? {}
+    : {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        transition: { duration: dur.fast, ease: ease.out },
+      };
   const totalPages = totalElements !== undefined && size ? Math.max(1, Math.ceil(totalElements / size)) : 1;
   const currentPage = page ?? 0;
   const enablePagination = onPageChange && totalElements !== undefined;
@@ -79,7 +90,7 @@ export function DataTable<T>({
   };
 
   return (
-    <section className="card surface data-table-card" aria-label={ariaLabel} aria-busy={loading || undefined}>
+    <section className="card surface surface--flat surface--pad-none data-table-card" aria-label={ariaLabel} aria-busy={loading || undefined}>
       {toolbar && <div className="table-toolbar">{toolbar}</div>}
       {loading && (
         <p className="sr-only" role="status" aria-live="polite">
@@ -137,19 +148,20 @@ export function DataTable<T>({
               ))}
             {!loading &&
               rows.map((row) => (
-                <tr
+                <motion.tr
                   key={rowKey(row)}
                   data-clickable={onRowClick ? 'true' : undefined}
                   tabIndex={onRowClick ? 0 : undefined}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   onKeyDown={onRowClick ? (event) => handleRowKeyDown(event, row) : undefined}
+                  {...rowMotion}
                 >
                   {columns.map((column) => (
                     <td key={column.key} style={{ textAlign: column.align ?? 'left' }}>
                       {column.render(row)}
                     </td>
                   ))}
-                </tr>
+                </motion.tr>
               ))}
           </tbody>
         </table>
@@ -158,7 +170,7 @@ export function DataTable<T>({
       <div className="mobile-card-list" role="list" aria-label={`${ariaLabel} card view`}>
         {loading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <div className="mobile-card surface" role="listitem" key={`mobile-skeleton-${index}`}>
+            <div className="mobile-card surface surface--flat surface--pad-sm" role="listitem" key={`mobile-skeleton-${index}`}>
               <Skeleton width="55%" height={16} />
               <Skeleton height={12} width="85%" />
               <Skeleton height={12} width="65%" />
@@ -166,7 +178,12 @@ export function DataTable<T>({
           ))}
         {!loading &&
           rows.map((row) => (
-            <article className="mobile-card surface" role="listitem" key={rowKey(row)}>
+            <motion.article
+              className="mobile-card surface surface--flat surface--pad-sm"
+              role="listitem"
+              key={rowKey(row)}
+              {...rowMotion}
+            >
               {mobileCard ? mobileCard(row) : (
                 <>
                   <strong className="task-title">
@@ -187,7 +204,7 @@ export function DataTable<T>({
                   View details <ChevronRight size={15} aria-hidden="true" />
                 </button>
               )}
-            </article>
+            </motion.article>
           ))}
       </div>
 

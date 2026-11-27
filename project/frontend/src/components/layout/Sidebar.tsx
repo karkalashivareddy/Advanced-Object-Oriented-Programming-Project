@@ -1,8 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { HeartPulse, PanelLeftClose, PanelLeftOpen, ShieldCheck, X } from 'lucide-react';
+import { LayoutGroup, motion } from 'motion/react';
+import { PanelLeftClose, PanelLeftOpen, ShieldCheck, X } from 'lucide-react';
+import { Wordmark } from '@/components/brand';
 import { useAuth } from '@/lib/auth';
+import { spring } from '@/lib/motion';
 import { NAV_GROUPS, NAV_ITEMS } from '@/lib/navigation';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 import { cx } from '@/lib/utils';
 
 interface SidebarProps {
@@ -17,6 +21,7 @@ const FOCUSABLE =
 
 export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile }: SidebarProps) {
   const auth = useAuth();
+  const reduced = useReducedMotion();
   const sidebarRef = useRef<HTMLElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const visibleItems = NAV_ITEMS.filter((item) => !item.rule || auth.canAccess(item.rule));
@@ -80,15 +85,14 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
         aria-label={mobileOpen ? 'Navigation menu' : 'Primary navigation'}
       >
         <div className="sidebar-brand">
-          <span className="brand-mark">
-            <HeartPulse size={19} aria-hidden="true" />
-          </span>
-          <span>
-            <span className="brand-name">LifeLink</span>
-            <span className="brand-subtitle" style={{ display: 'block' }}>
-              Blood network
-            </span>
-          </span>
+          <motion.div
+            className="sidebar-brand__motion"
+            initial={false}
+            animate={reduced ? undefined : { x: collapsed ? -2 : 0 }}
+            transition={reduced ? undefined : spring}
+          >
+            <Wordmark compact={collapsed} />
+          </motion.div>
           <button
             ref={closeRef}
             type="button"
@@ -100,40 +104,64 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
           </button>
         </div>
 
-        <nav className="sidebar-nav" aria-label="Sections">
-          {NAV_GROUPS.map((group) => {
-            const items = visibleItems.filter((item) => item.group === group);
-            if (items.length === 0) return null;
-            return (
-              <div className="nav-group" key={group}>
-                <div className="nav-group-label">{group}</div>
-                {items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
+        <LayoutGroup id="sidebar-nav">
+          <nav className="sidebar-nav" aria-label="Sections">
+            {NAV_GROUPS.map((group) => {
+              const items = visibleItems.filter((item) => item.group === group);
+              if (items.length === 0) return null;
+              return (
+                <div className="nav-group" key={group}>
+                  <div className="nav-group-label">{group}</div>
+                  {items.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
                       end={item.to === '/app/donors'}
-                    title={item.label}
-                    className={({ isActive }) => cx('nav-link', isActive && 'active')}
-                    onClick={onCloseMobile}
-                  >
-                    <item.icon size={18} aria-hidden="true" />
-                    <span>{item.label}</span>
-                  </NavLink>
-                ))}
-              </div>
-            );
-          })}
-        </nav>
+                      title={item.label}
+                      className={({ isActive }) => cx('nav-link', isActive && 'active')}
+                      onClick={onCloseMobile}
+                    >
+                      {({ isActive }) => (
+                        <>
+                          {isActive &&
+                            (reduced ? (
+                              <span className="nav-active-indicator nav-active-indicator--static" aria-hidden="true" />
+                            ) : (
+                              <motion.span
+                                className="nav-active-indicator"
+                                layoutId="sidebar-active-indicator"
+                                aria-hidden="true"
+                                transition={spring}
+                              />
+                            ))}
+                          <item.icon size={18} aria-hidden="true" />
+                          <span>{item.label}</span>
+                        </>
+                      )}
+                    </NavLink>
+                  ))}
+                </div>
+              );
+            })}
+          </nav>
+        </LayoutGroup>
 
         <div className="sidebar-footer">
-          <button type="button" className="sidebar-collapse" onClick={onToggleCollapse}>
+          <motion.button
+            type="button"
+            className="sidebar-collapse"
+            onClick={onToggleCollapse}
+            initial={false}
+            animate={reduced ? undefined : { scale: collapsed ? 1.025 : 1 }}
+            transition={reduced ? undefined : spring}
+          >
             {collapsed ? (
               <PanelLeftOpen size={18} aria-hidden="true" />
             ) : (
               <PanelLeftClose size={18} aria-hidden="true" />
             )}
             <span>{collapsed ? 'Expand' : 'Collapse'} sidebar</span>
-          </button>
+          </motion.button>
           <p
             className="text-xs text-subtle"
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px 2px' }}

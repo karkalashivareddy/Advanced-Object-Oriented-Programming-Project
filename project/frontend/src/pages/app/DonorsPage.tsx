@@ -24,10 +24,13 @@ import {
   EmptyState,
   ErrorState,
   FormField,
+  Input,
   Modal,
   PageHeader,
+  Select,
   Skeleton,
   StatusBadge,
+  Surface,
   useToast,
   type DataTableColumn,
 } from '@/components/ui';
@@ -434,6 +437,85 @@ export function DonorsPage() {
         </article>
       </section>
 
+      <Surface as="section" variant="flat" padding="md" aria-label="Donor filters">
+        <div className="filter-grid">
+          <div className="filter-field">
+            <label htmlFor="donor-search">Search donors</label>
+            <div className="search-input-wrap">
+              <Search size={15} aria-hidden="true" />
+              <Input
+                id="donor-search"
+                type="search"
+                aria-describedby="donor-filter-note"
+                placeholder="Name or public ID…"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(0);
+                }}
+              />
+            </div>
+            <span className="text-xs text-subtle" id="donor-filter-note">
+              Search, filters and pagination run on the server within your authorized donor scope.
+            </span>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="donor-blood-group">Blood group</label>
+            <Select
+              id="donor-blood-group"
+              value={bloodGroup}
+              onChange={(event) => {
+                setBloodGroup(event.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">All blood groups</option>
+              {BLOOD_GROUPS.map((group) => (
+                <option key={group} value={group}>
+                  {humanize(group)}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="donor-availability">Availability</label>
+            <Select
+              id="donor-availability"
+              value={availability}
+              onChange={(event) => {
+                setAvailability(event.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">Any availability</option>
+              {DONOR_AVAILABILITY.map((item) => (
+                <option key={item} value={item}>
+                  {humanize(item)}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="donor-city">City</label>
+            <Input
+              id="donor-city"
+              type="search"
+              placeholder="Any city"
+              value={city}
+              onChange={(event) => {
+                setCity(event.target.value);
+                setPage(0);
+              }}
+            />
+          </div>
+          <div className="section-actions">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={clearFilters}>
+              <RotateCcw size={14} aria-hidden="true" /> Reset
+            </button>
+          </div>
+        </div>
+      </Surface>
+
       <DataTable
         ariaLabel="Donor list"
         caption="Donor profiles returned by the donor API"
@@ -480,96 +562,10 @@ export function DonorsPage() {
             <div className="action-row">{renderActions(donor)}</div>
           </>
         )}
-        toolbar={
-          <div className="surface-interactive" style={{ width: '100%' }}>
-            <div className="filter-grid">
-              <div className="filter-field">
-                <label htmlFor="donor-search">Search donors</label>
-                <div className="search-input-wrap">
-                  <Search size={15} aria-hidden="true" />
-                  <input
-                    id="donor-search"
-                    className="input toolbar-search"
-                    type="search"
-                    aria-describedby="donor-filter-note"
-                  placeholder="Name or public ID…"
-                    value={search}
-                    onChange={(event) => {
-                      setSearch(event.target.value);
-                      setPage(0);
-                    }}
-                  />
-                </div>
-                <span className="text-xs text-subtle" id="donor-filter-note">
-                  Search, filters and pagination run on the server within your authorized donor scope.
-                </span>
-              </div>
-              <div className="filter-field">
-                <label htmlFor="donor-blood-group">Blood group</label>
-                <select
-                  id="donor-blood-group"
-                  className="select"
-                  value={bloodGroup}
-                  onChange={(event) => {
-                    setBloodGroup(event.target.value);
-                    setPage(0);
-                  }}
-                >
-                  <option value="">All blood groups</option>
-                  {BLOOD_GROUPS.map((group) => (
-                    <option key={group} value={group}>
-                      {humanize(group)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="filter-field">
-                <label htmlFor="donor-availability">Availability</label>
-                <select
-                  id="donor-availability"
-                  className="select"
-                  value={availability}
-                  onChange={(event) => {
-                    setAvailability(event.target.value);
-                    setPage(0);
-                  }}
-                >
-                  <option value="">Any availability</option>
-                  {DONOR_AVAILABILITY.map((item) => (
-                    <option key={item} value={item}>
-                      {humanize(item)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="filter-field">
-                <label htmlFor="donor-city">City</label>
-                <input
-                  id="donor-city"
-                  className="input"
-                  type="search"
-                  placeholder="Any city"
-                  value={city}
-                  onChange={(event) => {
-                    setCity(event.target.value);
-                    setPage(0);
-                  }}
-                />
-              </div>
-              <div className="section-actions">
-                <button type="button" className="btn btn-ghost btn-sm" onClick={clearFilters}>
-                  <RotateCcw size={14} aria-hidden="true" /> Reset
-                </button>
-              </div>
-            </div>
-          </div>
-        }
       />
 
       {donorsQuery.isError && (
-        <div className="surface" style={{ marginTop: 16 }}>
-          <ErrorState error={donorsQuery.error} onRetry={() => void donorsQuery.refetch()} />
-        </div>
+        <ErrorState error={donorsQuery.error} onRetry={() => void donorsQuery.refetch()} />
       )}
 
       <Drawer
@@ -588,50 +584,52 @@ export function DonorsPage() {
           <ErrorState error={detailQuery.error} onRetry={() => void detailQuery.refetch()} />
         )}
         {detail && (
-          <>
-            <div className="section-heading">
-              <h3>Profile</h3>
-              <StatusBadge
-                status={detail.availability ?? 'AVAILABLE'}
-                label={`Donor ${humanize(detail.availability ?? 'AVAILABLE').toLowerCase()}`}
-              />
+          <div className="stack">
+            <div>
+              <div className="section-heading">
+                <h3>Profile</h3>
+                <StatusBadge
+                  status={detail.availability ?? 'AVAILABLE'}
+                  label={`Donor ${humanize(detail.availability ?? 'AVAILABLE').toLowerCase()}`}
+                />
+              </div>
+              <span className="freshness">
+                Details loaded {formatDateTime(new Date(detailQuery.dataUpdatedAt).toISOString())}
+              </span>
+              <dl className="detail-grid">
+                <div className="detail-item">
+                  <dt>User ID</dt>
+                  <dd className="mono">{detail.userId}</dd>
+                </div>
+                <div className="detail-item">
+                  <dt>Public ID</dt>
+                  <dd className="mono">{detail.publicId}</dd>
+                </div>
+                <div className="detail-item">
+                  <dt>Blood group</dt>
+                  <dd>{humanize(detail.bloodGroup)}</dd>
+                </div>
+                <div className="detail-item">
+                  <dt>Date of birth</dt>
+                  <dd>{formatDate(detail.dateOfBirth)}</dd>
+                </div>
+                <div className="detail-item">
+                  <dt>Preferred contact</dt>
+                  <dd>{detail.preferredContact ?? '—'}</dd>
+                </div>
+                <div className="detail-item">
+                  <dt>City</dt>
+                  <dd>{detail.city ?? '—'}</dd>
+                </div>
+                <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                  <dt>Address</dt>
+                  <dd>{[detail.address, detail.city, detail.state].filter(Boolean).join(', ') || '—'}</dd>
+                </div>
+              </dl>
             </div>
-            <span className="freshness">
-              Details loaded {formatDateTime(new Date(detailQuery.dataUpdatedAt).toISOString())}
-            </span>
-            <dl className="detail-grid">
-              <div className="detail-item">
-                <dt>User ID</dt>
-                <dd className="mono">{detail.userId}</dd>
-              </div>
-              <div className="detail-item">
-                <dt>Public ID</dt>
-                <dd className="mono">{detail.publicId}</dd>
-              </div>
-              <div className="detail-item">
-                <dt>Blood group</dt>
-                <dd>{humanize(detail.bloodGroup)}</dd>
-              </div>
-              <div className="detail-item">
-                <dt>Date of birth</dt>
-                <dd>{formatDate(detail.dateOfBirth)}</dd>
-              </div>
-              <div className="detail-item">
-                <dt>Preferred contact</dt>
-                <dd>{detail.preferredContact ?? '—'}</dd>
-              </div>
-              <div className="detail-item">
-                <dt>City</dt>
-                <dd>{detail.city ?? '—'}</dd>
-              </div>
-              <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
-                <dt>Address</dt>
-                <dd>{[detail.address, detail.city, detail.state].filter(Boolean).join(', ') || '—'}</dd>
-              </div>
-            </dl>
 
             {detail.userId === auth.user?.id && (
-              <section className="surface surface-raised donor-location-consent" aria-labelledby="location-consent-heading">
+              <section className="donor-location-consent" aria-labelledby="location-consent-heading">
                 <div className="section-heading">
                   <div>
                     <h3 id="location-consent-heading">Location discovery consent</h3>
@@ -647,11 +645,11 @@ export function DonorsPage() {
                     <LocateFixed size={15} aria-hidden="true" /> Use current device location
                   </button>
                   <FormField label="Latitude">
-                    <input className="input" inputMode="decimal" value={locationCoordinates.latitude}
+                    <Input inputMode="decimal" value={locationCoordinates.latitude}
                       onChange={(event) => setLocationCoordinates({ ...locationCoordinates, latitude: event.target.value })} placeholder="12.9716" />
                   </FormField>
                   <FormField label="Longitude">
-                    <input className="input" inputMode="decimal" value={locationCoordinates.longitude}
+                    <Input inputMode="decimal" value={locationCoordinates.longitude}
                       onChange={(event) => setLocationCoordinates({ ...locationCoordinates, longitude: event.target.value })} placeholder="77.5946" />
                   </FormField>
                 </div>
@@ -671,7 +669,7 @@ export function DonorsPage() {
               </section>
             )}
 
-            <section className="surface surface-raised" style={{ marginTop: 16 }}>
+            <section aria-label="Consent records">
               <div className="section-heading">
                 <h3>Consents</h3>
                 <span className="status-chip">{consents.length} records</span>
@@ -730,10 +728,9 @@ export function DonorsPage() {
                 </div>
               )}
               {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
-                <div className="form-grid" style={{ marginTop: 12 }}>
+                <div className="form-grid">
                   <FormField label="Consent type" required full hint="Location discovery consent can only be managed by the donor in the dedicated privacy section above.">
-                    <input
-                      className="input"
+                    <Input
                       value={consent.type}
                       onChange={(event) => setConsent({ ...consent, type: event.target.value })}
                     />
@@ -776,7 +773,7 @@ export function DonorsPage() {
               )}
             </section>
 
-            <section className="surface surface-raised" style={{ marginTop: 16 }}>
+            <section aria-label="Appointments">
               <div className="section-heading">
                 <h3>Appointments</h3>
                 <span className="status-chip">{appointments.length} total</span>
@@ -846,15 +843,14 @@ export function DonorsPage() {
                 </div>
               )}
               {auth.hasPermission(PERMISSIONS.DONOR_MANAGE) && (
-                <div className="form-grid" style={{ marginTop: 12 }}>
+                <div className="form-grid">
                   <FormField
                     label="Organization"
                     required
                     full
                     hint="Defaults to your active membership"
                   >
-                    <select
-                      className="select"
+                    <Select
                       value={appointment.organizationId}
                       onChange={(event) => setAppointment({ ...appointment, organizationId: event.target.value })}
                     >
@@ -864,7 +860,7 @@ export function DonorsPage() {
                           {option.name}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </FormField>
                   {canChooseOrganization && organizationsQuery.isError && (
                     <ErrorState
@@ -874,8 +870,7 @@ export function DonorsPage() {
                     />
                   )}
                   <FormField label="Appointment date and time" required full>
-                    <input
-                      className="input"
+                    <Input
                       type="datetime-local"
                       value={appointment.scheduledAt}
                       onChange={(event) => setAppointment({ ...appointment, scheduledAt: event.target.value })}
@@ -918,7 +913,7 @@ export function DonorsPage() {
                 </>
               )}
             </section>
-          </>
+          </div>
         )}
       </Drawer>
 
@@ -947,7 +942,7 @@ export function DonorsPage() {
         <div className="form-grid">
           {editing === 'new' ? (
             <>
-              <div className="surface surface-raised form-field-full">
+              <div className="form-field-full">
                 <div className="section-heading">
                   <h3>Existing user account</h3>
                   <Users size={16} aria-hidden="true" />
@@ -963,8 +958,7 @@ export function DonorsPage() {
                       error={errors.userId}
                       full
                     >
-                      <input
-                        className="input toolbar-search"
+                      <Input
                         type="search"
                         placeholder="Name or email…"
                         value={userQuery}
@@ -1010,8 +1004,7 @@ export function DonorsPage() {
                     required
                     full
                   >
-                    <input
-                      className="input"
+                    <Input
                       inputMode="numeric"
                       value={form.userId}
                       onChange={(event) => setForm({ ...form, userId: event.target.value })}
@@ -1027,8 +1020,7 @@ export function DonorsPage() {
                 )}
               </div>
               <FormField label="Blood group" required>
-                <select
-                  className="select"
+                <Select
                   value={form.bloodGroup}
                   onChange={(event) => setForm({ ...form, bloodGroup: event.target.value as BloodGroup })}
                 >
@@ -1037,11 +1029,10 @@ export function DonorsPage() {
                       {humanize(group)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </FormField>
               <FormField label="Date of birth">
-                <input
-                  className="input"
+                <Input
                   type="date"
                   value={form.dateOfBirth}
                   onChange={(event) => setForm({ ...form, dateOfBirth: event.target.value })}
@@ -1050,8 +1041,7 @@ export function DonorsPage() {
             </>
           ) : (
             <FormField label="Availability" full>
-              <select
-                className="select"
+              <Select
                 value={form.availability}
                 onChange={(event) => setForm({ ...form, availability: event.target.value as DonorAvailability })}
               >
@@ -1060,33 +1050,29 @@ export function DonorsPage() {
                     {humanize(item)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FormField>
           )}
           <FormField label="Address" full>
-            <input
-              className="input"
+            <Input
               value={form.address}
               onChange={(event) => setForm({ ...form, address: event.target.value })}
             />
           </FormField>
           <FormField label="City">
-            <input
-              className="input"
+            <Input
               value={form.city}
               onChange={(event) => setForm({ ...form, city: event.target.value })}
             />
           </FormField>
           <FormField label="State">
-            <input
-              className="input"
+            <Input
               value={form.state}
               onChange={(event) => setForm({ ...form, state: event.target.value })}
             />
           </FormField>
           <FormField label="Preferred contact" full>
-            <input
-              className="input"
+            <Input
               value={form.preferredContact}
               onChange={(event) => setForm({ ...form, preferredContact: event.target.value })}
             />
@@ -1098,7 +1084,7 @@ export function DonorsPage() {
             <span>Could not save donor: {getErrorMessage(saveDonor.error)}</span>
           </div>
         )}
-        <p className="text-xs text-subtle" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <p className="text-xs text-subtle cluster">
           <HeartHandshake size={13} aria-hidden="true" /> Consent and appointment records are managed from the donor
           drawer. {activeMembership ? `Active organization: ${activeMembership.organizationName}.` : ''}
         </p>

@@ -29,10 +29,15 @@ import {
   EmptyState,
   ErrorState,
   FormField,
+  Grid,
+  Input,
   Modal,
   PageHeader,
+  Select,
   Skeleton,
+  StatCard,
   StatusBadge,
+  Surface,
   useToast,
   type DataTableColumn,
   type SortState,
@@ -397,28 +402,12 @@ export function RequestsPage() {
         }
       />
 
-      <div className="metric-grid">
-        <div className="metric-card surface stagger-1">
-          <span className="metric-label">Requests in view</span>
-          <span className="metric-value">{allRequests.length}</span>
-          <span className="metric-delta">{requests.length} after filters</span>
-        </div>
-        <div className="metric-card surface stagger-2">
-          <span className="metric-label">Awaiting staff action</span>
-          <span className="metric-value">{actionableCount}</span>
-          <span className="metric-delta">Verification and approval</span>
-        </div>
-        <div className="metric-card surface stagger-3">
-          <span className="metric-label">Urgent or critical</span>
-          <span className="metric-value">{urgentCount}</span>
-          <span className="metric-delta">Time-sensitive requests</span>
-        </div>
-        <div className="metric-card surface">
-          <span className="metric-label">Fulfilled</span>
-          <span className="metric-value">{fulfilledCount}</span>
-          <span className="metric-delta">Completed through dispatch</span>
-        </div>
-      </div>
+      <Grid columns="stats">
+        <StatCard label="Requests in view" value={allRequests.length} hint={`${requests.length} after filters`} />
+        <StatCard label="Awaiting staff action" value={actionableCount} hint="Verification and approval" />
+        <StatCard label="Urgent or critical" value={urgentCount} hint="Time-sensitive requests" />
+        <StatCard label="Fulfilled" value={fulfilledCount} hint="Completed through dispatch" />
+      </Grid>
 
       <div className="task-grid" style={{ marginTop: 18 }}>
         <button
@@ -453,7 +442,7 @@ export function RequestsPage() {
         </button>
       </div>
 
-      <div className="surface premium-table" style={{ marginTop: 18 }}>
+      <div style={{ marginTop: 18 }}>
         <DataTable
           ariaLabel="Emergency request list"
           rowKey={(row) => row.id}
@@ -470,8 +459,7 @@ export function RequestsPage() {
               <div className="toolbar">
                 <div className="toolbar-search">
                   <Search size={15} aria-hidden="true" />
-                  <input
-                    className="input"
+                  <Input
                     type="search"
                     aria-label="Search requests"
                     placeholder="Search requests…"
@@ -482,9 +470,8 @@ export function RequestsPage() {
                 <div className="filter-grid">
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="request-status">Request status</label>
-                    <select
+                    <Select
                       id="request-status"
-                      className="select"
                       value={status}
                       onChange={(event) => setStatus(event.target.value)}
                     >
@@ -492,13 +479,12 @@ export function RequestsPage() {
                       {REQUEST_STATUSES.map((item) => (
                         <option key={item} value={item}>{humanize(item)}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="request-priority">Request priority</label>
-                    <select
+                    <Select
                       id="request-priority"
-                      className="select"
                       value={priority}
                       onChange={(event) => setPriority(event.target.value)}
                     >
@@ -506,7 +492,7 @@ export function RequestsPage() {
                       {PRIORITIES.map((item) => (
                         <option key={item} value={item}>{humanize(item)}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
                 <span className="freshness" aria-live="polite">
@@ -527,9 +513,9 @@ export function RequestsPage() {
         />
       </div>
       {requestsQuery.isError && (
-        <div className="surface" style={{ marginTop: 16 }}>
+        <Surface padding="md" style={{ marginTop: 16 }}>
           <ErrorState error={requestsQuery.error} onRetry={() => void requestsQuery.refetch()} />
-        </div>
+        </Surface>
       )}
 
       <Drawer

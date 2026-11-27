@@ -3,7 +3,19 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { Bell, Check, Copy, RefreshCw, X } from 'lucide-react';
 import { api, getErrorMessage } from '@/lib/api';
 import { formatDateTime, humanize } from '@/lib/utils';
-import { DataTable, ErrorState, FreshnessIndicator, PageHeader, StatusBadge, useToast, type DataTableColumn } from '@/components/ui';
+import {
+  DataTable,
+  ErrorState,
+  FreshnessIndicator,
+  Grid,
+  PageHeader,
+  Select,
+  StatCard,
+  StatusBadge,
+  Surface,
+  useToast,
+  type DataTableColumn,
+} from '@/components/ui';
 import { MarkAllReadButton } from '@/components/layout/NotificationCenter';
 import type { PageResponse } from '@/types/api';
 import type { NotificationView } from '@/types/domain';
@@ -185,25 +197,25 @@ export function NotificationsPage() {
       />
 
       {!notificationsQuery.isError && (
-        <div className="metric-grid stagger-1" aria-label="Notification summary">
-          <article className="metric-card">
-            <span className="metric-label">Total notifications</span>
-            <strong className="metric-value">{notificationsQuery.data?.totalElements ?? '—'}</strong>
-            <span className="metric-delta">From the paged API response</span>
-          </article>
-          <article className="metric-card">
-            <span className="metric-label">Unread (account total)</span>
-            <strong className="metric-value">{unreadQuery.data ? (unreadTotal ?? '—') : '—'}</strong>
-            <span className="metric-delta">
-              {unreadQuery.isError ? 'Unread count unavailable' : 'From /notifications/unread-count'}
-            </span>
-          </article>
-          <article className="metric-card">
-            <span className="metric-label">On this page</span>
-            <strong className="metric-value">{notificationsQuery.data ? notifications.length : '—'}</strong>
-            <span className="metric-delta">{hasFilters ? 'After page filters' : `Page ${page + 1} of ${notificationsQuery.data?.totalPages ?? '—'}`}</span>
-          </article>
-        </div>
+        <section className="stagger-1" aria-label="Notification summary">
+          <Grid columns="stats">
+            <StatCard
+              label="Total notifications"
+              value={notificationsQuery.data?.totalElements ?? '—'}
+              hint="From the paged API response"
+            />
+            <StatCard
+              label="Unread (account total)"
+              value={unreadQuery.data ? (unreadTotal ?? '—') : '—'}
+              hint={unreadQuery.isError ? 'Unread count unavailable' : 'From /notifications/unread-count'}
+            />
+            <StatCard
+              label="On this page"
+              value={notificationsQuery.data ? notifications.length : '—'}
+              hint={hasFilters ? 'After page filters' : `Page ${page + 1} of ${notificationsQuery.data?.totalPages ?? '—'}`}
+            />
+          </Grid>
+        </section>
       )}
 
       <div className="stagger-2" style={{ margin: '16px 0' }}>
@@ -220,13 +232,13 @@ export function NotificationsPage() {
       </div>
 
       {notificationsQuery.isError ? (
-        <section className="surface surface-glass stagger-2">
+        <Surface as="section" variant="glass" padding="md" className="stagger-2">
           <ErrorState
             title="Notifications could not be loaded"
             error={notificationsQuery.error}
             onRetry={() => void notificationsQuery.refetch()}
           />
-        </section>
+        </Surface>
       ) : (
         <div className="stagger-2">
           <DataTable
@@ -253,9 +265,8 @@ export function NotificationsPage() {
                 <div className="filter-grid">
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="notification-read-filter">Read state on this page</label>
-                    <select
+                    <Select
                       id="notification-read-filter"
-                      className="select"
                       value={readFilter}
                       onChange={(event) => { setReadFilter(event.target.value); setPage(0); }}
                       title="Filters the current page; the API has no read query parameter"
@@ -263,20 +274,19 @@ export function NotificationsPage() {
                       <option value="">All read states</option>
                       <option value="UNREAD">Unread</option>
                       <option value="READ">Read</option>
-                    </select>
+                    </Select>
                   </div>
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="notification-type-filter">Notification type on this page</label>
-                    <select
+                    <Select
                       id="notification-type-filter"
-                      className="select"
                       value={typeFilter}
                       onChange={(event) => { setTypeFilter(event.target.value); setPage(0); }}
                       title="Filters the current page; the API has no type query parameter"
                     >
                       <option value="">All types</option>
                       {typeOptions.map((type) => <option key={type} value={type}>{humanize(type)}</option>)}
-                    </select>
+                    </Select>
                   </div>
                 </div>
                 <div className="section-actions">

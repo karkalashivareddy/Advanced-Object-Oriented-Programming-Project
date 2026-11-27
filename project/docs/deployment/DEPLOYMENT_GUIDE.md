@@ -135,8 +135,14 @@ Backend configuration notes:
 | Browser E2E | Playwright 18 passed on Chrome and Edge, retries 0, flaky 0 | [`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json) |
 | Unit/integration | Backend 119 tests, 0 failures/errors/skips; frontend 39 unit tests | [`../quality/TEST_RESULTS.md`](../quality/TEST_RESULTS.md) |
 
-These are local-development / supervised-demo results. They do not imply a
-production deployment, a CI run, or a shared-store multi-instance deployment.
+The 18 E2E and 119/39 test figures in this table are historical results from the
+recorded Compose verification run. The current 27 November gates are backend
+**135 tests run, 0 failures, 0 errors, 8 skipped** (Docker-dependent PostgreSQL
+Testcontainers), frontend **54 tests in 11 files**, and **46 Playwright
+executions** against a seeded H2 dev backend; see
+[`../quality/TEST_RESULTS.md`](../quality/TEST_RESULTS.md). These are
+local-development / supervised-demo results. They do not imply a production
+deployment, a CI run, or a shared-store multi-instance deployment.
 
 ## 5. Production hardening checklist
 

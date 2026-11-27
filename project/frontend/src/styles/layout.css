@@ -7,7 +7,6 @@
   overflow-x: clip;
   min-height: 100dvh;
   background: var(--color-canvas);
-  transition: grid-template-columns var(--transition-base);
 }
 
 .app-shell.is-collapsed {
@@ -130,6 +129,7 @@
   align-items: center;
   gap: var(--space-3);
   width: 100%;
+  min-height: 44px;
   padding: var(--space-2) var(--space-3);
   border: 0;
   border-radius: var(--radius-md);

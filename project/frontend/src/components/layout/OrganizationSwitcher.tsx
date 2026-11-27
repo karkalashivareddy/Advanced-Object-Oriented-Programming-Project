@@ -77,7 +77,6 @@ export function OrganizationSwitcher() {
         id="organization-switcher"
         type="button"
         className="org-trigger"
-        aria-label={`Active organization: ${activeName}. Change organization`}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls="organization-options"
@@ -86,9 +85,10 @@ export function OrganizationSwitcher() {
         <span className="scope-indicator" aria-hidden="true" />
         <Building2 size={16} aria-hidden="true" />
         <span className="org-trigger-text">
-          <small className="scope-label">Scope</small>
+          <small className="scope-label">Scope</small>{' '}
           <strong className="scope-name">{activeName}</strong>
         </span>
+        <span className="sr-only">Active organization. Change organization</span>
         <ChevronDown size={14} aria-hidden="true" />
       </button>
 

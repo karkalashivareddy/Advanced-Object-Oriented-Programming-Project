@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { LifelinePath } from '@/components/brand';
+import { RouteTransition } from '@/components/motion';
 import { RealtimeNotificationsBridge } from '@/lib/useRealtimeNotifications';
 import { cx } from '@/lib/utils';
 
@@ -52,6 +54,9 @@ export function AppShell() {
         Skip to content
       </a>
       <RealtimeNotificationsBridge />
+      <div className="lifeline-rail">
+        <LifelinePath variant="status" />
+      </div>
       <Sidebar
         collapsed={collapsed}
         onToggleCollapse={toggleCollapse}
@@ -62,7 +67,9 @@ export function AppShell() {
         <Topbar onOpenMobileMenu={openMobile} />
         <main className="app-content" id="main-content">
           <div className="app-content-inner">
-            <Outlet />
+            <RouteTransition>
+              <Outlet />
+            </RouteTransition>
           </div>
         </main>
       </div>

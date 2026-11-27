@@ -29,8 +29,8 @@ unit inventory, hospital emergency requests, allocation, reservation, dispatch, 
 addresses the inconsistency and poor traceability of manual blood distribution, where a unit can be promised twice, an
 unscreened donation can be released, expired stock can be issued, and one organization can see another organization's
 data. The system models the supply chain as guarded Java domain objects whose state transitions enforce real
-invariants. A modular Spring Boot REST service and React/TypeScript single-page application share one PostgreSQL
-database; Flyway migrations, scoped authorization, and database constraints complement object-
+invariants. A modular Spring Boot REST service owns PostgreSQL; the React/TypeScript SPA uses only
+REST/STOMP. Flyway migrations, scoped authorization, and database constraints complement object-
 level checks.
 
 The local runtime uses Dockerized PostgreSQL 16 on a Windows host; Linux containers are runtime

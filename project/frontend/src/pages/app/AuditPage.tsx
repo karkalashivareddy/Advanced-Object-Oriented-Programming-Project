@@ -6,7 +6,18 @@ import { useAuth } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { auditKeys } from '@/lib/queryCache';
 import { formatDateTime, humanize } from '@/lib/utils';
-import { DataTable, ErrorState, FreshnessIndicator, PageHeader, StatusBadge, useToast, type DataTableColumn } from '@/components/ui';
+import {
+  DataTable,
+  ErrorState,
+  FreshnessIndicator,
+  Input,
+  PageHeader,
+  Select,
+  StatusBadge,
+  Surface,
+  useToast,
+  type DataTableColumn,
+} from '@/components/ui';
 import type { PageResponse } from '@/types/api';
 import type { AuditLogView, UserView } from '@/types/domain';
 
@@ -232,13 +243,13 @@ export function AuditPage() {
       </p>
 
       {auditQuery.isError ? (
-        <section className="surface surface-glass stagger-2" aria-describedby="audit-results-help">
+        <Surface as="section" variant="glass" padding="md" className="stagger-2" aria-describedby="audit-results-help">
           <ErrorState
             title="Audit records could not be loaded"
             error={auditQuery.error}
             onRetry={() => void auditQuery.refetch()}
           />
-        </section>
+        </Surface>
       ) : (
         <div className="stagger-2" aria-describedby="audit-results-help">
           <output className="sr-only" aria-live="polite">
@@ -267,9 +278,8 @@ export function AuditPage() {
                   {auth.hasRole('PLATFORM_ADMIN') && (
                     <div className="filter-field">
                       <label className="sr-only" htmlFor="audit-organization">Organization ID</label>
-                      <input
+                      <Input
                         id="audit-organization"
-                        className="input"
                         inputMode="numeric"
                         aria-label="Filter by organization ID"
                         placeholder="Organization ID"
@@ -280,9 +290,8 @@ export function AuditPage() {
                   )}
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="audit-actor">Actor ID</label>
-                    <input
+                    <Input
                       id="audit-actor"
-                      className="input"
                       inputMode="numeric"
                       aria-label="Filter by actor ID"
                       placeholder="Actor ID"
@@ -292,9 +301,8 @@ export function AuditPage() {
                   </div>
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="audit-action">Action</label>
-                    <input
+                    <Input
                       id="audit-action"
-                      className="input"
                       aria-label="Filter by action"
                       placeholder="Action"
                       value={action}
@@ -303,22 +311,20 @@ export function AuditPage() {
                   </div>
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="audit-outcome">Outcome on this page</label>
-                    <select
+                    <Select
                       id="audit-outcome"
-                      className="select"
                       value={outcome}
                       onChange={(event) => setOutcome(event.target.value)}
                       title="The audit API does not accept an outcome parameter; this filters the current page"
                     >
                       <option value="">All outcomes</option>
                       {outcomeOptions.map((item) => <option key={item} value={item}>{humanize(item)}</option>)}
-                    </select>
+                    </Select>
                   </div>
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="audit-from">From date</label>
-                    <input
+                    <Input
                       id="audit-from"
-                      className="input"
                       type="date"
                       aria-label="From date"
                       value={from}
@@ -327,9 +333,8 @@ export function AuditPage() {
                   </div>
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="audit-to">To date</label>
-                    <input
+                    <Input
                       id="audit-to"
-                      className="input"
                       type="date"
                       aria-label="To date"
                       value={to}

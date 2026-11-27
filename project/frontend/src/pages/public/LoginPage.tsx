@@ -1,10 +1,18 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, Eye, EyeOff, HeartPulse, LockKeyhole, ShieldCheck } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  LockKeyhole,
+  Route,
+  ShieldCheck,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { ApiError, getErrorMessage } from '@/lib/api';
 import { tokenStore } from '@/lib/tokenStore';
-import { FormField } from '@/components/ui/FormField';
+import { CellField, LifelinePath, Wordmark } from '@/components/brand';
+import { Field, Input, PasswordField } from '@/components/ui';
 
 interface FieldErrors {
   email?: string;
@@ -46,7 +54,6 @@ export function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Record<FieldName, boolean>>({ email: false, password: false });
@@ -54,10 +61,14 @@ export function LoginPage() {
   const [showSessionNotice, setShowSessionNotice] = useState(
     sessionExpired || (location.state as { sessionExpired?: boolean } | null)?.sessionExpired === true,
   );
+  const [authenticatedOnMount] = useState(auth.status === 'authenticated');
 
+  // Only redirect visitors who open /login with an existing session. The login
+  // submit handler owns navigation for a fresh sign-in; a status-driven effect
+  // here would fire a second replace navigation and remount the destination.
   useEffect(() => {
-    if (auth.status === 'authenticated') navigate(from, { replace: true });
-  }, [auth.status, from, navigate]);
+    if (authenticatedOnMount) navigate(from, { replace: true });
+  }, [authenticatedOnMount, from, navigate]);
 
   const busy = submitting || auth.status === 'loading';
 
@@ -105,15 +116,36 @@ export function LoginPage() {
 
   return (
     <div className="auth-shell">
-      <main className="auth-panel">
-        <div className="auth-form surface-glass surface-raised page-enter">
+      <a className="skip-link" href="#login-form">Skip to sign-in form</a>
+
+      <header className="auth-visual" aria-label="About LifeLink">
+        <CellField className="auth-visual__cells" />
+        <LifelinePath variant="hero" className="auth-visual__path" />
+        <div className="auth-visual__safe">
+          <Wordmark inverse />
+          <div className="auth-visual__footer">
+            <p className="auth-visual__statement">One record. Every critical handover.</p>
+            <p className="auth-visual__note">
+              Move from donation to delivery with traceable units, explicit permissions, and a clear operational history.
+            </p>
+            <div className="auth-visual__proof">
+              <span><ShieldCheck size={14} aria-hidden="true" /> Organization-scoped</span>
+              <span><ShieldCheck size={14} aria-hidden="true" /> Permission-aware</span>
+              <span><Route size={14} aria-hidden="true" /> Auditable</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="auth-panel" id="main-content">
+        <div className="auth-card page-enter">
           <Link to="/" className="auth-back">
             <ArrowLeft size={14} aria-hidden="true" /> Back to home
           </Link>
           <div>
             <span className="eyebrow"><LockKeyhole size={14} aria-hidden="true" /> Secure sign in</span>
-            <h1 className="page-title">Welcome back</h1>
-            <p className="page-subtitle">Sign in to your LifeLink organization workspace.</p>
+            <h1>Welcome back</h1>
+            <p>Sign in to your LifeLink organization workspace.</p>
           </div>
 
           {showSessionNotice && (
@@ -133,10 +165,9 @@ export function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={(event) => void submit(event)} noValidate className="form-grid">
-            <FormField label="Email address" error={errors.email} required full>
-              <input
-                className="input"
+          <form id="login-form" onSubmit={(event) => void submit(event)} noValidate className="form-grid">
+            <Field label="Email address" error={errors.email} required full>
+              <Input
                 type="email"
                 autoComplete="username"
                 placeholder="you@organization.org"
@@ -144,59 +175,35 @@ export function LoginPage() {
                 onChange={(event) => handleChange('email', event.target.value)}
                 onBlur={() => handleBlur('email', email)}
               />
-            </FormField>
-            <FormField label="Password" error={errors.password} required full>
-              <div className="search-input-wrap">
-                <input
-                  className="input"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="Your password"
-                  value={password}
-                  onChange={(event) => handleChange('password', event.target.value)}
-                  onBlur={() => handleBlur('password', password)}
-                />
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-icon"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  onClick={() => setShowPassword((current) => !current)}
-                >
-                  {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
-                </button>
-              </div>
-            </FormField>
+            </Field>
+            <PasswordField
+              label="Password"
+              name="password"
+              autoComplete="current-password"
+              placeholder="Your password"
+              value={password}
+              error={errors.password}
+              required
+              onChange={(event) => handleChange('password', event.target.value)}
+              onBlur={() => handleBlur('password', password)}
+            />
             <div className="form-actions form-field-full">
               <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={busy} aria-busy={busy}>
                 {busy ? 'Signing in…' : 'Sign in'}
+                {!busy && <ArrowRight size={16} aria-hidden="true" />}
               </button>
             </div>
           </form>
 
-          <p className="text-sm text-muted">
+          <p className="auth-card__footer">
             New here? <Link to="/register">Create account</Link>
           </p>
-          <p className="text-xs text-subtle">
+          <p className="auth-secure-note">
+            <ShieldCheck size={14} aria-hidden="true" />
             Demo accounts are seeded by the backend. Contact your administrator for credentials.
           </p>
         </div>
       </main>
-      <aside className="auth-visual" aria-label="About LifeLink">
-        <div className="surface-glass stagger-1">
-          <span className="brand-mark">
-            <HeartPulse size={22} aria-hidden="true" />
-          </span>
-          <h2>One shared record for every critical handover.</h2>
-          <p>
-            Move from donation to delivery with traceable units, explicit permissions, and a clear operational history.
-          </p>
-          <ul className="check-list">
-            <li><ShieldCheck size={17} aria-hidden="true" /> Organization-scoped access</li>
-            <li><ShieldCheck size={17} aria-hidden="true" /> Permission-aware workflows</li>
-            <li><ShieldCheck size={17} aria-hidden="true" /> Auditable critical actions</li>
-          </ul>
-        </div>
-      </aside>
     </div>
   );
 }

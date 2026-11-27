@@ -7,6 +7,35 @@ import { tokenStore } from '@/lib/tokenStore';
 
 const RECONNECT_DELAY_MS = 5_000;
 
+type AddEventListener = typeof EventTarget.prototype.addEventListener;
+type RemoveEventListener = typeof EventTarget.prototype.removeEventListener;
+
+/**
+ * Chrome reports an `unload` permissions-policy violation when sockjs-client is
+ * imported. SockJS only uses that listener to flush pending transports, so load
+ * it with `unload` translated to the page-lifecycle-safe `pagehide` event and
+ * restore the native methods immediately afterwards.
+ */
+async function importSockJs() {
+  const nativeAdd: AddEventListener = EventTarget.prototype.addEventListener;
+  const nativeRemove: RemoveEventListener = EventTarget.prototype.removeEventListener;
+  const remap = (type: string) => (type === 'unload' ? 'pagehide' : type);
+
+  EventTarget.prototype.addEventListener = function (this: EventTarget, type, listener, options) {
+    return nativeAdd.call(this, remap(type), listener, options);
+  };
+  EventTarget.prototype.removeEventListener = function (this: EventTarget, type, listener, options) {
+    return nativeRemove.call(this, remap(type), listener, options);
+  };
+
+  try {
+    return await import('sockjs-client');
+  } finally {
+    EventTarget.prototype.addEventListener = nativeAdd;
+    EventTarget.prototype.removeEventListener = nativeRemove;
+  }
+}
+
 /**
  * Browser-side STOMP subscription for notification invalidation.
  *
@@ -50,10 +79,11 @@ export function RealtimeNotificationsBridge() {
         // public landing bundle does not pay for the STOMP/SockJS client.
         // sockjs-client is a UMD bundle that references `global` in browsers.
         (globalThis as { global?: typeof globalThis }).global ??= globalThis;
-        const [{ Client: StompClient }, { default: SockJS }] = await Promise.all([
+        const [{ Client: StompClient }, sockJsModule] = await Promise.all([
           import('@stomp/stompjs'),
-          import('sockjs-client'),
+          importSockJs(),
         ]);
+        const SockJS = sockJsModule.default;
         if (stopped) return;
 
         client = new StompClient({

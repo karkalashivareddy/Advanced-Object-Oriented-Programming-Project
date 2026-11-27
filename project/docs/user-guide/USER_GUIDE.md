@@ -39,12 +39,12 @@ Token details: access tokens carry a unique `jti` and `token_version`. Password 
 
 ## 3. Role journeys that work end to end
 
-The following sequences are implemented. The current local run recorded backend 119 tests with 0 failures/errors/skips, frontend 39 unit tests, and Playwright 18 passed on Chrome and Edge with retries 0
+The following sequences are implemented. A 24 November local run recorded backend 119 tests with 0 failures/errors/skips, frontend 39 unit tests, and Playwright 18 passed on Chrome and Edge with retries 0. The current 27 November gates record backend **135 tests run, 0 failures, 0 errors, 8 skipped** (Docker-dependent PostgreSQL Testcontainers), frontend **54 tests in 11 files**, and **46 Playwright executions**
 ([`../evidence/PLAYWRIGHT_RESULTS.json`](../evidence/PLAYWRIGHT_RESULTS.json)); detailed per-class results are maintained in the quality workstream's test documents. Steps marked *advisory* produce suggestions, not guaranteed stock.
 
 ### 3.1 Donor
 
-1. Sign in as `donor@lifelink.local`. The dashboard shows **My donations**, **My appointments**, **My consents**, and **Notifications** from real API data.
+1. Sign in as `donor@lifelink.local`. The dashboard shows **Your donor workspace** with upcoming appointments, recorded donations, and the blood group on file from real API data; profile and consents are reached from the sidebar.
 2. `GET /donors` returns the donor profiles visible to the caller (a donor sees their own profile); use the returned numeric id as `{id}`. The SPA then reads `GET /donors/{id}`, `GET /donors/{id}/appointments`, `GET /donors/{id}/consents`, and `GET /donations?donorId={id}`. There is no `/donors/me` or `/donors/me/...` route.
 3. Request an appointment with `POST /donors/{id}/appointments` (`scheduledAt`, `organizationId`, optional notes). Default status is `REQUESTED`; staff can move it to `CONFIRMED`, `COMPLETED`, `REJECTED`, or `CANCELLED` via `PATCH /donors/appointments/{appointmentId}`.
 4. Record consent with `POST /donors/{id}/consents` and withdraw via `PATCH /donors/{id}/consents/{consentId}`.

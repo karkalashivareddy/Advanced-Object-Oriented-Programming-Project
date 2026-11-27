@@ -1,10 +1,14 @@
 # LifeLink Test Strategy
 
-Date: 24 November 2026. This document describes the suites that exist in the
-current tree and how to run them. Recorded results are in
-[`TEST_RESULTS.md`](TEST_RESULTS.md): 119 backend tests, 39 frontend tests,
-18 Playwright passes, standalone and browser STOMP evidence, and Compose probes.
-Historical Phase 2 counts remain preserved in dated review records.
+Date: 24 November 2026, with a 27 November 2026 current-gate addendum. This
+document describes the suites that exist in the current tree and how to run
+them. The 24 November counts below are retained as the suite-design snapshot;
+they are superseded by the current record in
+[`TEST_RESULTS.md`](TEST_RESULTS.md): backend **135 tests run, 0 failures, 0
+errors, 8 skipped** (Docker-dependent PostgreSQL Testcontainers), frontend
+**54 tests in 11 files**, **46 Playwright executions**, standalone and browser
+STOMP evidence, and H2/Compose probes. Historical Phase 2 counts remain
+preserved in dated review records.
 
 Status labels: **V** verified · **I** implemented but not runtime-verified ·
 **N** not implemented · **B** blocked by environment/scope. The final-tree

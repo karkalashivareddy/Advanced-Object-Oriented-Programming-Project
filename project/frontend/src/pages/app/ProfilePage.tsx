@@ -5,8 +5,6 @@ import {
   Building2,
   CheckCircle2,
   Copy,
-  Eye,
-  EyeOff,
   Info,
   KeyRound,
   ShieldCheck,
@@ -14,15 +12,23 @@ import {
 import { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { humanize, initials } from '@/lib/utils';
-import { ErrorState, FormField, PageHeader, StatusBadge, useToast } from '@/components/ui';
+import {
+  ErrorState,
+  Grid,
+  PageHeader,
+  PasswordField,
+  SectionCard,
+  StatCard,
+  StatusBadge,
+  Surface,
+  useToast,
+} from '@/components/ui';
 
 interface Errors {
   currentPassword?: string;
   newPassword?: string;
   confirmPassword?: string;
 }
-
-type VisibleFields = { current: boolean; next: boolean; confirm: boolean };
 
 const STRENGTH_LABELS = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
 const STRENGTH_COLORS = ['#ef4444', '#f59e0b', '#eab308', '#22c55e'];
@@ -47,7 +53,6 @@ export function ProfilePage() {
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState('');
   const [done, setDone] = useState(false);
-  const [visible, setVisible] = useState<VisibleFields>({ current: false, next: false, confirm: false });
 
   const changePassword = useMutation({
     mutationFn: () => auth.changePassword(form.currentPassword, form.newPassword),
@@ -90,10 +95,6 @@ export function ProfilePage() {
     if (Object.keys(next).length === 0) changePassword.mutate();
   };
 
-  const toggleVisibility = (field: keyof VisibleFields) => {
-    setVisible((current) => ({ ...current, [field]: !current[field] }));
-  };
-
   const copyPublicId = async (value: string) => {
     if (!navigator.clipboard) {
       toast.error('Clipboard is not available in this browser');
@@ -134,14 +135,13 @@ export function ProfilePage() {
       />
 
       <div className="split-layout stagger-1">
-        <section className="surface surface-glass" aria-labelledby="profile-identity-title">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">Identity</span>
-              <h2 id="profile-identity-title">{user.fullName}</h2>
-              <p className="page-subtitle">{user.email}</p>
-            </div>
-            <div className="section-actions">
+        <SectionCard
+          variant="glass"
+          eyebrow="Identity"
+          title={user.fullName}
+          description={user.email}
+          actions={
+            <>
               <StatusBadge status={user.status} />
               <span
                 className="avatar"
@@ -150,8 +150,9 @@ export function ProfilePage() {
               >
                 {initials(user.fullName)}
               </span>
-            </div>
-          </div>
+            </>
+          }
+        >
           <dl className="detail-grid">
             <div className="detail-item"><dt>Full name</dt><dd>{user.fullName}</dd></div>
             <div className="detail-item"><dt>Email</dt><dd>{user.email}</dd></div>
@@ -173,64 +174,61 @@ export function ProfilePage() {
           </dl>
 
           <hr className="divider" />
-          <h3>Global roles</h3>
-          <div className="cluster" style={{ marginTop: 8 }}>
-            {user.roles.length
-              ? user.roles.map((role) => <span className="status-chip" key={role}>{humanize(role)}</span>)
-              : <span className="text-muted">No roles returned</span>}
-          </div>
-
-          <h3 style={{ marginTop: 20 }}>Effective permissions</h3>
-          <div className="cluster" style={{ marginTop: 8 }}>
-            {user.permissions.length
-              ? user.permissions.map((permission) => <span className="chip" key={permission}>{humanize(permission)}</span>)
-              : <span className="text-muted">No explicit permissions returned; roles determine access.</span>}
-          </div>
-          <p className="text-xs text-subtle" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ShieldCheck size={13} aria-hidden="true" /> Permissions displayed here are advisory; the API enforces access.
-          </p>
-        </section>
-
-        <section className="surface surface-raised" aria-labelledby="profile-access-title">
-          <div className="section-heading">
+          <div className="stack">
             <div>
-              <span className="eyebrow">Access snapshot</span>
-              <h2 id="profile-access-title">Access</h2>
-              <p className="page-subtitle">Counts are from your authenticated user record.</p>
-            </div>
-          </div>
-          <div className="metric-grid">
-            <article className="metric-card">
-              <span className="metric-label">Roles</span>
-              <strong className="metric-value">{user.roles.length}</strong>
-            </article>
-            <article className="metric-card">
-              <span className="metric-label">Permissions</span>
-              <strong className="metric-value">{user.permissions.length}</strong>
-            </article>
-            <article className="metric-card">
-              <span className="metric-label">Memberships</span>
-              <strong className="metric-value">{user.memberships.length}</strong>
-            </article>
-          </div>
-          <div className="item-header" style={{ marginTop: 16 }}>
-            <div>
-              <strong>Active organization</strong>
-              <div className="text-xs text-subtle">
-                {activeMembership
-                  ? `${activeMembership.organizationName} · ${humanize(activeMembership.role)}`
-                  : auth.hasRole('PLATFORM_ADMIN') ? 'Platform admin context' : 'No active organization'}
+              <h3>Global roles</h3>
+              <div className="cluster">
+                {user.roles.length
+                  ? user.roles.map((role) => <span className="status-chip" key={role}>{humanize(role)}</span>)
+                  : <span className="text-muted">No roles returned</span>}
               </div>
             </div>
-            <span className="live-pill"><span className="live-dot" aria-hidden="true" /> Current</span>
+
+            <div>
+              <h3>Effective permissions</h3>
+              <div className="cluster">
+                {user.permissions.length
+                  ? user.permissions.map((permission) => <span className="chip" key={permission}>{humanize(permission)}</span>)
+                  : <span className="text-muted">No explicit permissions returned; roles determine access.</span>}
+              </div>
+            </div>
+            <p className="text-xs text-subtle cluster">
+              <ShieldCheck size={13} aria-hidden="true" /> Permissions displayed here are advisory; the API enforces access.
+            </p>
           </div>
-          <p className="text-xs text-subtle" style={{ marginTop: 12 }}>
-            Switch the active organization from the top bar when you belong to more than one.
-          </p>
-        </section>
+        </SectionCard>
+
+        <SectionCard
+          variant="raised"
+          eyebrow="Access snapshot"
+          title="Access"
+          description="Counts are from your authenticated user record."
+        >
+          <div className="stack">
+            <Grid columns="stats" className="metric-grid">
+              <StatCard label="Roles" value={user.roles.length} />
+              <StatCard label="Permissions" value={user.permissions.length} />
+              <StatCard label="Memberships" value={user.memberships.length} />
+            </Grid>
+            <div className="item-header">
+              <div>
+                <strong>Active organization</strong>
+                <div className="text-xs text-subtle">
+                  {activeMembership
+                    ? `${activeMembership.organizationName} · ${humanize(activeMembership.role)}`
+                    : auth.hasRole('PLATFORM_ADMIN') ? 'Platform admin context' : 'No active organization'}
+                </div>
+              </div>
+              <span className="live-pill"><span className="live-dot" aria-hidden="true" /> Current</span>
+            </div>
+            <p className="text-xs text-subtle">
+              Switch the active organization from the top bar when you belong to more than one.
+            </p>
+          </div>
+        </SectionCard>
       </div>
 
-      <section className="stagger-2" style={{ marginTop: 24 }} aria-labelledby="profile-memberships-title">
+      <section className="stagger-2" aria-labelledby="profile-memberships-title">
         <div className="section-heading">
           <div>
             <span className="eyebrow">Tenancy</span>
@@ -239,11 +237,11 @@ export function ProfilePage() {
           </div>
         </div>
         {user.memberships.length === 0 && (
-          <div className="surface surface-glass">
+          <Surface variant="glass" padding="md">
             <p className="text-sm text-muted">No organization memberships yet.</p>
-          </div>
+          </Surface>
         )}
-        <div className="task-grid">
+        <Grid columns="auto" className="task-grid">
           {user.memberships.map((membership) => {
             const isActive = membership.organizationId === auth.organizationId;
             return (
@@ -254,7 +252,7 @@ export function ProfilePage() {
                   Organization #{membership.organizationId} · {humanize(membership.role)}
                 </div>
                 {isActive ? (
-                  <span className="status-chip" style={{ marginTop: 12 }}>
+                  <span className="status-chip">
                     <span className="live-dot" aria-hidden="true" /> Active organization
                   </span>
                 ) : (
@@ -272,10 +270,15 @@ export function ProfilePage() {
               </article>
             );
           })}
-        </div>
+        </Grid>
       </section>
 
-      <section className="danger-zone stagger-3" style={{ marginTop: 24 }} aria-labelledby="password-title">
+      <Surface
+        as="section"
+        tone="danger"
+        className="danger-zone stagger-3"
+        aria-labelledby="password-title"
+      >
         <div className="section-heading">
           <div>
             <span className="eyebrow">Security</span>
@@ -285,94 +288,52 @@ export function ProfilePage() {
         </div>
 
         {formError && (
-          <div className="alert alert-danger form-error-banner" style={{ marginBottom: 16 }} role="alert">
+          <div className="alert alert-danger form-error-banner" role="alert">
             <AlertTriangle size={17} aria-hidden="true" /> <span>{formError}</span>
           </div>
         )}
         {done && (
-          <div className="alert alert-success form-error-banner" style={{ marginBottom: 16 }} role="status" aria-live="polite">
+          <div className="alert alert-success form-error-banner" role="status" aria-live="polite">
             <CheckCircle2 size={17} aria-hidden="true" /> <span>Password changed successfully. Sign in again on other devices.</span>
           </div>
         )}
 
         <form onSubmit={submit} noValidate className="form-grid" style={{ maxWidth: 680 }}>
-          <div style={{ position: 'relative' }}>
-            <FormField label="Current password" error={errors.currentPassword} required full>
-              <input
-                className="input"
-                style={{ paddingRight: 44 }}
-                type={visible.current ? 'text' : 'password'}
-                autoComplete="current-password"
-                value={form.currentPassword}
-                onChange={(event) => setForm({ ...form, currentPassword: event.target.value })}
-              />
-            </FormField>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm btn-icon"
-              style={{ position: 'absolute', right: 4, top: 28 }}
-              aria-label={visible.current ? 'Hide current password' : 'Show current password'}
-              aria-pressed={visible.current}
-              onClick={() => toggleVisibility('current')}
-            >
-              {visible.current ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
-            </button>
-          </div>
+          <PasswordField
+            label="Current password"
+            error={errors.currentPassword}
+            required
+            value={form.currentPassword}
+            onChange={(event) => setForm({ ...form, currentPassword: event.target.value })}
+            autoComplete="current-password"
+          />
+          <PasswordField
+            label="New password"
+            error={errors.newPassword}
+            required
+            full={false}
+            value={form.newPassword}
+            onChange={(event) => setForm({ ...form, newPassword: event.target.value })}
+            autoComplete="new-password"
+          />
+          <PasswordField
+            label="Confirm new password"
+            error={errors.confirmPassword}
+            required
+            full={false}
+            value={form.confirmPassword}
+            onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })}
+            autoComplete="new-password"
+          />
 
-          <div style={{ position: 'relative' }}>
-            <FormField label="New password" error={errors.newPassword} required>
-              <input
-                className="input"
-                style={{ paddingRight: 44 }}
-                type={visible.next ? 'text' : 'password'}
-                autoComplete="new-password"
-                value={form.newPassword}
-                onChange={(event) => setForm({ ...form, newPassword: event.target.value })}
-              />
-            </FormField>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm btn-icon"
-              style={{ position: 'absolute', right: 4, top: 28 }}
-              aria-label={visible.next ? 'Hide new password' : 'Show new password'}
-              aria-pressed={visible.next}
-              onClick={() => toggleVisibility('next')}
-            >
-              {visible.next ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
-            </button>
-          </div>
-
-          <div style={{ position: 'relative' }}>
-            <FormField label="Confirm new password" error={errors.confirmPassword} required>
-              <input
-                className="input"
-                style={{ paddingRight: 44 }}
-                type={visible.confirm ? 'text' : 'password'}
-                autoComplete="new-password"
-                value={form.confirmPassword}
-                onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })}
-              />
-            </FormField>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm btn-icon"
-              style={{ position: 'absolute', right: 4, top: 28 }}
-              aria-label={visible.confirm ? 'Hide confirmation password' : 'Show confirmation password'}
-              aria-pressed={visible.confirm}
-              onClick={() => toggleVisibility('confirm')}
-            >
-              {visible.confirm ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
-            </button>
-          </div>
-
-          <div className="form-field-full">
+          <div className="form-field-full stack">
             <div
+              className="cluster"
               role="progressbar"
               aria-label="Password strength"
               aria-valuemin={0}
               aria-valuemax={4}
               aria-valuenow={strength}
-              style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 10 }}
             >
               {[0, 1, 2, 3].map((index) => (
                 <span
@@ -390,26 +351,25 @@ export function ProfilePage() {
             <span className="field-hint">Use 10–72 characters with mixed case, numbers and symbols for a strong password.</span>
           </div>
 
-          <div className="form-actions form-field-full" style={{ marginTop: 4 }}>
+          <div className="form-actions form-field-full">
             <button type="submit" className="btn btn-primary" disabled={changePassword.isPending}>
               <KeyRound size={15} aria-hidden="true" /> {changePassword.isPending ? 'Updating…' : 'Update password'}
             </button>
           </div>
         </form>
-      </section>
+      </Surface>
 
-      <section className="surface surface-glass stagger-3" style={{ marginTop: 24 }} aria-labelledby="profile-limits-title">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">API scope</span>
-            <h2 id="profile-limits-title">What this page can and cannot change</h2>
-          </div>
-        </div>
-        <p className="text-sm text-muted" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+      <SectionCard
+        className="stagger-3"
+        variant="glass"
+        eyebrow="API scope"
+        title="What this page can and cannot change"
+      >
+        <p className="text-sm text-muted cluster" style={{ alignItems: 'flex-start' }}>
           <Info size={16} aria-hidden="true" style={{ flex: 'none', marginTop: 2 }} />
           Profile fields are read-only in this build: the API exposes no profile-edit endpoint. There is also no endpoint to list or revoke individual sessions; a password change revokes refresh tokens, and signing out ends the current session.
         </p>
-      </section>
+      </SectionCard>
     </div>
   );
 }

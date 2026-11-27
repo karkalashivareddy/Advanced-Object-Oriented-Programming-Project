@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <rect width="1200" height="1200" fill="#ffffff" />
+  <circle cx="600" cy="600" r="500" fill="#fff5f7" />
+  <circle cx="600" cy="600" r="450" fill="none" stroke="#f3eff1" stroke-width="2" />
+  <circle cx="600" cy="600" r="430" fill="none" stroke="#e8dce0" stroke-width="3" stroke-dasharray="14 18" />
+  <circle cx="600" cy="600" r="330" fill="none" stroke="#ffd0da" stroke-width="5" stroke-dasharray="10 20" />
+  <circle cx="600" cy="600" r="240" fill="#ffe8ed" opacity="0.65" />
+  <circle cx="600" cy="600" r="230" fill="none" stroke="#c8102e" stroke-width="4" stroke-dasharray="4 16" opacity="0.6" />
+  <path d="M600 420 L748 486 V600 C748 704 678 766 600 800 C522 766 452 704 452 600 V486Z" fill="#ffffff" stroke="#c8102e" stroke-width="10" stroke-linejoin="round" />
+  <path d="M600 522 C584 554 550 598 550 630 A50 50 0 0 0 650 630 C650 598 616 554 600 522Z" fill="#df1b3b" />
+  <path d="M566 634 h18 l10-20 14 40 10-20 h18" fill="none" stroke="#fff5f7" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="600" cy="170" r="10" fill="#c8102e" />
+  <circle cx="1030" cy="600" r="10" fill="#c8102e" opacity="0.6" />
+  <circle cx="600" cy="1030" r="10" fill="#c8102e" opacity="0.6" />
+  <circle cx="170" cy="600" r="10" fill="#c8102e" opacity="0.6" />
+</svg>

@@ -13,9 +13,14 @@ import {
   ErrorState,
   FormField,
   FreshnessIndicator,
+  Grid,
+  Input,
   Modal,
   PageHeader,
+  Select,
+  StatCard,
   StatusBadge,
+  Surface,
   useToast,
   type DataTableColumn,
 } from '@/components/ui';
@@ -197,23 +202,25 @@ export function UsersAdminPage() {
       />
 
       {!usersQuery.isError && (
-        <div className="metric-grid stagger-1" aria-label="User summary">
-          <article className="metric-card">
-            <span className="metric-label">Accounts (server total)</span>
-            <strong className="metric-value">{usersQuery.data?.totalElements ?? '—'}</strong>
-            <span className="metric-delta">From /users pagination</span>
-          </article>
-          <article className="metric-card">
-            <span className="metric-label">On this page</span>
-            <strong className="metric-value">{usersQuery.data ? allUsers.length : '—'}</strong>
-            <span className="metric-delta">Page {usersQuery.data?.page !== undefined ? usersQuery.data.page + 1 : '—'} of {usersQuery.data?.totalPages ?? '—'}</span>
-          </article>
-          <article className="metric-card">
-            <span className="metric-label">Shown after filters</span>
-            <strong className="metric-value">{usersQuery.data ? users.length : '—'}</strong>
-            <span className="metric-delta">{hasFilters ? 'Page-scoped filters active' : 'No filters active'}</span>
-          </article>
-        </div>
+        <section className="stagger-1" aria-label="User summary">
+          <Grid columns="stats">
+            <StatCard
+              label="Accounts (server total)"
+              value={usersQuery.data?.totalElements ?? '—'}
+              hint="From /users pagination"
+            />
+            <StatCard
+              label="On this page"
+              value={usersQuery.data ? allUsers.length : '—'}
+              hint={`Page ${usersQuery.data?.page !== undefined ? usersQuery.data.page + 1 : '—'} of ${usersQuery.data?.totalPages ?? '—'}`}
+            />
+            <StatCard
+              label="Shown after filters"
+              value={usersQuery.data ? users.length : '—'}
+              hint={hasFilters ? 'Page-scoped filters active' : 'No filters active'}
+            />
+          </Grid>
+        </section>
       )}
 
       <div className="stagger-2" style={{ margin: '16px 0' }}>
@@ -230,13 +237,13 @@ export function UsersAdminPage() {
       </div>
 
       {usersQuery.isError ? (
-        <section className="surface surface-glass stagger-2">
+        <Surface as="section" variant="glass" padding="md" className="stagger-2">
           <ErrorState
             title="Users could not be loaded"
             error={usersQuery.error}
             onRetry={() => void usersQuery.refetch()}
           />
-        </section>
+        </Surface>
       ) : (
         <div className="stagger-2">
           <DataTable
@@ -258,13 +265,12 @@ export function UsersAdminPage() {
             toolbar={
               <div className="toolbar">
                 <div className="filter-grid">
-                  <div className="filter-field toolbar-search">
+                  <div className="filter-field">
                     <label className="sr-only" htmlFor="users-search">Search users</label>
                     <div className="search-input-wrap">
                       <Search size={15} aria-hidden="true" />
-                      <input
+                      <Input
                         id="users-search"
-                        className="input"
                         type="search"
                         placeholder="Search name or email…"
                         value={search}
@@ -274,33 +280,30 @@ export function UsersAdminPage() {
                   </div>
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="users-status-filter">Status on this page</label>
-                    <select
+                    <Select
                       id="users-status-filter"
-                      className="select"
                       value={statusFilter}
                       onChange={(event) => setStatusFilter(event.target.value)}
                     >
                       <option value="">All statuses</option>
                       {USER_STATUSES.map((item) => <option key={item} value={item}>{humanize(item)}</option>)}
-                    </select>
+                    </Select>
                   </div>
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="users-role-filter">Role on this page</label>
-                    <select
+                    <Select
                       id="users-role-filter"
-                      className="select"
                       value={roleFilter}
                       onChange={(event) => setRoleFilter(event.target.value)}
                     >
                       <option value="">All roles</option>
                       {ROLES.map((role) => <option key={role} value={role}>{humanize(role)}</option>)}
-                    </select>
+                    </Select>
                   </div>
                   <div className="filter-field">
                     <label className="sr-only" htmlFor="users-org-filter">Organization on this page</label>
-                    <select
+                    <Select
                       id="users-org-filter"
-                      className="select"
                       value={organizationFilter}
                       onChange={(event) => setOrganizationFilter(event.target.value)}
                     >
@@ -308,7 +311,7 @@ export function UsersAdminPage() {
                       {organizationOptions.map(([id, name]) => (
                         <option key={id} value={id}>{name}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
                 <div className="section-actions">

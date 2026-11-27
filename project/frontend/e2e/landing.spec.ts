@@ -23,7 +23,7 @@ test('landing page tells the donor-to-delivery story on desktop', async ({ page 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Every drop has a journey/i);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Every\s+Drop\s+Has\s+a\s+Destination\./i);
   await expect(page.getByRole('group', { name: 'Donor to delivery journey' }).locator('li'))
     .toHaveCount(6);
   for (const stage of ['Donate', 'Screen', 'Store', 'Request', 'Reserve', 'Deliver']) {
@@ -32,8 +32,8 @@ test('landing page tells the donor-to-delivery story on desktop', async ({ page 
   await expect(page.getByRole('img', { name: /Illustrative animated blood vessel/i })).toBeVisible();
   await expect(page.getByText(/Visual story only · not live supply data/i)).toBeVisible();
 
-  const primary = page.getByRole('link', { name: /Create donor account/i }).first();
-  const signIn = page.getByRole('link', { name: /Sign in to workspace/i }).first();
+  const primary = page.getByRole('link', { name: /Become a donor/i }).first();
+  const signIn = page.getByRole('link', { name: /Find Blood/i }).first();
   await expect(primary).toHaveAttribute('href', '/register');
   await expect(signIn).toHaveAttribute('href', '/login');
 

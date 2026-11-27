@@ -6,7 +6,18 @@ Status labels used below: **V** verified by an executed command/recorded probe �
 **I** implemented but not runtime-verified · **N** not implemented ·
 **B** blocked by environment or edit scope. No production-readiness claim.
 
-## 2026-11-24 — Bloodstream experience, audit fixes, abstract correction, and final reconciliation (current)
+> **Current verification — 27 November 2026:** the 24 November figures in the
+> first entry below are historical. Current gates are backend **135 tests run,
+> 0 failures, 0 errors, 8 skipped** (Docker-dependent PostgreSQL Testcontainers);
+> frontend **54 tests in 11 files**, typecheck and production build passed;
+> Playwright **46 executions**; `npm audit --audit-level=high` found 0
+> vulnerabilities. A follow-up live-browser fix corrected the donor dashboard's
+> paged `/donors` response handling, the unscoped admin donation 403, and the
+> SockJS unload console warning. See
+> [`docs/quality/TEST_RESULTS.md`](docs/quality/TEST_RESULTS.md)
+> and the four current named review documents linked from the root README.
+
+## 2026-11-24 — Bloodstream experience, audit fixes, abstract correction, and final reconciliation (historical)
 
 Branch: `feature/lifelink-bloodstream-experience`; base HEAD
 `59401d45e511183ede59e7d55073f07e2cf5eacd`. Work is recorded in local commits

@@ -1,0 +1,44 @@
+[
+  {
+    "generatedAt": "2026-11-25T04:19:10.744Z",
+    "browser": "chrome",
+    "routes": [
+      "/",
+      "/register",
+      "/login"
+    ],
+    "failedResponses": [],
+    "unloadListeners": {
+      "registrations": [
+        {
+          "type": "beforeunload",
+          "stack": "Error\n    at EventTarget.addEventListener (<anonymous>:15:18)\n    at http://127.0.0.1:4173/@vite/client:785:61"
+        }
+      ],
+      "propertyWrites": []
+    },
+    "unloadPolicyMessages": [],
+    "relevantConsoleMessages": []
+  },
+  {
+    "generatedAt": "2026-11-25T04:19:45.323Z",
+    "browser": "edge",
+    "routes": [
+      "/",
+      "/register",
+      "/login"
+    ],
+    "failedResponses": [],
+    "unloadListeners": {
+      "registrations": [
+        {
+          "type": "beforeunload",
+          "stack": "Error\n    at EventTarget.addEventListener (<anonymous>:15:18)\n    at http://127.0.0.1:4173/@vite/client:785:61"
+        }
+      ],
+      "propertyWrites": []
+    },
+    "unloadPolicyMessages": [],
+    "relevantConsoleMessages": []
+  }
+]

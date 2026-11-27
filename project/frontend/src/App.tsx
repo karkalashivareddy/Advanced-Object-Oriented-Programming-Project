@@ -1,8 +1,16 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/lib/auth';
-import { Skeleton, ToastProvider } from '@/components/ui';
+import { ToastProvider } from '@/components/ui';
+import {
+  BloodWipe,
+  RouteFallback,
+  RouteTransition,
+  TopProgress,
+  useMotionVisibility,
+  useScrollRestoration,
+} from '@/components/motion';
 import { AppShell } from '@/components/layout/AppShell';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { LandingPage } from '@/pages/public/LandingPage';
@@ -25,19 +33,29 @@ const AnalyticsPage = lazy(async () => ({ default: (await import('@/pages/app/An
 const UsersAdminPage = lazy(async () => ({ default: (await import('@/pages/app/UsersAdminPage')).UsersAdminPage }));
 const OrganizationsAdminPage = lazy(async () => ({ default: (await import('@/pages/app/OrganizationsAdminPage')).OrganizationsAdminPage }));
 const ProfilePage = lazy(async () => ({ default: (await import('@/pages/app/ProfilePage')).ProfilePage }));
+const DesignKitPage = lazy(async () => ({ default: (await import('@/pages/public/DesignKitPage')).DesignKitPage }));
 
-function RouteFallback() {
-  return (
-    <div className="card card-pad" role="status" aria-live="polite">
-      <div className="skeleton-lines">
-        <Skeleton height={20} width="45%" />
-        <Skeleton height={14} />
-        <Skeleton height={14} width="80%" />
-        <Skeleton height={200} />
-      </div>
-      <span className="sr-only">Loading page…</span>
-    </div>
-  );
+const routeChunks = [
+  () => import('@/pages/app/DashboardPage'),
+  () => import('@/pages/app/InventoryPage'),
+  () => import('@/pages/app/DonorsPage'),
+  () => import('@/pages/app/DonationsPage'),
+  () => import('@/pages/app/RequestsPage'),
+  () => import('@/pages/app/AnalyticsPage'),
+];
+
+/** Warm likely next routes during idle time without changing navigation behaviour. */
+function useRoutePrefetch(): void {
+  useEffect(() => {
+    const warm = () => routeChunks.forEach((load) => void load());
+    const idle = window.requestIdleCallback;
+    if (typeof idle === 'function') {
+      const handle = idle(warm, { timeout: 1800 });
+      return () => window.cancelIdleCallback?.(handle);
+    }
+    const handle = window.setTimeout(warm, 1200);
+    return () => window.clearTimeout(handle);
+  }, []);
 }
 
 const queryClient = new QueryClient({
@@ -50,41 +68,62 @@ const queryClient = new QueryClient({
   },
 });
 
+function AppRoutes() {
+  const location = useLocation();
+  const publicTransition = !location.pathname.startsWith('/app');
+  useScrollRestoration();
+  useMotionVisibility();
+  useRoutePrefetch();
+
+  const routes = (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      {import.meta.env.DEV && <Route path="/__kit" element={<DesignKitPage />} />}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/app" element={<AppShell />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="inventory" element={<InventoryPage />} />
+          <Route path="donors" element={<DonorsPage />} />
+          <Route path="donors/nearby" element={<NearbyDonorsPage />} />
+          <Route path="donations" element={<DonationsPage />} />
+          <Route path="requests" element={<RequestsPage />} />
+          <Route path="allocations" element={<AllocationsPage />} />
+          <Route path="reservations" element={<ReservationsPage />} />
+          <Route path="dispatch" element={<DispatchPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="audit" element={<AuditPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="admin/users" element={<UsersAdminPage />} />
+          <Route path="admin/organizations" element={<OrganizationsAdminPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Route>
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+
+  return (
+    <>
+      <TopProgress />
+      <BloodWipe />
+      <Suspense fallback={<RouteFallback />}>
+        {publicTransition ? <RouteTransition>{routes}</RouteTransition> : routes}
+      </Suspense>
+    </>
+  );
+}
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <AuthProvider>
           <BrowserRouter>
-            <Suspense fallback={<RouteFallback />}>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/app" element={<AppShell />}>
-                    <Route index element={<Navigate to="dashboard" replace />} />
-                    <Route path="dashboard" element={<DashboardPage />} />
-                    <Route path="inventory" element={<InventoryPage />} />
-                    <Route path="donors" element={<DonorsPage />} />
-                    <Route path="donors/nearby" element={<NearbyDonorsPage />} />
-                    <Route path="donations" element={<DonationsPage />} />
-                    <Route path="requests" element={<RequestsPage />} />
-                    <Route path="allocations" element={<AllocationsPage />} />
-                    <Route path="reservations" element={<ReservationsPage />} />
-                    <Route path="dispatch" element={<DispatchPage />} />
-                    <Route path="notifications" element={<NotificationsPage />} />
-                    <Route path="audit" element={<AuditPage />} />
-                    <Route path="analytics" element={<AnalyticsPage />} />
-                    <Route path="admin/users" element={<UsersAdminPage />} />
-                    <Route path="admin/organizations" element={<OrganizationsAdminPage />} />
-                    <Route path="profile" element={<ProfilePage />} />
-                    <Route path="*" element={<NotFoundPage />} />
-                  </Route>
-                </Route>
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </Suspense>
+            <AppRoutes />
           </BrowserRouter>
         </AuthProvider>
       </ToastProvider>
